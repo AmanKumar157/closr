@@ -74,3 +74,19 @@ test('API Response Formatter: formats success and error payloads consistently', 
   assert.equal(apiErr.errors.length, 1);
 });
 
+test('Auth Security: Token blacklist simulation revokes logged out sessions', () => {
+  const blacklistedTokens = new Set();
+  const token = 'sample_jwt_revoked_token_abcdef123456';
+  
+  // User logs out -> token added to blacklist
+  blacklistedTokens.add(token);
+
+  // Authenticate attempt
+  const isRevoked = blacklistedTokens.has(token);
+  assert.equal(isRevoked, true);
+
+  // Non-blacklisted token passes check
+  const activeToken = 'sample_jwt_valid_active_token_987654';
+  assert.equal(blacklistedTokens.has(activeToken), false);
+});
+

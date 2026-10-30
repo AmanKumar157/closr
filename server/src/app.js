@@ -8,6 +8,9 @@ import { ApiError } from './utils/ApiError.js';
 import authRoutes from './routes/auth.routes.js';
 import profileRoutes from './routes/profile.routes.js';
 import analysisRoutes from './routes/analysis.routes.js';
+import roadmapRoutes from './routes/roadmap.routes.js';
+import progressRoutes from './routes/progress.routes.js';
+import resumeRoutes from './routes/resume.routes.js';
 
 const app = express();
 
@@ -42,6 +45,9 @@ app.get('/api/health', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/profile', profileRoutes);
 app.use('/api/analysis', analysisRoutes);
+app.use('/api/roadmap', roadmapRoutes);
+app.use('/api/progress', progressRoutes);
+app.use('/api/resume', resumeRoutes);
 
 // Catch-all for undefined routes
 app.use('*', (req, res, next) => {

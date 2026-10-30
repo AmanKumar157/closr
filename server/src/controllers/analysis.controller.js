@@ -157,3 +157,4 @@ export const compareAnalyses = asyncHandler(async (req, res) => {
     'Analyses compared successfully'
   ).send(res);
 });
+

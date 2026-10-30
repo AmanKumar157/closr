@@ -85,3 +85,4 @@ test('AI Service: fallback simulation produces valid schema-compliant structure'
   const validation = aiAnalysisOutputSchema.safeParse(result);
   assert.equal(validation.success, true);
 });
+

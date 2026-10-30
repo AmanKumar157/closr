@@ -10,6 +10,10 @@ import DashboardPage from './pages/DashboardPage.jsx';
 import ProfilePage from './features/profile/pages/ProfilePage.jsx';
 import NewAnalysisPage from './features/analysis/pages/NewAnalysisPage.jsx';
 import AnalysisResultPage from './features/analysis/pages/AnalysisResultPage.jsx';
+import RoadmapTimelinePage from './features/roadmap/pages/RoadmapTimelinePage.jsx';
+import TrackerPage from './features/tracker/pages/TrackerPage.jsx';
+import ResumeGeneratorPage from './features/resume/pages/ResumeGeneratorPage.jsx';
+import HistoryPage from './features/history/pages/HistoryPage.jsx';
 
 export const App = () => {
   return (
@@ -84,6 +88,70 @@ export const App = () => {
                 element={
                   <ProtectedRoute>
                     <AnalysisResultPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/roadmap"
+                element={
+                  <ProtectedRoute>
+                    <RoadmapTimelinePage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/roadmap/generate"
+                element={
+                  <ProtectedRoute>
+                    <RoadmapTimelinePage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/roadmap/:id"
+                element={
+                  <ProtectedRoute>
+                    <RoadmapTimelinePage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/tracker"
+                element={
+                  <ProtectedRoute>
+                    <TrackerPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/resume"
+                element={
+                  <ProtectedRoute>
+                    <ResumeGeneratorPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/resume/generate"
+                element={
+                  <ProtectedRoute>
+                    <ResumeGeneratorPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/resume/:id"
+                element={
+                  <ProtectedRoute>
+                    <ResumeGeneratorPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/history"
+                element={
+                  <ProtectedRoute>
+                    <HistoryPage />
                   </ProtectedRoute>
                 }
               />

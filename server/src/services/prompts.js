@@ -45,3 +45,4 @@ Analyze this resume against the target role. Return the response strictly follow
 
   ATS_RESUME_SYSTEM: `Rewrite the resume as clean semantic HTML: single column, standard headings (Summary, Skills, Experience, Projects, Education), no tables, images or icons, inline CSS only, print-friendly. Do not fabricate experience, employers, dates or metrics; only reword and reorganise.`
 };
+

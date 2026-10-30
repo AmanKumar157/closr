@@ -27,3 +27,4 @@ router.get('/compare', compareAnalyses);
 router.get('/:id', getAnalysisById);
 
 export default router;
+

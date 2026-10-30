@@ -39,3 +39,4 @@ export const analysisService = {
 };
 
 export default analysisService;
+

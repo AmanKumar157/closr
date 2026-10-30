@@ -113,25 +113,41 @@ export const DashboardPage = () => {
               </p>
             </Link>
 
-            <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-slate-50 transition-colors">
-              <div className="w-8 h-8 rounded-lg bg-sky-100 text-sky-600 flex items-center justify-center mb-3">
-                <Map className="w-5 h-5" />
+            <Link
+              to="/roadmap"
+              className="p-4 rounded-xl border border-sky-200 bg-sky-50/30 hover:bg-sky-50/70 transition-all group block"
+            >
+              <div className="flex items-center justify-between mb-3">
+                <div className="w-8 h-8 rounded-lg bg-sky-100 text-sky-600 flex items-center justify-center">
+                  <Map className="w-5 h-5" />
+                </div>
+                <ArrowRight className="w-4 h-4 text-sky-500 group-hover:translate-x-1 transition-transform" />
               </div>
-              <h4 className="font-semibold text-slate-900 text-sm">3. 12-Week Roadmap</h4>
+              <h4 className="font-semibold text-slate-900 text-sm group-hover:text-sky-600 transition-colors">
+                3. 12-Week Roadmap
+              </h4>
               <p className="text-xs text-slate-500 mt-1">
                 Follow milestone tasks with 1 curated resource per milestone.
               </p>
-            </div>
+            </Link>
 
-            <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-slate-50 transition-colors">
-              <div className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center mb-3">
-                <TrendingUp className="w-5 h-5" />
+            <Link
+              to="/history"
+              className="p-4 rounded-xl border border-emerald-200 bg-emerald-50/30 hover:bg-emerald-50/70 transition-all group block"
+            >
+              <div className="flex items-center justify-between mb-3">
+                <div className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center">
+                  <TrendingUp className="w-5 h-5" />
+                </div>
+                <ArrowRight className="w-4 h-4 text-emerald-500 group-hover:translate-x-1 transition-transform" />
               </div>
-              <h4 className="font-semibold text-slate-900 text-sm">4. Re-analysis Loop</h4>
+              <h4 className="font-semibold text-slate-900 text-sm group-hover:text-emerald-600 transition-colors">
+                4. Re-analysis Loop & Compare
+              </h4>
               <p className="text-xs text-slate-500 mt-1">
-                Re-upload your updated resume to track score improvements and export an ATS resume.
+                Re-upload updated resumes to track score improvement charts and export ATS PDFs.
               </p>
-            </div>
+            </Link>
           </div>
         </Card>
       </div>

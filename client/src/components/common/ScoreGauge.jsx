@@ -98,3 +98,4 @@ export const ScoreGauge = ({ score = 0, size = 'md', label = 'ATS Match Score' }
 };
 
 export default ScoreGauge;
+

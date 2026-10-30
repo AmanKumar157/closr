@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth.js';
-import { Compass, LogOut, User, LayoutDashboard, FileText, Map, History } from 'lucide-react';
+import { Compass, LogOut, User, LayoutDashboard, FileText, Map, History, TrendingUp } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export const Navbar = () => {
@@ -39,27 +39,55 @@ export const Navbar = () => {
 
           {/* Navigation Links for Authenticated Users */}
           {isAuthenticated && (
-            <nav className="hidden md:flex items-center space-x-1 lg:space-x-2">
+            <nav className="hidden lg:flex items-center space-x-1">
               <Link
                 to="/dashboard"
-                className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-slate-700 hover:text-indigo-600 hover:bg-slate-50 rounded-lg transition-colors"
+                className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-slate-700 hover:text-indigo-600 hover:bg-slate-50 rounded-lg transition-colors"
               >
-                <LayoutDashboard className="w-4 h-4" />
+                <LayoutDashboard className="w-3.5 h-3.5" />
                 Dashboard
               </Link>
               <Link
-                to="/profile"
-                className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-slate-700 hover:text-indigo-600 hover:bg-slate-50 rounded-lg transition-colors"
+                to="/analysis/new"
+                className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50/60 rounded-lg transition-colors font-semibold"
               >
-                <User className="w-4 h-4" />
-                Profile
+                <FileText className="w-3.5 h-3.5" />
+                Analyze
               </Link>
               <Link
-                to="/analysis/new"
-                className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50/60 rounded-lg transition-colors font-semibold"
+                to="/roadmap"
+                className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-slate-700 hover:text-indigo-600 hover:bg-slate-50 rounded-lg transition-colors"
               >
-                <FileText className="w-4 h-4" />
-                Analyze Resume
+                <Map className="w-3.5 h-3.5" />
+                Roadmap
+              </Link>
+              <Link
+                to="/tracker"
+                className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-slate-700 hover:text-indigo-600 hover:bg-slate-50 rounded-lg transition-colors"
+              >
+                <TrendingUp className="w-3.5 h-3.5" />
+                Tracker
+              </Link>
+              <Link
+                to="/resume"
+                className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-slate-700 hover:text-indigo-600 hover:bg-slate-50 rounded-lg transition-colors"
+              >
+                <FileText className="w-3.5 h-3.5" />
+                ATS Resume
+              </Link>
+              <Link
+                to="/history"
+                className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-slate-700 hover:text-indigo-600 hover:bg-slate-50 rounded-lg transition-colors"
+              >
+                <History className="w-3.5 h-3.5" />
+                History & Diff
+              </Link>
+              <Link
+                to="/profile"
+                className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-slate-700 hover:text-indigo-600 hover:bg-slate-50 rounded-lg transition-colors"
+              >
+                <User className="w-3.5 h-3.5" />
+                Profile
               </Link>
             </nav>
           )}
