@@ -8,6 +8,7 @@ import {
   Circle,
   Sparkles,
   ArrowRight,
+  ArrowLeft,
   RefreshCw,
   FileText,
   Calendar,
@@ -55,7 +56,7 @@ export const RoadmapTimelinePage = () => {
           if (res.success && res.data?.roadmap) {
             toast.success('Your 12-week roadmap is ready!');
             setRoadmap(res.data.roadmap);
-            navigate(`/roadmap/${res.data.roadmap._id}`, { replace: true });
+            navigate(`/roadmap/${res.data.roadmap._id}`);
           }
         } else if (isObjectId) {
           // Load existing roadmap by specific MongoDB ID
@@ -95,7 +96,7 @@ export const RoadmapTimelinePage = () => {
       if (res.success && res.data?.roadmap) {
         toast.success('Your 12-week roadmap is ready!');
         setRoadmap(res.data.roadmap);
-        navigate(`/roadmap/${res.data.roadmap._id}`, { replace: true });
+        navigate(`/roadmap/${res.data.roadmap._id}`);
       }
     } catch (err) {
       toast.error(err.message || 'Failed to generate roadmap. Please try again.');
@@ -400,7 +401,29 @@ export const RoadmapTimelinePage = () => {
   const overallPercent = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+      {/* Navigation Breadcrumbs / Back Button */}
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          onClick={() => navigate(-1)}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:text-slate-900 bg-white border border-slate-200 hover:border-slate-300 rounded-lg shadow-2xs transition-colors"
+        >
+          <ArrowLeft className="w-3.5 h-3.5" />
+          <span>← Back</span>
+        </button>
+
+        {roadmap?.analysisId && (
+          <Link
+            to={`/analysis/${roadmap.analysisId}`}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-indigo-600 hover:text-indigo-700 bg-indigo-50/70 hover:bg-indigo-100/70 border border-indigo-200 rounded-lg transition-colors"
+          >
+            <FileText className="w-3.5 h-3.5" />
+            <span>Back to Analysis Report</span>
+          </Link>
+        )}
+      </div>
+
       {/* Roadmap Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 pb-4 border-b border-slate-200">
         <div>

@@ -9,6 +9,7 @@ import {
   Code,
   Sparkles,
   ArrowRight,
+  ArrowLeft,
   ShieldCheck,
   RefreshCw,
   Layers,
@@ -48,7 +49,7 @@ export const ResumeGeneratorPage = () => {
           const res = await resumeService.generateResume(analysisId);
           if (res.success && res.data?.resume) {
             setResume(res.data.resume);
-            navigate(`/resume/${res.data.resume._id}`, { replace: true });
+            navigate(`/resume/${res.data.resume._id}`);
             toast.success('ATS Resume generated successfully!');
           }
         } else if (isObjectId) {
@@ -88,7 +89,7 @@ export const ResumeGeneratorPage = () => {
       const res = await resumeService.generateResume(targetAnalysisId);
       if (res.success && res.data?.resume) {
         setResume(res.data.resume);
-        navigate(`/resume/${res.data.resume._id}`, { replace: true });
+        navigate(`/resume/${res.data.resume._id}`);
         toast.success('ATS Resume generated successfully!');
       }
     } catch (err) {
@@ -289,6 +290,28 @@ export const ResumeGeneratorPage = () => {
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+      {/* Navigation Breadcrumbs / Back Button */}
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          onClick={() => navigate(-1)}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:text-slate-900 bg-white border border-slate-200 hover:border-slate-300 rounded-lg shadow-2xs transition-colors"
+        >
+          <ArrowLeft className="w-3.5 h-3.5" />
+          <span>← Back</span>
+        </button>
+
+        {resume?.analysisId && (
+          <Link
+            to={`/analysis/${resume.analysisId}`}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-indigo-600 hover:text-indigo-700 bg-indigo-50/70 hover:bg-indigo-100/70 border border-indigo-200 rounded-lg transition-colors"
+          >
+            <FileText className="w-3.5 h-3.5" />
+            <span>Back to Analysis Report</span>
+          </Link>
+        )}
+      </div>
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-slate-200">
         <div>
