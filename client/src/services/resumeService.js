@@ -56,8 +56,11 @@ export const resumeService = {
    * URL for streaming original uploaded PDF inside the browser iframe
    */
   getOriginalPdfUrl(analysisId) {
+    const rawId = typeof analysisId === 'object' && analysisId !== null
+      ? (analysisId._id || '')
+      : (analysisId || '');
     const baseURL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
-    return `${baseURL}/analysis/${analysisId}/file`;
+    return `${baseURL}/analysis/${rawId}/file`;
   }
 };
 

@@ -150,6 +150,10 @@ export const getAnalyses = asyncHandler(async (req, res) => {
  * @access  Protected
  */
 export const getAnalysisById = asyncHandler(async (req, res) => {
+  if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+    throw new ApiError(400, 'Invalid analysis ID format.');
+  }
+
   const analysis = await Analysis.findOne({
     _id: req.params.id,
     userId: req.user._id
@@ -217,6 +221,10 @@ export const compareAnalyses = asyncHandler(async (req, res) => {
  * @access  Protected
  */
 export const getOriginalResumePdf = asyncHandler(async (req, res) => {
+  if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+    throw new ApiError(400, 'Invalid analysis ID format.');
+  }
+
   const analysis = await Analysis.findOne({
     _id: req.params.id,
     userId: req.user._id
@@ -227,7 +235,30 @@ export const getOriginalResumePdf = asyncHandler(async (req, res) => {
   }
 
   if (!analysis.fileBuffer) {
-    throw new ApiError(404, 'Original PDF file was not stored for this older upload.');
+    res.set('Content-Type', 'text/html');
+    return res.status(200).send(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <style>
+          body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f8fafc; color: #334155; padding: 40px 20px; text-align: center; }
+          .card { max-width: 500px; margin: 40px auto; background: white; padding: 32px; border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+          h2 { color: #0f172a; margin-top: 0; font-size: 20px; }
+          p { font-size: 14px; line-height: 1.6; color: #64748b; }
+          .badge { display: inline-block; padding: 4px 12px; background: #e0e7ff; color: #4338ca; border-radius: 9999px; font-size: 12px; font-weight: 600; margin-bottom: 16px; }
+        </style>
+      </head>
+      <body>
+        <div class="card">
+          <div class="badge">Older Resume Upload</div>
+          <h2>Original PDF Preview Not Available</h2>
+          <p>This resume was uploaded in an earlier session before PDF archiving was active.</p>
+          <p>All newly uploaded resumes retain full in-app PDF previewing.</p>
+        </div>
+      </body>
+      </html>
+    `);
   }
 
   res.set({
