@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth.js';
 import { Compass, LogOut, User, LayoutDashboard, FileText, Map, History, TrendingUp } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -7,6 +7,7 @@ import toast from 'react-hot-toast';
 export const Navbar = () => {
   const { user, isAuthenticated, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const handleLogout = async () => {
     try {
@@ -16,6 +17,23 @@ export const Navbar = () => {
     } catch (err) {
       toast.error('Failed to log out');
     }
+  };
+
+  const navItems = [
+    { label: 'Dashboard', path: '/dashboard', to: '/dashboard', icon: LayoutDashboard },
+    { label: 'Analyze', path: '/analysis', to: '/analysis/new', icon: FileText },
+    { label: 'Roadmap', path: '/roadmap', to: '/roadmap', icon: Map },
+    { label: 'Tracker', path: '/tracker', to: '/tracker', icon: TrendingUp },
+    { label: 'ATS Resume', path: '/resume', to: '/resume', icon: FileText },
+    { label: 'History & Diff', path: '/history', to: '/history', icon: History },
+    { label: 'Profile', path: '/profile', to: '/profile', icon: User }
+  ];
+
+  const isItemActive = (item) => {
+    if (item.path === '/dashboard') {
+      return location.pathname === '/dashboard' || location.pathname === '/';
+    }
+    return location.pathname.startsWith(item.path);
   };
 
   return (
@@ -40,55 +58,25 @@ export const Navbar = () => {
           {/* Navigation Links for Authenticated Users */}
           {isAuthenticated && (
             <nav className="hidden lg:flex items-center space-x-1">
-              <Link
-                to="/dashboard"
-                className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-slate-700 hover:text-indigo-600 hover:bg-slate-50 rounded-lg transition-colors"
-              >
-                <LayoutDashboard className="w-3.5 h-3.5" />
-                Dashboard
-              </Link>
-              <Link
-                to="/analysis/new"
-                className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50/60 rounded-lg transition-colors font-semibold"
-              >
-                <FileText className="w-3.5 h-3.5" />
-                Analyze
-              </Link>
-              <Link
-                to="/roadmap"
-                className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-slate-700 hover:text-indigo-600 hover:bg-slate-50 rounded-lg transition-colors"
-              >
-                <Map className="w-3.5 h-3.5" />
-                Roadmap
-              </Link>
-              <Link
-                to="/tracker"
-                className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-slate-700 hover:text-indigo-600 hover:bg-slate-50 rounded-lg transition-colors"
-              >
-                <TrendingUp className="w-3.5 h-3.5" />
-                Tracker
-              </Link>
-              <Link
-                to="/resume"
-                className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-slate-700 hover:text-indigo-600 hover:bg-slate-50 rounded-lg transition-colors"
-              >
-                <FileText className="w-3.5 h-3.5" />
-                ATS Resume
-              </Link>
-              <Link
-                to="/history"
-                className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-slate-700 hover:text-indigo-600 hover:bg-slate-50 rounded-lg transition-colors"
-              >
-                <History className="w-3.5 h-3.5" />
-                History & Diff
-              </Link>
-              <Link
-                to="/profile"
-                className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-slate-700 hover:text-indigo-600 hover:bg-slate-50 rounded-lg transition-colors"
-              >
-                <User className="w-3.5 h-3.5" />
-                Profile
-              </Link>
+              {navItems.map((item) => {
+                const IconComponent = item.icon;
+                const active = isItemActive(item);
+
+                return (
+                  <Link
+                    key={item.label}
+                    to={item.to}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg transition-all ${
+                      active
+                        ? 'bg-indigo-50 text-indigo-700 font-bold shadow-xs'
+                        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100 font-medium'
+                    }`}
+                  >
+                    <IconComponent className={`w-3.5 h-3.5 ${active ? 'text-indigo-600' : 'text-slate-400'}`} />
+                    <span>{item.label}</span>
+                  </Link>
+                );
+              })}
             </nav>
           )}
 
