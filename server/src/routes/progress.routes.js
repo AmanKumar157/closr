@@ -10,3 +10,4 @@ router.get('/summary', getProgressSummary);
 router.get('/score-history', getScoreHistory);
 
 export default router;
+

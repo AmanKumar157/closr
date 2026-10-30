@@ -236,3 +236,4 @@ export const updateResourceStatus = asyncHandler(async (req, res) => {
 
   return new ApiResponse(200, { milestone: week.milestones[milestoneIndex] }, 'Resource status updated').send(res);
 });
+

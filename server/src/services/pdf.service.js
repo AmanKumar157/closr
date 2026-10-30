@@ -51,7 +51,7 @@ export const generatePdfFromHtml = async (html) => {
     });
 
     // Generate A4 PDF with 15mm margins and printBackground on
-    const pdfBuffer = await page.pdf({
+    const pdfBytes = await page.pdf({
       format: 'A4',
       printBackground: true,
       margin: {
@@ -62,9 +62,24 @@ export const generatePdfFromHtml = async (html) => {
       }
     });
 
-    return pdfBuffer;
+    return Buffer.from(pdfBytes);
   } finally {
     // Always close the tab/page to prevent memory leaks
     await page.close();
   }
 };
+
+/**
+ * Closes the cached browser instance (used on graceful shutdown or in tests)
+ */
+export const closeBrowser = async () => {
+  if (cachedBrowser) {
+    try {
+      await cachedBrowser.close();
+    } catch (e) {
+      // Ignore
+    }
+    cachedBrowser = null;
+  }
+};
+

@@ -18,3 +18,4 @@ router.get('/:id/pdf', getResumePdf);
 router.get('/:id', getResumeById);
 
 export default router;
+

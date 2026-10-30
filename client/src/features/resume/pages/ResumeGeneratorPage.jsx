@@ -213,3 +213,4 @@ export const ResumeGeneratorPage = () => {
 };
 
 export default ResumeGeneratorPage;
+

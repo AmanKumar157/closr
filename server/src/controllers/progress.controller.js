@@ -92,3 +92,4 @@ export const getScoreHistory = asyncHandler(async (req, res) => {
 
   return new ApiResponse(200, { scoreHistory }, 'Score progression history retrieved').send(res);
 });
+

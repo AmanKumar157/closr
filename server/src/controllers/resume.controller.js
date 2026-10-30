@@ -100,3 +100,4 @@ export const getResumeById = asyncHandler(async (req, res) => {
 
   return new ApiResponse(200, { resume }, 'Resume retrieved').send(res);
 });
+

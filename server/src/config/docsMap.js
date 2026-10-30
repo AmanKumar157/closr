@@ -69,3 +69,4 @@ export const getDocsUrl = (name = '') => {
   const normalized = name.toLowerCase().replace(/[^a-z0-9]/g, '');
   return DOCS_MAP[normalized] || null;
 };
+

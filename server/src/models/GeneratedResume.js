@@ -25,3 +25,4 @@ const generatedResumeSchema = new mongoose.Schema(
 );
 
 export const GeneratedResume = mongoose.model('GeneratedResume', generatedResumeSchema);
+
