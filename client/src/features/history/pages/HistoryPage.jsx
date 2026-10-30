@@ -339,10 +339,18 @@ export const HistoryPage = () => {
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                        {new Date(a.createdAt).toLocaleDateString()}
-                      </span>
-                      <h4 className="text-base font-bold text-slate-900 truncate mt-0.5">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                          {new Date(a.createdAt).toLocaleDateString()}
+                        </span>
+                        {a.fileName && (
+                          <span className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-600 bg-slate-100 px-2 py-0.5 rounded truncate max-w-[190px]">
+                            <FileText className="w-3 h-3 text-indigo-500 shrink-0" />
+                            <span className="truncate">{a.fileName}</span>
+                          </span>
+                        )}
+                      </div>
+                      <h4 className="text-base font-bold text-slate-900 truncate mt-1">
                         {a.targetRole}
                       </h4>
                       <p className="text-xs text-slate-500 mt-1">

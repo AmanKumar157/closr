@@ -24,6 +24,15 @@ const analysisSchema = new mongoose.Schema(
       required: true,
       index: true
     },
+    fileName: {
+      type: String,
+      default: 'Uploaded Resume.pdf',
+      trim: true
+    },
+    fileSize: {
+      type: Number,
+      default: 0
+    },
     resumeText: {
       type: String,
       required: [true, 'Resume text is required']

@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth.js';
 import Card from '../components/common/Card.jsx';
 import Button from '../components/common/Button.jsx';
+import analysisService from '../services/analysisService.js';
 import {
   User,
   ShieldCheck,
@@ -10,12 +11,34 @@ import {
   FileCheck2,
   Map,
   TrendingUp,
-  FileText
+  FileText,
+  Calendar,
+  Eye,
+  UploadCloud
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export const DashboardPage = () => {
   const { user } = useAuth();
+  const [latestAnalysis, setLatestAnalysis] = useState(null);
+  const [loadingAnalysis, setLoadingAnalysis] = useState(true);
+
+  useEffect(() => {
+    const fetchLatest = async () => {
+      try {
+        const res = await analysisService.getAnalyses();
+        if (res.success && res.data?.analyses?.length > 0) {
+          setLatestAnalysis(res.data.analyses[0]);
+        }
+      } catch (err) {
+        // Soft fail
+      } finally {
+        setLoadingAnalysis(false);
+      }
+    };
+
+    fetchLatest();
+  }, []);
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
@@ -48,6 +71,66 @@ export const DashboardPage = () => {
           </div>
         </div>
       </div>
+
+      {/* Active Tracked Resume Section */}
+      {latestAnalysis ? (
+        <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="flex items-start sm:items-center gap-4">
+            <div className="w-12 h-12 rounded-xl bg-indigo-50 border border-indigo-100 text-indigo-600 flex items-center justify-center shrink-0 shadow-inner">
+              <FileText className="w-6 h-6" />
+            </div>
+            <div>
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-xs font-bold uppercase tracking-wider text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded">
+                  Active Resume On File
+                </span>
+                <span className="text-xs text-slate-400">
+                  Uploaded {new Date(latestAnalysis.createdAt).toLocaleDateString(undefined, { dateStyle: 'medium' })}
+                </span>
+              </div>
+              <h3 className="text-lg font-bold text-slate-900 mt-1">
+                {latestAnalysis.fileName || 'Uploaded_Resume.pdf'}
+              </h3>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Target Role: <strong className="text-slate-700">{latestAnalysis.targetRole}</strong> • ATS Match Score: <strong className="text-indigo-600">{latestAnalysis.matchScore}%</strong> • {latestAnalysis.missingSkills?.length || 0} gaps remaining
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0">
+            <Link to={`/analysis/${latestAnalysis._id}`}>
+              <Button variant="outline" size="sm">
+                <Eye className="w-3.5 h-3.5 mr-1.5" />
+                View Analysis Report
+              </Button>
+            </Link>
+            <Link to="/analysis/new">
+              <Button variant="primary" size="sm">
+                <UploadCloud className="w-3.5 h-3.5 mr-1.5" />
+                Upload New Version
+              </Button>
+            </Link>
+          </div>
+        </div>
+      ) : !loadingAnalysis ? (
+        <div className="bg-slate-50 rounded-2xl border border-dashed border-slate-300 p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-slate-200 text-slate-600 flex items-center justify-center shrink-0">
+              <FileText className="w-5 h-5" />
+            </div>
+            <div>
+              <h4 className="text-sm font-bold text-slate-800">No Resume Uploaded Yet</h4>
+              <p className="text-xs text-slate-500">Upload your resume once to get your score and track progress over time.</p>
+            </div>
+          </div>
+          <Link to="/analysis/new">
+            <Button variant="primary" size="sm">
+              <UploadCloud className="w-3.5 h-3.5 mr-1.5" />
+              Upload Resume
+            </Button>
+          </Link>
+        </div>
+      ) : null}
 
       {/* Account Info & System Status Card */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

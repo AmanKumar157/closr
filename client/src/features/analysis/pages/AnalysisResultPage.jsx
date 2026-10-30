@@ -11,7 +11,11 @@ import {
   RefreshCw,
   Briefcase,
   Layers,
-  Calendar
+  Calendar,
+  Eye,
+  EyeOff,
+  Copy,
+  Check
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import analysisService from '../../../services/analysisService.js';
@@ -26,6 +30,16 @@ export const AnalysisResultPage = () => {
   const navigate = useNavigate();
   const [analysis, setAnalysis] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [showResumeText, setShowResumeText] = useState(false);
+  const [copiedText, setCopiedText] = useState(false);
+
+  const handleCopyResumeText = () => {
+    if (!analysis?.resumeText) return;
+    navigator.clipboard.writeText(analysis.resumeText);
+    setCopiedText(true);
+    toast.success('Extracted resume text copied to clipboard!');
+    setTimeout(() => setCopiedText(false), 2000);
+  };
 
   useEffect(() => {
     const fetchAnalysis = async () => {
@@ -96,6 +110,74 @@ export const AnalysisResultPage = () => {
           </Link>
         </div>
       </div>
+
+      {/* Uploaded Resume File Card */}
+      <div className="bg-white rounded-xl border border-slate-200 p-4 sm:p-5 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="w-11 h-11 rounded-xl bg-indigo-50 border border-indigo-100 text-indigo-600 flex items-center justify-center shrink-0">
+            <FileText className="w-6 h-6" />
+          </div>
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-sm sm:text-base font-bold text-slate-900 truncate max-w-xs sm:max-w-md">
+                {analysis.fileName || 'Uploaded_Resume.pdf'}
+              </span>
+              <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-indigo-50 text-indigo-700 uppercase">
+                {analysis.fileName?.toLowerCase().endsWith('.docx') ? 'DOCX' : 'PDF'}
+              </span>
+              {analysis.fileSize > 0 && (
+                <span className="text-xs text-slate-400 font-medium">
+                  ({(analysis.fileSize / 1024).toFixed(1)} KB)
+                </span>
+              )}
+            </div>
+            <p className="text-xs text-slate-500 mt-1 flex flex-wrap items-center gap-2">
+              <span>Extracted {analysis.resumeText ? analysis.resumeText.split(/\s+/).filter(Boolean).length : 0} words</span>
+              <span>•</span>
+              <span className="text-emerald-600 font-semibold">{analysis.extractedSkills?.length || 0} skills identified</span>
+              <span>•</span>
+              <span>Ready for ATS screening</span>
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 shrink-0">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowResumeText(!showResumeText)}
+          >
+            {showResumeText ? <EyeOff className="w-3.5 h-3.5 mr-1.5" /> : <Eye className="w-3.5 h-3.5 mr-1.5" />}
+            {showResumeText ? 'Hide Extracted Text' : 'View Extracted Text'}
+          </Button>
+        </div>
+      </div>
+
+      {/* Expandable Extracted Resume Text Drawer */}
+      {showResumeText && (
+        <Card
+          title="Extracted Document Content"
+          subtitle="Full text extracted from your uploaded file and evaluated by Gemini AI"
+          className="border-indigo-200 bg-slate-50/50 shadow-sm"
+        >
+          <div className="space-y-3">
+            <div className="flex items-center justify-between text-xs text-slate-500 border-b border-slate-200 pb-2">
+              <span>{analysis.resumeText?.length || 0} characters parsed</span>
+              <button
+                type="button"
+                onClick={handleCopyResumeText}
+                className="flex items-center gap-1 text-indigo-600 hover:text-indigo-700 font-semibold"
+              >
+                {copiedText ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                <span>{copiedText ? 'Copied' : 'Copy Text'}</span>
+              </button>
+            </div>
+            <div className="max-h-96 overflow-y-auto p-4 bg-white rounded-lg border border-slate-200 font-mono text-xs text-slate-700 whitespace-pre-wrap leading-relaxed shadow-inner">
+              {analysis.resumeText}
+            </div>
+          </div>
+        </Card>
+      )}
 
       {/* Overview Score & Key Metrics Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

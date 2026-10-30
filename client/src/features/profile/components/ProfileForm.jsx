@@ -10,7 +10,9 @@ import {
   Camera,
   Trash2,
   User as UserIcon,
-  Upload
+  Upload,
+  Eye,
+  UploadCloud
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import profileService from '../../../services/profileService.js';
@@ -42,6 +44,7 @@ export const ProfileForm = () => {
   const [skills, setSkills] = useState([]);
   const [newSkillInput, setNewSkillInput] = useState('');
   const [avatar, setAvatar] = useState('');
+  const [lastUploadedResume, setLastUploadedResume] = useState(null);
   const fileInputRef = useRef(null);
 
   const {
@@ -72,6 +75,9 @@ export const ProfileForm = () => {
           });
           setSkills(profile.currentSkills || []);
           setAvatar(profile.avatar || user?.avatar || '');
+          if (profile.lastUploadedResume?.fileName) {
+            setLastUploadedResume(profile.lastUploadedResume);
+          }
         }
       } catch (err) {
         toast.error('Failed to load profile details.');
@@ -349,6 +355,53 @@ export const ProfileForm = () => {
         <p className="mt-1 text-xs text-slate-500">
           Used as fallback context during resume gap analysis if no specific JD is provided for a new run.
         </p>
+      </div>
+
+      {/* Tracked Active Resume Card */}
+      <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/70 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center shrink-0">
+            <FileText className="w-5 h-5" />
+          </div>
+          <div>
+            <span className="text-[10px] font-bold text-indigo-600 uppercase tracking-wider">
+              Tracked Active Resume
+            </span>
+            <h4 className="text-sm font-bold text-slate-900 mt-0.5">
+              {lastUploadedResume?.fileName || 'No resume uploaded yet'}
+            </h4>
+            {lastUploadedResume?.uploadedAt ? (
+              <p className="text-xs text-slate-500 mt-0.5">
+                Uploaded {new Date(lastUploadedResume.uploadedAt).toLocaleDateString(undefined, { dateStyle: 'medium' })}
+                {lastUploadedResume.fileSize > 0 && ` • ${(lastUploadedResume.fileSize / 1024).toFixed(1)} KB`}
+              </p>
+            ) : (
+              <p className="text-xs text-slate-400 mt-0.5">
+                Upload a resume to automatically track your skills and progress.
+              </p>
+            )}
+          </div>
+        </div>
+
+        <div>
+          {lastUploadedResume?.analysisId ? (
+            <a
+              href={`/analysis/${lastUploadedResume.analysisId}`}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-indigo-600 hover:text-indigo-700 bg-white border border-indigo-200 rounded-lg shadow-sm hover:bg-indigo-50/50 transition-colors"
+            >
+              <Eye className="w-3.5 h-3.5" />
+              View Analysis
+            </a>
+          ) : (
+            <a
+              href="/analysis/new"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-sm transition-colors"
+            >
+              <UploadCloud className="w-3.5 h-3.5" />
+              Upload Resume
+            </a>
+          )}
+        </div>
       </div>
 
       {/* Submit Button */}

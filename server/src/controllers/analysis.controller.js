@@ -42,9 +42,14 @@ export const createAnalysis = asyncHandler(async (req, res) => {
   // 3. Run Gemini AI Resume Gap Analysis
   const aiResult = await analyzeResume(resumeText, targetRole.trim(), jobDescription?.trim() || '');
 
+  const fileName = req.file.originalname || 'Uploaded_Resume.pdf';
+  const fileSize = req.file.size || 0;
+
   // 4. Save analysis document to MongoDB
   const analysis = await Analysis.create({
     userId: req.user._id,
+    fileName,
+    fileSize,
     resumeText,
     targetRole: targetRole.trim(),
     jobDescription: jobDescription?.trim() || '',
@@ -59,16 +64,25 @@ export const createAnalysis = asyncHandler(async (req, res) => {
     cacheHash: aiResult.cacheHash
   });
 
-  // 5. Skill prefill: If user profile skills are empty, prefill from extractedSkills
-  if (profile && (!profile.currentSkills || profile.currentSkills.length === 0)) {
-    if (aiResult.extractedSkills && aiResult.extractedSkills.length > 0) {
-      profile.currentSkills = aiResult.extractedSkills;
-      if (!profile.targetRole) {
-        profile.targetRole = targetRole.trim();
+  // 5. Update user profile with latest uploaded resume & auto-prefill empty skills
+  if (profile) {
+    profile.lastUploadedResume = {
+      fileName,
+      fileSize,
+      uploadedAt: new Date(),
+      analysisId: analysis._id
+    };
+
+    if (!profile.currentSkills || profile.currentSkills.length === 0) {
+      if (aiResult.extractedSkills && aiResult.extractedSkills.length > 0) {
+        profile.currentSkills = aiResult.extractedSkills;
+        if (!profile.targetRole) {
+          profile.targetRole = targetRole.trim();
+        }
+        console.log(`[Profile Prefill] Auto-populated profile with ${aiResult.extractedSkills.length} extracted skills.`);
       }
-      await profile.save();
-      console.log(`[Profile Prefill] Auto-populated profile with ${aiResult.extractedSkills.length} extracted skills.`);
     }
+    await profile.save();
   }
 
   return new ApiResponse(

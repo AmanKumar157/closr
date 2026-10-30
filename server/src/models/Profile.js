@@ -31,6 +31,12 @@ const profileSchema = new mongoose.Schema(
     avatar: {
       type: String,
       default: ''
+    },
+    lastUploadedResume: {
+      fileName: { type: String, default: '' },
+      fileSize: { type: Number, default: 0 },
+      uploadedAt: { type: Date, default: null },
+      analysisId: { type: mongoose.Schema.Types.ObjectId, ref: 'Analysis', default: null }
     }
   },
   {

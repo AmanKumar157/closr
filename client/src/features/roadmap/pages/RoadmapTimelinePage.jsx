@@ -250,9 +250,18 @@ export const RoadmapTimelinePage = () => {
                   <div className="flex items-start justify-between gap-3">
                     <div>
                       <h3 className="text-base font-bold text-slate-900">{a.targetRole || 'Target Role Analysis'}</h3>
-                      <p className="text-xs text-slate-500 mt-0.5">
-                        {new Date(a.createdAt).toLocaleDateString(undefined, { dateStyle: 'medium' })}
-                      </p>
+                      <div className="flex items-center gap-2 mt-0.5 text-xs text-slate-500">
+                        <span>{new Date(a.createdAt).toLocaleDateString(undefined, { dateStyle: 'medium' })}</span>
+                        {a.fileName && (
+                          <>
+                            <span>•</span>
+                            <span className="inline-flex items-center gap-1 font-medium text-slate-600 truncate max-w-[160px]">
+                              <FileText className="w-3 h-3 text-indigo-500 shrink-0" />
+                              <span className="truncate">{a.fileName}</span>
+                            </span>
+                          </>
+                        )}
+                      </div>
                     </div>
                     <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-100 text-slate-700 text-xs font-bold">
                       <span>Score: {a.matchScore}%</span>
