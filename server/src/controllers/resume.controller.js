@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import { GeneratedResume } from '../models/GeneratedResume.js';
 import { Analysis } from '../models/Analysis.js';
 import { generateAtsResume } from '../services/gemini.service.js';
@@ -49,6 +50,10 @@ export const generateResume = asyncHandler(async (req, res) => {
  * @access  Protected
  */
 export const getResumePdf = asyncHandler(async (req, res) => {
+  if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+    throw new ApiError(400, 'Invalid resume ID format.');
+  }
+
   const generatedResume = await GeneratedResume.findOne({
     _id: req.params.id,
     userId: req.user._id
@@ -89,6 +94,10 @@ export const getResumes = asyncHandler(async (req, res) => {
  * @access  Protected
  */
 export const getResumeById = asyncHandler(async (req, res) => {
+  if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+    throw new ApiError(400, 'Invalid resume ID format.');
+  }
+
   const resume = await GeneratedResume.findOne({
     _id: req.params.id,
     userId: req.user._id

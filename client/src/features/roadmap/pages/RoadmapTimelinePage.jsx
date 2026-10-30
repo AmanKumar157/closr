@@ -44,12 +44,10 @@ export const RoadmapTimelinePage = () => {
       try {
         setLoading(true);
 
-        if (id) {
-          const res = await roadmapService.getRoadmapById(id);
-          if (res.success && res.data?.roadmap) {
-            setRoadmap(res.data.roadmap);
-          }
-        } else if (analysisId) {
+        const isObjectId = id && id !== 'generate' && id !== 'new' && /^[0-9a-fA-F]{24}$/.test(id);
+
+        if (analysisId) {
+          // Generate new roadmap from specified analysis ID
           setGenerating(true);
           const res = await roadmapService.generateRoadmap(analysisId, remainingGapsOnly);
           if (res.success && res.data?.roadmap) {
@@ -57,8 +55,14 @@ export const RoadmapTimelinePage = () => {
             setRoadmap(res.data.roadmap);
             navigate(`/roadmap/${res.data.roadmap._id}`, { replace: true });
           }
+        } else if (isObjectId) {
+          // Load existing roadmap by specific MongoDB ID
+          const res = await roadmapService.getRoadmapById(id);
+          if (res.success && res.data?.roadmap) {
+            setRoadmap(res.data.roadmap);
+          }
         } else {
-          // Fetch latest roadmap
+          // Fetch latest roadmap for this user
           const res = await roadmapService.getRoadmaps();
           if (res.success && res.data?.roadmaps?.length > 0) {
             setRoadmap(res.data.roadmaps[0]);
@@ -81,6 +85,22 @@ export const RoadmapTimelinePage = () => {
 
     initRoadmap();
   }, [id, analysisId, remainingGapsOnly, navigate]);
+
+  const handleGenerateRoadmap = async (targetAnalysisId) => {
+    try {
+      setGenerating(true);
+      const res = await roadmapService.generateRoadmap(targetAnalysisId, false);
+      if (res.success && res.data?.roadmap) {
+        toast.success('Your 12-week roadmap is ready!');
+        setRoadmap(res.data.roadmap);
+        navigate(`/roadmap/${res.data.roadmap._id}`, { replace: true });
+      }
+    } catch (err) {
+      toast.error(err.message || 'Failed to generate roadmap. Please try again.');
+    } finally {
+      setGenerating(false);
+    }
+  };
 
   const toggleWeekExpand = async (weekNumber) => {
     const isExpanding = !expandedWeeks[weekNumber];
@@ -282,12 +302,15 @@ export const RoadmapTimelinePage = () => {
                     <Link to={`/analysis/${a._id}`} className="text-xs text-slate-500 hover:text-indigo-600 font-medium">
                       View Analysis →
                     </Link>
-                    <Link to={`/roadmap?analysisId=${a._id}`}>
-                      <Button variant="primary" size="sm">
-                        <Sparkles className="w-3.5 h-3.5 mr-1.5" />
-                        Generate Roadmap
-                      </Button>
-                    </Link>
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      onClick={() => handleGenerateRoadmap(a._id)}
+                      isLoading={generating}
+                    >
+                      <Sparkles className="w-3.5 h-3.5 mr-1.5" />
+                      Generate Roadmap
+                    </Button>
                   </div>
                 </Card>
               ))}

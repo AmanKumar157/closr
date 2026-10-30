@@ -40,18 +40,22 @@ export const ResumeGeneratorPage = () => {
       try {
         setLoading(true);
 
-        if (id) {
-          const res = await resumeService.getResumeById(id);
-          if (res.success && res.data?.resume) {
-            setResume(res.data.resume);
-          }
-        } else if (analysisId) {
+        const isObjectId = id && id !== 'generate' && id !== 'new' && /^[0-9a-fA-F]{24}$/.test(id);
+
+        if (analysisId) {
+          // Generate new ATS resume for given analysis
           setGenerating(true);
           const res = await resumeService.generateResume(analysisId);
           if (res.success && res.data?.resume) {
             setResume(res.data.resume);
             navigate(`/resume/${res.data.resume._id}`, { replace: true });
             toast.success('ATS Resume generated successfully!');
+          }
+        } else if (isObjectId) {
+          // Load specific resume by ID
+          const res = await resumeService.getResumeById(id);
+          if (res.success && res.data?.resume) {
+            setResume(res.data.resume);
           }
         } else {
           // List user resumes
@@ -77,6 +81,22 @@ export const ResumeGeneratorPage = () => {
 
     fetchOrCreate();
   }, [id, analysisId, navigate]);
+
+  const handleGenerateResume = async (targetAnalysisId) => {
+    try {
+      setGenerating(true);
+      const res = await resumeService.generateResume(targetAnalysisId);
+      if (res.success && res.data?.resume) {
+        setResume(res.data.resume);
+        navigate(`/resume/${res.data.resume._id}`, { replace: true });
+        toast.success('ATS Resume generated successfully!');
+      }
+    } catch (err) {
+      toast.error(err.message || 'Failed to generate resume. Please try again.');
+    } finally {
+      setGenerating(false);
+    }
+  };
 
   const handleDownloadPdf = async () => {
     if (!resume) return;
@@ -197,12 +217,15 @@ export const ResumeGeneratorPage = () => {
                     <Link to={`/analysis/${a._id}`} className="text-xs text-slate-500 hover:text-indigo-600 font-medium">
                       View Analysis →
                     </Link>
-                    <Link to={`/resume?analysisId=${a._id}`}>
-                      <Button variant="primary" size="sm">
-                        <Sparkles className="w-3.5 h-3.5 mr-1.5" />
-                        Generate ATS Resume
-                      </Button>
-                    </Link>
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      onClick={() => handleGenerateResume(a._id)}
+                      isLoading={generating}
+                    >
+                      <Sparkles className="w-3.5 h-3.5 mr-1.5" />
+                      Generate ATS Resume
+                    </Button>
                   </div>
                 </Card>
               ))}

@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import { Roadmap } from '../models/Roadmap.js';
 import { Analysis } from '../models/Analysis.js';
 import { Profile } from '../models/Profile.js';
@@ -77,6 +78,10 @@ export const getRoadmaps = asyncHandler(async (req, res) => {
  * @access  Protected
  */
 export const getRoadmapById = asyncHandler(async (req, res) => {
+  if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+    throw new ApiError(400, 'Invalid roadmap ID format.');
+  }
+
   const roadmap = await Roadmap.findOne({
     _id: req.params.id,
     userId: req.user._id

@@ -94,14 +94,20 @@ export const AnalysisResultPage = () => {
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Link to="/analysis/new">
             <Button variant="outline" size="sm">
               <RefreshCw className="w-3.5 h-3.5 mr-1.5" />
-              Analyze Another Resume
+              Analyze Another
             </Button>
           </Link>
-          <Link to={`/roadmap/generate?analysisId=${analysis._id}`}>
+          <Link to={`/resume?analysisId=${analysis._id}`}>
+            <Button variant="outline" size="sm">
+              <FileText className="w-3.5 h-3.5 mr-1.5 text-indigo-600" />
+              Generate ATS Resume
+            </Button>
+          </Link>
+          <Link to={`/roadmap?analysisId=${analysis._id}`}>
             <Button variant="primary" size="sm">
               <Map className="w-3.5 h-3.5 mr-1.5" />
               Generate 12-Week Roadmap
@@ -359,7 +365,7 @@ export const AnalysisResultPage = () => {
             Generate a personalized 12-week roadmap targeting your {highImportanceGaps.length} high-importance missing skills with exactly one verified resource per milestone.
           </p>
         </div>
-        <Link to={`/roadmap/generate?analysisId=${analysis._id}`}>
+        <Link to={`/roadmap?analysisId=${analysis._id}`}>
           <Button variant="primary" size="lg" className="bg-white text-indigo-900 hover:bg-indigo-50 shadow-md min-w-[200px]">
             <Map className="w-4 h-4 mr-2 text-indigo-600" />
             Create 12-Week Roadmap
