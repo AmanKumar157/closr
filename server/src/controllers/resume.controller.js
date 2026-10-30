@@ -37,7 +37,7 @@ export const generateResume = asyncHandler(async (req, res) => {
       { companyName: '' },
       { companyName: analysis.fileName }
     ]
-  }).populate('analysisId', 'fileName targetRole matchScore');
+  }).populate('analysisId', 'fileName targetRole matchScore hasOriginalPdf resumeText');
 
   if (existingResume) {
     // Backfill any missing metadata on existing resume
@@ -68,7 +68,7 @@ export const generateResume = asyncHandler(async (req, res) => {
     html
   });
 
-  await generatedResume.populate('analysisId', 'fileName targetRole matchScore');
+  await generatedResume.populate('analysisId', 'fileName targetRole matchScore hasOriginalPdf resumeText');
 
   return new ApiResponse(
     201,
@@ -115,7 +115,7 @@ export const getResumePdf = asyncHandler(async (req, res) => {
  */
 export const getResumes = asyncHandler(async (req, res) => {
   const resumes = await GeneratedResume.find({ userId: req.user._id })
-    .populate('analysisId', 'fileName targetRole matchScore')
+    .populate('analysisId', 'fileName targetRole matchScore hasOriginalPdf')
     .select('-html')
     .sort({ createdAt: -1 });
 
@@ -147,7 +147,7 @@ export const getResumeById = asyncHandler(async (req, res) => {
   const resume = await GeneratedResume.findOne({
     _id: req.params.id,
     userId: req.user._id
-  }).populate('analysisId', 'fileName targetRole matchScore');
+  }).populate('analysisId', 'fileName targetRole matchScore hasOriginalPdf resumeText');
 
   if (!resume) {
     throw new ApiError(404, 'Resume not found.');
@@ -242,6 +242,8 @@ export const tailorResumeForJob = asyncHandler(async (req, res) => {
     template: 'modern',
     html
   });
+
+  await tailoredResume.populate('analysisId', 'fileName targetRole matchScore hasOriginalPdf resumeText');
 
   return new ApiResponse(
     201,

@@ -141,20 +141,23 @@ export const ResumeGeneratorPage = () => {
 
             // Fetch analysis details to check original PDF file
             if (res.data.resume.analysisId) {
-              const rawAId = typeof res.data.resume.analysisId === 'object'
-                ? res.data.resume.analysisId._id
-                : res.data.resume.analysisId;
+              const analysisObj = typeof res.data.resume.analysisId === 'object'
+                ? res.data.resume.analysisId
+                : null;
+              const rawAId = analysisObj ? analysisObj._id : res.data.resume.analysisId;
 
-              // Immediately set from populated object if available
-              if (typeof res.data.resume.analysisId === 'object') {
-                setCurrentAnalysis(res.data.resume.analysisId);
+              if (analysisObj) {
+                setCurrentAnalysis(analysisObj);
               }
 
               if (rawAId && /^[0-9a-fA-F]{24}$/.test(rawAId)) {
                 try {
                   const aRes = await analysisService.getAnalysisById(rawAId);
                   if (aRes.success && aRes.data?.analysis) {
-                    setCurrentAnalysis(aRes.data.analysis);
+                    setCurrentAnalysis((prev) => ({
+                      ...(prev || {}),
+                      ...aRes.data.analysis
+                    }));
                   }
                 } catch (e) {
                   // Silently ignore if already populated
@@ -810,9 +813,15 @@ export const ResumeGeneratorPage = () => {
                   <div className="bg-amber-50 p-3 rounded-lg border border-amber-200 text-amber-800 text-xs">
                     <strong>Original Extracted Content</strong> (Re-upload in Analyze to activate in-app PDF viewing)
                   </div>
-                  <div className="whitespace-pre-wrap leading-relaxed bg-white p-4 rounded-lg border border-slate-200">
-                    {currentAnalysis?.resumeText || 'Original resume text preview...'}
-                  </div>
+                  {(currentAnalysis?.resumeText || (typeof resume?.analysisId === 'object' ? resume.analysisId?.resumeText : '')) ? (
+                    <div className="whitespace-pre-wrap leading-relaxed bg-white p-4 rounded-lg border border-slate-200 text-xs font-mono text-slate-800 max-h-[750px] overflow-y-auto">
+                      {currentAnalysis?.resumeText || resume.analysisId?.resumeText}
+                    </div>
+                  ) : (
+                    <div className="p-6 bg-white rounded-lg border border-slate-200 text-center text-xs text-slate-400 italic">
+                      Original text is loading...
+                    </div>
+                  )}
                 </div>
               )}
             </Card>
@@ -882,8 +891,8 @@ export const ResumeGeneratorPage = () => {
               <p className="text-xs text-slate-500">
                 This resume was uploaded in an earlier session before PDF archiving was active. Below is the full extracted text evaluated by AI. Re-upload in <strong>Analyze</strong> to enable full in-app PDF viewing.
               </p>
-              <div className="p-4 bg-white rounded-xl border border-slate-200 text-left text-xs font-mono max-h-96 overflow-y-auto whitespace-pre-wrap">
-                {currentAnalysis?.resumeText || 'Extracted resume text...'}
+              <div className="p-4 bg-white rounded-xl border border-slate-200 text-left text-xs font-mono max-h-96 overflow-y-auto whitespace-pre-wrap leading-relaxed text-slate-800">
+                {currentAnalysis?.resumeText || (typeof resume?.analysisId === 'object' ? resume.analysisId?.resumeText : '') || 'Extracted resume text is loading...'}
               </div>
             </div>
           )}
