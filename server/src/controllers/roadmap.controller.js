@@ -242,3 +242,186 @@ export const updateResourceStatus = asyncHandler(async (req, res) => {
   return new ApiResponse(200, { milestone: week.milestones[milestoneIndex] }, 'Resource status updated').send(res);
 });
 
+/**
+ * @desc    Add a custom milestone/step to a specific week in the roadmap
+ * @route   POST /api/roadmap/:id/weeks/:weekNumber/milestones
+ * @access  Protected
+ */
+export const addCustomMilestone = asyncHandler(async (req, res) => {
+  const { id, weekNumber } = req.params;
+  const { title, resource } = req.body;
+
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    throw new ApiError(400, 'Invalid roadmap ID format.');
+  }
+
+  if (!title || typeof title !== 'string' || !title.trim()) {
+    throw new ApiError(400, 'Milestone title is required.');
+  }
+
+  const roadmap = await Roadmap.findOne({
+    _id: id,
+    userId: req.user._id
+  });
+
+  if (!roadmap) {
+    throw new ApiError(404, 'Roadmap not found.');
+  }
+
+  const week = roadmap.weeks.find((w) => w.weekNumber === Number(weekNumber));
+  if (!week) {
+    throw new ApiError(400, `Week ${weekNumber} not found in roadmap.`);
+  }
+
+  const resourceType = ['video', 'documentation', 'article', 'practice'].includes(resource?.type)
+    ? resource.type
+    : 'practice';
+  const resourceName = resource?.name?.trim() || title.trim();
+  const resourceWhyThis = resource?.whyThis?.trim() || 'Custom milestone deliverable';
+  const resourceSearchQuery = resource?.searchQuery?.trim() || resourceName;
+  const resourceUrl = resource?.url?.trim() || '';
+
+  const newMilestone = {
+    title: title.trim(),
+    completed: false,
+    completedAt: null,
+    resource: {
+      type: resourceType,
+      name: resourceName,
+      searchQuery: resourceSearchQuery,
+      whyThis: resourceWhyThis,
+      isFree: resource?.isFree !== undefined ? Boolean(resource.isFree) : true,
+      language: resource?.language === 'hi' ? 'hi' : 'en',
+      status: 'not_started',
+      resolved: {
+        url: resourceUrl,
+        title: resourceName,
+        channel: 'Custom',
+        videoId: '',
+        verified: Boolean(resourceUrl)
+      }
+    }
+  };
+
+  week.milestones.push(newMilestone);
+  await roadmap.save();
+
+  return new ApiResponse(
+    201,
+    { roadmap, week, milestone: newMilestone },
+    'Milestone added successfully'
+  ).send(res);
+});
+
+/**
+ * @desc    Update a custom milestone's title or attached resource
+ * @route   PUT /api/roadmap/:id/weeks/:weekNumber/milestones/:milestoneIndex
+ * @access  Protected
+ */
+export const updateCustomMilestone = asyncHandler(async (req, res) => {
+  const { id, weekNumber, milestoneIndex } = req.params;
+  const { title, resource } = req.body;
+
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    throw new ApiError(400, 'Invalid roadmap ID format.');
+  }
+
+  const roadmap = await Roadmap.findOne({
+    _id: id,
+    userId: req.user._id
+  });
+
+  if (!roadmap) {
+    throw new ApiError(404, 'Roadmap not found.');
+  }
+
+  const week = roadmap.weeks.find((w) => w.weekNumber === Number(weekNumber));
+  if (!week) {
+    throw new ApiError(400, `Week ${weekNumber} not found in roadmap.`);
+  }
+
+  const idx = Number(milestoneIndex);
+  if (isNaN(idx) || idx < 0 || idx >= week.milestones.length) {
+    throw new ApiError(400, 'Invalid milestone index.');
+  }
+
+  const milestone = week.milestones[idx];
+
+  if (title && typeof title === 'string' && title.trim()) {
+    milestone.title = title.trim();
+  }
+
+  if (resource) {
+    if (resource.type && ['video', 'documentation', 'article', 'practice'].includes(resource.type)) {
+      milestone.resource.type = resource.type;
+    }
+    if (resource.name && resource.name.trim()) {
+      milestone.resource.name = resource.name.trim();
+      milestone.resource.searchQuery = resource.name.trim();
+    }
+    if (resource.whyThis && resource.whyThis.trim()) {
+      milestone.resource.whyThis = resource.whyThis.trim();
+    }
+    if (resource.url !== undefined) {
+      const url = (resource.url || '').trim();
+      milestone.resource.resolved = {
+        url,
+        title: milestone.resource.name || milestone.title,
+        channel: 'Custom',
+        videoId: '',
+        verified: Boolean(url)
+      };
+    }
+  }
+
+  await roadmap.save();
+
+  return new ApiResponse(
+    200,
+    { roadmap, week, milestone: week.milestones[idx] },
+    'Milestone updated successfully'
+  ).send(res);
+});
+
+/**
+ * @desc    Delete a milestone from a specific week
+ * @route   DELETE /api/roadmap/:id/weeks/:weekNumber/milestones/:milestoneIndex
+ * @access  Protected
+ */
+export const deleteCustomMilestone = asyncHandler(async (req, res) => {
+  const { id, weekNumber, milestoneIndex } = req.params;
+
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    throw new ApiError(400, 'Invalid roadmap ID format.');
+  }
+
+  const roadmap = await Roadmap.findOne({
+    _id: id,
+    userId: req.user._id
+  });
+
+  if (!roadmap) {
+    throw new ApiError(404, 'Roadmap not found.');
+  }
+
+  const week = roadmap.weeks.find((w) => w.weekNumber === Number(weekNumber));
+  if (!week) {
+    throw new ApiError(400, `Week ${weekNumber} not found in roadmap.`);
+  }
+
+  const idx = Number(milestoneIndex);
+  if (isNaN(idx) || idx < 0 || idx >= week.milestones.length) {
+    throw new ApiError(400, 'Invalid milestone index.');
+  }
+
+  const removed = week.milestones.splice(idx, 1);
+  await roadmap.save();
+
+  return new ApiResponse(
+    200,
+    { roadmap, week, removedMilestone: removed[0] },
+    'Milestone deleted successfully'
+  ).send(res);
+});
+
+

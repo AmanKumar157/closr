@@ -85,7 +85,7 @@ export const ResourceCard = ({
               {resolved?.verified ? (
                 <span className="inline-flex items-center gap-0.5 text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
                   <ShieldCheck className="w-3 h-3 text-emerald-600" />
-                  Verified
+                  {resolved?.channel === 'Custom' ? 'Custom Link' : 'Verified'}
                 </span>
               ) : resolved?.url ? (
                 <span className="inline-flex items-center gap-0.5 text-[10px] font-semibold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">

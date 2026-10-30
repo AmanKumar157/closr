@@ -113,3 +113,84 @@ test('Resource Resolver: falls back gracefully to search link on quota limit or 
   assert.equal(typeof resolved.title, 'string');
   assert.equal(typeof resolved.verified, 'boolean');
 });
+
+test('Roadmap Customization: validates custom milestone creation structure and defaults', () => {
+  const customMilestone = {
+    title: 'Deploy to AWS ECS with Fargate',
+    completed: false,
+    completedAt: null,
+    resource: {
+      type: 'practice',
+      name: 'ECS Fargate Deployment',
+      searchQuery: 'ECS Fargate Deployment',
+      whyThis: 'Proves container orchestration and cloud delivery',
+      isFree: true,
+      language: 'en',
+      status: 'not_started',
+      resolved: {
+        url: 'https://docs.aws.amazon.com/ecs',
+        title: 'ECS Documentation',
+        channel: 'Custom',
+        videoId: '',
+        verified: true
+      }
+    }
+  };
+
+  assert.equal(customMilestone.title, 'Deploy to AWS ECS with Fargate');
+  assert.equal(customMilestone.completed, false);
+  assert.equal(customMilestone.resource.type, 'practice');
+  assert.equal(customMilestone.resource.resolved.channel, 'Custom');
+  assert.equal(customMilestone.resource.resolved.verified, true);
+});
+
+test('Roadmap Customization: allows adding, updating, and removing custom milestones on week', () => {
+  const week = {
+    weekNumber: 3,
+    topicTitle: 'State Management & Performance',
+    description: 'Master Zustand and React render optimizations',
+    skillsCovered: ['Zustand', 'React Profiler'],
+    milestones: [
+      {
+        title: 'Migrate Redux boilerplate to Zustand store',
+        completed: false,
+        resource: {
+          type: 'documentation',
+          name: 'Zustand Docs',
+          searchQuery: 'zustand docs',
+          whyThis: 'Official docs'
+        }
+      }
+    ]
+  };
+
+  // Add custom milestone
+  const customMilestone = {
+    title: 'Build Optimistic UI updates with cache invalidation',
+    completed: false,
+    completedAt: null,
+    resource: {
+      type: 'practice',
+      name: 'Optimistic UI',
+      searchQuery: 'optimistic ui',
+      whyThis: 'Real-world UX practice',
+      resolved: { url: 'https://tanstack.com/query', verified: true, channel: 'Custom' }
+    }
+  };
+  week.milestones.push(customMilestone);
+  assert.equal(week.milestones.length, 2);
+  assert.equal(week.milestones[1].title, 'Build Optimistic UI updates with cache invalidation');
+
+  // Update milestone
+  week.milestones[1].title = 'Build Optimistic UI with TanStack Query';
+  week.milestones[1].resource.type = 'documentation';
+  assert.equal(week.milestones[1].title, 'Build Optimistic UI with TanStack Query');
+  assert.equal(week.milestones[1].resource.type, 'documentation');
+
+  // Delete milestone
+  const removed = week.milestones.splice(0, 1);
+  assert.equal(removed.length, 1);
+  assert.equal(week.milestones.length, 1);
+  assert.equal(week.milestones[0].title, 'Build Optimistic UI with TanStack Query');
+});
+

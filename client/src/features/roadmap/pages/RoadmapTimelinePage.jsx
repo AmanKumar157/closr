@@ -15,7 +15,13 @@ import {
   Layers,
   Award,
   TrendingUp,
-  Target
+  Target,
+  Plus,
+  Trash2,
+  Edit2,
+  X,
+  Check,
+  Link as LinkIcon
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import roadmapService from '../../../services/roadmapService.js';
@@ -40,6 +46,28 @@ export const RoadmapTimelinePage = () => {
   const [generating, setGenerating] = useState(false);
   const [expandedWeeks, setExpandedWeeks] = useState({ 1: true });
   const [swappingMilestone, setSwappingMilestone] = useState(null);
+
+  // Custom milestone additions & edits (User Freedom / Customization)
+  const [addingToWeek, setAddingToWeek] = useState(null);
+  const [newMilestoneForm, setNewMilestoneForm] = useState({
+    title: '',
+    resourceType: 'practice',
+    resourceName: '',
+    resourceUrl: '',
+    resourceWhyThis: ''
+  });
+  const [submittingAdd, setSubmittingAdd] = useState(false);
+
+  const [editingMilestoneKey, setEditingMilestoneKey] = useState(null);
+  const [editMilestoneForm, setEditMilestoneForm] = useState({
+    title: '',
+    resourceType: 'practice',
+    resourceName: '',
+    resourceUrl: '',
+    resourceWhyThis: ''
+  });
+  const [submittingEdit, setSubmittingEdit] = useState(false);
+  const [deletingKey, setDeletingKey] = useState(null);
 
   // Load or generate roadmap
   useEffect(() => {
@@ -217,6 +245,121 @@ export const RoadmapTimelinePage = () => {
       }
     } catch (err) {
       toast.error('Failed to update resource status.');
+    }
+  };
+
+  const handleAddMilestone = async (weekNumber) => {
+    if (!newMilestoneForm.title.trim()) {
+      toast.error('Please enter a milestone title');
+      return;
+    }
+
+    try {
+      setSubmittingAdd(true);
+      const res = await roadmapService.addMilestone(roadmap._id, weekNumber, {
+        title: newMilestoneForm.title.trim(),
+        resource: {
+          type: newMilestoneForm.resourceType,
+          name: newMilestoneForm.resourceName.trim() || newMilestoneForm.title.trim(),
+          url: newMilestoneForm.resourceUrl.trim(),
+          whyThis: newMilestoneForm.resourceWhyThis.trim() || 'Custom milestone deliverable'
+        }
+      });
+
+      if (res.success && res.data?.week) {
+        setRoadmap((prev) => ({
+          ...prev,
+          weeks: prev.weeks.map((w) => (w.weekNumber === weekNumber ? res.data.week : w))
+        }));
+        setAddingToWeek(null);
+        setNewMilestoneForm({
+          title: '',
+          resourceType: 'practice',
+          resourceName: '',
+          resourceUrl: '',
+          resourceWhyThis: ''
+        });
+        toast.success(`Custom step added to Week ${weekNumber}!`);
+      }
+    } catch (err) {
+      toast.error(err.message || 'Failed to add milestone');
+    } finally {
+      setSubmittingAdd(false);
+    }
+  };
+
+  const handleStartEdit = (weekNumber, mIdx, milestone) => {
+    const key = `${weekNumber}-${mIdx}`;
+    setEditingMilestoneKey(key);
+    setEditMilestoneForm({
+      title: milestone.title || '',
+      resourceType: milestone.resource?.type || 'practice',
+      resourceName: milestone.resource?.name || '',
+      resourceUrl: milestone.resource?.resolved?.url || '',
+      resourceWhyThis: milestone.resource?.whyThis || ''
+    });
+  };
+
+  const handleSaveEdit = async (weekNumber, mIdx) => {
+    if (!editMilestoneForm.title.trim()) {
+      toast.error('Milestone title cannot be empty');
+      return;
+    }
+
+    try {
+      setSubmittingEdit(true);
+      const res = await roadmapService.updateMilestoneDetails(roadmap._id, weekNumber, mIdx, {
+        title: editMilestoneForm.title.trim(),
+        resource: {
+          type: editMilestoneForm.resourceType,
+          name: editMilestoneForm.resourceName.trim() || editMilestoneForm.title.trim(),
+          url: editMilestoneForm.resourceUrl.trim(),
+          whyThis: editMilestoneForm.resourceWhyThis.trim() || 'Custom milestone deliverable'
+        }
+      });
+
+      if (res.success && res.data?.milestone) {
+        setRoadmap((prev) => ({
+          ...prev,
+          weeks: prev.weeks.map((w) => {
+            if (w.weekNumber === weekNumber) {
+              const updatedMilestones = [...w.milestones];
+              updatedMilestones[mIdx] = res.data.milestone;
+              return { ...w, milestones: updatedMilestones };
+            }
+            return w;
+          })
+        }));
+        setEditingMilestoneKey(null);
+        toast.success('Milestone updated!');
+      }
+    } catch (err) {
+      toast.error(err.message || 'Failed to update milestone');
+    } finally {
+      setSubmittingEdit(false);
+    }
+  };
+
+  const handleDeleteMilestone = async (weekNumber, mIdx) => {
+    const key = `${weekNumber}-${mIdx}`;
+    if (!window.confirm('Are you sure you want to delete this step from your roadmap?')) {
+      return;
+    }
+
+    try {
+      setDeletingKey(key);
+      const res = await roadmapService.deleteMilestone(roadmap._id, weekNumber, mIdx);
+      if (res.success && res.data?.week) {
+        setRoadmap((prev) => ({
+          ...prev,
+          weeks: prev.weeks.map((w) => (w.weekNumber === weekNumber ? res.data.week : w))
+        }));
+        toast.success('Milestone deleted');
+      }
+    } catch (err) {
+      toast.error(err.message || 'Failed to delete milestone');
+    } finally {
+      setDeletingKey(null);
     }
   };
 
@@ -617,38 +760,205 @@ export const RoadmapTimelinePage = () => {
                     {week.milestones?.map((milestone, mIdx) => {
                       const swapKey = `${week.weekNumber}-${mIdx}`;
                       const isSwapping = swappingMilestone === swapKey;
+                      const isEditing = editingMilestoneKey === swapKey;
+                      const isDeleting = deletingKey === swapKey;
+                      const isCustom = milestone.resource?.resolved?.channel === 'Custom';
+
+                      if (isEditing) {
+                        return (
+                          <div
+                            key={mIdx}
+                            className="p-4 rounded-xl border border-indigo-300 bg-white shadow-sm space-y-3"
+                          >
+                            <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                              <span className="text-xs font-bold text-indigo-900 flex items-center gap-1.5">
+                                <Edit2 className="w-3.5 h-3.5 text-indigo-600" />
+                                Edit Step & Resource (Week {week.weekNumber}, Step {mIdx + 1})
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => setEditingMilestoneKey(null)}
+                                className="text-slate-400 hover:text-slate-600 p-1 rounded-md"
+                              >
+                                <X className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+
+                            <div className="space-y-1">
+                              <label className="text-[11px] font-semibold text-slate-700 block">
+                                Step Title *
+                              </label>
+                              <input
+                                type="text"
+                                value={editMilestoneForm.title}
+                                onChange={(e) =>
+                                  setEditMilestoneForm({ ...editMilestoneForm, title: e.target.value })
+                                }
+                                className="w-full text-xs px-3 py-2 border rounded-lg border-slate-300 focus:outline-none focus:ring-1 focus:ring-indigo-500 bg-white"
+                                placeholder="e.g. Build REST API for authentication"
+                              />
+                            </div>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                              <div>
+                                <label className="text-[11px] font-semibold text-slate-700 block mb-1">
+                                  Resource Type
+                                </label>
+                                <select
+                                  value={editMilestoneForm.resourceType}
+                                  onChange={(e) =>
+                                    setEditMilestoneForm({
+                                      ...editMilestoneForm,
+                                      resourceType: e.target.value
+                                    })
+                                  }
+                                  className="w-full text-xs px-2.5 py-1.5 border rounded-lg border-slate-300 focus:outline-none focus:ring-1 focus:ring-indigo-500 bg-white"
+                                >
+                                  <option value="practice">Hands-on Practice / Project</option>
+                                  <option value="documentation">Official Documentation</option>
+                                  <option value="video">Video Tutorial</option>
+                                  <option value="article">Article / Deep Dive</option>
+                                </select>
+                              </div>
+                              <div>
+                                <label className="text-[11px] font-semibold text-slate-700 block mb-1">
+                                  Resource Name
+                                </label>
+                                <input
+                                  type="text"
+                                  value={editMilestoneForm.resourceName}
+                                  onChange={(e) =>
+                                    setEditMilestoneForm({
+                                      ...editMilestoneForm,
+                                      resourceName: e.target.value
+                                    })
+                                  }
+                                  className="w-full text-xs px-3 py-1.5 border rounded-lg border-slate-300 focus:outline-none focus:ring-1 focus:ring-indigo-500 bg-white"
+                                  placeholder="e.g. JWT Auth Complete Guide"
+                                />
+                              </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                              <div>
+                                <label className="text-[11px] font-semibold text-slate-700 block mb-1">
+                                  Resource Link / URL (Optional)
+                                </label>
+                                <input
+                                  type="url"
+                                  value={editMilestoneForm.resourceUrl}
+                                  onChange={(e) =>
+                                    setEditMilestoneForm({
+                                      ...editMilestoneForm,
+                                      resourceUrl: e.target.value
+                                    })
+                                  }
+                                  className="w-full text-xs px-3 py-1.5 border rounded-lg border-slate-300 focus:outline-none focus:ring-1 focus:ring-indigo-500 bg-white"
+                                  placeholder="https://..."
+                                />
+                              </div>
+                              <div>
+                                <label className="text-[11px] font-semibold text-slate-700 block mb-1">
+                                  Why This Resource / Note
+                                </label>
+                                <input
+                                  type="text"
+                                  value={editMilestoneForm.resourceWhyThis}
+                                  onChange={(e) =>
+                                    setEditMilestoneForm({
+                                      ...editMilestoneForm,
+                                      resourceWhyThis: e.target.value
+                                    })
+                                  }
+                                  className="w-full text-xs px-3 py-1.5 border rounded-lg border-slate-300 focus:outline-none focus:ring-1 focus:ring-indigo-500 bg-white"
+                                  placeholder="e.g. Delivers auth capability"
+                                />
+                              </div>
+                            </div>
+
+                            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+                              <button
+                                type="button"
+                                onClick={() => setEditingMilestoneKey(null)}
+                                className="px-3 py-1.5 text-xs font-semibold text-slate-600 hover:text-slate-800 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors"
+                              >
+                                Cancel
+                              </button>
+                              <button
+                                type="button"
+                                disabled={submittingEdit || !editMilestoneForm.title.trim()}
+                                onClick={() => handleSaveEdit(week.weekNumber, mIdx)}
+                                className="px-4 py-1.5 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors shadow-2xs flex items-center gap-1.5 disabled:opacity-50"
+                              >
+                                <Check className="w-3.5 h-3.5" />
+                                <span>{submittingEdit ? 'Saving...' : 'Save Changes'}</span>
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      }
 
                       return (
                         <div
                           key={mIdx}
-                          className="p-4 rounded-xl border border-slate-200/80 bg-slate-50/50 space-y-3"
+                          className="p-4 rounded-xl border border-slate-200/80 bg-slate-50/50 space-y-3 transition-colors hover:border-slate-300"
                         >
-                          {/* Milestone Title + Checkbox */}
-                          <div className="flex items-start gap-3">
-                            <button
-                              type="button"
-                              onClick={() =>
-                                handleToggleMilestone(week.weekNumber, mIdx, milestone.completed)
-                              }
-                              className="mt-0.5 text-slate-400 hover:text-indigo-600 focus:outline-none transition-colors"
-                              title={milestone.completed ? 'Mark incomplete' : 'Mark complete'}
-                            >
-                              {milestone.completed ? (
-                                <CheckCircle2 className="w-5 h-5 text-emerald-600 fill-emerald-50" />
-                              ) : (
-                                <Circle className="w-5 h-5 text-slate-300" />
-                              )}
-                            </button>
-                            <div className="min-w-0 flex-1">
-                              <h4
-                                className={`text-sm font-semibold ${
-                                  milestone.completed
-                                    ? 'line-through text-slate-400'
-                                    : 'text-slate-800'
-                                }`}
+                          {/* Milestone Title + Checkbox + Action Buttons */}
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="flex items-start gap-3 min-w-0 flex-1">
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  handleToggleMilestone(week.weekNumber, mIdx, milestone.completed)
+                                }
+                                className="mt-0.5 text-slate-400 hover:text-indigo-600 focus:outline-none transition-colors shrink-0"
+                                title={milestone.completed ? 'Mark incomplete' : 'Mark complete'}
                               >
-                                {milestone.title}
-                              </h4>
+                                {milestone.completed ? (
+                                  <CheckCircle2 className="w-5 h-5 text-emerald-600 fill-emerald-50" />
+                                ) : (
+                                  <Circle className="w-5 h-5 text-slate-300" />
+                                )}
+                              </button>
+                              <div className="min-w-0 flex-1">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <h4
+                                    className={`text-sm font-semibold ${
+                                      milestone.completed
+                                        ? 'line-through text-slate-400'
+                                        : 'text-slate-800'
+                                    }`}
+                                  >
+                                    {milestone.title}
+                                  </h4>
+                                  {isCustom && (
+                                    <span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
+                                      Custom Step
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Edit & Delete Milestone Actions */}
+                            <div className="flex items-center gap-1 shrink-0">
+                              <button
+                                type="button"
+                                onClick={() => handleStartEdit(week.weekNumber, mIdx, milestone)}
+                                className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                                title="Edit step title or resource"
+                              >
+                                <Edit2 className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                type="button"
+                                disabled={isDeleting}
+                                onClick={() => handleDeleteMilestone(week.weekNumber, mIdx)}
+                                className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors disabled:opacity-50"
+                                title="Delete step"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
                             </div>
                           </div>
 
@@ -666,6 +976,154 @@ export const RoadmapTimelinePage = () => {
                         </div>
                       );
                     })}
+
+                    {/* Add Milestone to Week */}
+                    {addingToWeek === week.weekNumber ? (
+                      <div className="bg-indigo-50/40 rounded-xl border border-indigo-200 p-4 shadow-xs space-y-3">
+                        <div className="flex items-center justify-between border-b border-indigo-100 pb-2">
+                          <span className="text-xs font-bold text-indigo-900 flex items-center gap-1.5">
+                            <Plus className="w-3.5 h-3.5 text-indigo-600" />
+                            Add Custom Step to Week {week.weekNumber}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => setAddingToWeek(null)}
+                            className="text-slate-400 hover:text-slate-600 p-1"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+
+                        <div className="space-y-1.5">
+                          <label className="text-[11px] font-semibold text-slate-700 block">
+                            Milestone / Step Title *
+                          </label>
+                          <input
+                            type="text"
+                            value={newMilestoneForm.title}
+                            onChange={(e) =>
+                              setNewMilestoneForm({ ...newMilestoneForm, title: e.target.value })
+                            }
+                            className="w-full text-xs px-3 py-2 border rounded-lg border-slate-300 focus:outline-none focus:ring-1 focus:ring-indigo-500 bg-white"
+                            placeholder="e.g. Build caching layer with Redis"
+                          />
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          <div>
+                            <label className="text-[11px] font-semibold text-slate-700 block mb-1">
+                              Resource Type
+                            </label>
+                            <select
+                              value={newMilestoneForm.resourceType}
+                              onChange={(e) =>
+                                setNewMilestoneForm({
+                                  ...newMilestoneForm,
+                                  resourceType: e.target.value
+                                })
+                              }
+                              className="w-full text-xs px-2.5 py-1.5 border rounded-lg border-slate-300 focus:outline-none focus:ring-1 focus:ring-indigo-500 bg-white"
+                            >
+                              <option value="practice">Hands-on Practice / Project</option>
+                              <option value="documentation">Official Documentation</option>
+                              <option value="video">Video Tutorial</option>
+                              <option value="article">Article / Deep Dive</option>
+                            </select>
+                          </div>
+                          <div>
+                            <label className="text-[11px] font-semibold text-slate-700 block mb-1">
+                              Resource Name (Optional)
+                            </label>
+                            <input
+                              type="text"
+                              value={newMilestoneForm.resourceName}
+                              onChange={(e) =>
+                                setNewMilestoneForm({
+                                  ...newMilestoneForm,
+                                  resourceName: e.target.value
+                                })
+                              }
+                              className="w-full text-xs px-3 py-1.5 border rounded-lg border-slate-300 focus:outline-none focus:ring-1 focus:ring-indigo-500 bg-white"
+                              placeholder="e.g. Redis Documentation"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          <div>
+                            <label className="text-[11px] font-semibold text-slate-700 block mb-1">
+                              Resource Link / URL (Optional)
+                            </label>
+                            <input
+                              type="url"
+                              value={newMilestoneForm.resourceUrl}
+                              onChange={(e) =>
+                                setNewMilestoneForm({
+                                  ...newMilestoneForm,
+                                  resourceUrl: e.target.value
+                                })
+                              }
+                              className="w-full text-xs px-3 py-1.5 border rounded-lg border-slate-300 focus:outline-none focus:ring-1 focus:ring-indigo-500 bg-white"
+                              placeholder="https://..."
+                            />
+                          </div>
+                          <div>
+                            <label className="text-[11px] font-semibold text-slate-700 block mb-1">
+                              Deliverable Note (Optional)
+                            </label>
+                            <input
+                              type="text"
+                              value={newMilestoneForm.resourceWhyThis}
+                              onChange={(e) =>
+                                setNewMilestoneForm({
+                                  ...newMilestoneForm,
+                                  resourceWhyThis: e.target.value
+                                })
+                              }
+                              className="w-full text-xs px-3 py-1.5 border rounded-lg border-slate-300 focus:outline-none focus:ring-1 focus:ring-indigo-500 bg-white"
+                              placeholder="e.g. Key deliverable to prove proficiency"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="flex items-center justify-end gap-2 pt-2 border-t border-indigo-100">
+                          <button
+                            type="button"
+                            onClick={() => setAddingToWeek(null)}
+                            className="px-3 py-1.5 text-xs font-semibold text-slate-600 hover:text-slate-800 bg-white border border-slate-200 rounded-lg transition-colors"
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            type="button"
+                            disabled={submittingAdd || !newMilestoneForm.title.trim()}
+                            onClick={() => handleAddMilestone(week.weekNumber)}
+                            className="px-4 py-1.5 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors shadow-2xs flex items-center gap-1.5 disabled:opacity-50"
+                          >
+                            <Plus className="w-3.5 h-3.5" />
+                            <span>{submittingAdd ? 'Adding...' : `Add to Week ${week.weekNumber}`}</span>
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setAddingToWeek(week.weekNumber);
+                          setNewMilestoneForm({
+                            title: '',
+                            resourceType: 'practice',
+                            resourceName: '',
+                            resourceUrl: '',
+                            resourceWhyThis: ''
+                          });
+                        }}
+                        className="w-full py-2.5 px-4 rounded-xl border border-dashed border-indigo-300 hover:border-indigo-500 hover:bg-indigo-50/50 text-indigo-700 text-xs font-semibold flex items-center justify-center gap-2 transition-all group"
+                      >
+                        <Plus className="w-4 h-4 text-indigo-500 group-hover:scale-110 transition-transform" />
+                        <span>+ Add Custom Step to Week {week.weekNumber}</span>
+                      </button>
+                    )}
                   </div>
                 </div>
               )}

@@ -59,6 +59,30 @@ export const roadmapService = {
       milestoneIndex,
       status
     });
+  },
+
+  /**
+   * Add a custom milestone / step to a week
+   */
+  async addMilestone(id, weekNumber, milestoneData) {
+    return axiosInstance.post(`/roadmap/${id}/weeks/${weekNumber}/milestones`, milestoneData);
+  },
+
+  /**
+   * Edit / update milestone title and resource
+   */
+  async updateMilestoneDetails(id, weekNumber, milestoneIndex, milestoneData) {
+    return axiosInstance.put(
+      `/roadmap/${id}/weeks/${weekNumber}/milestones/${milestoneIndex}`,
+      milestoneData
+    );
+  },
+
+  /**
+   * Delete a milestone from a week
+   */
+  async deleteMilestone(id, weekNumber, milestoneIndex) {
+    return axiosInstance.delete(`/roadmap/${id}/weeks/${weekNumber}/milestones/${milestoneIndex}`);
   }
 };
 
