@@ -17,10 +17,25 @@ const generatedResumeSchema = new mongoose.Schema(
     html: {
       type: String,
       required: true
+    },
+    companyName: {
+      type: String,
+      default: 'General Application',
+      trim: true
+    },
+    targetRole: {
+      type: String,
+      default: 'Target Role',
+      trim: true
+    },
+    template: {
+      type: String,
+      enum: ['modern', 'classic', 'compact'],
+      default: 'modern'
     }
   },
   {
-    timestamps: { createdAt: true, updatedAt: false }
+    timestamps: true
   }
 );
 

@@ -29,6 +29,35 @@ export const resumeService = {
     return axiosInstance.get(`/resume/${id}/pdf`, {
       responseType: 'blob'
     });
+  },
+
+  /**
+   * Update resume HTML or template (Live Interactive Editing)
+   */
+  async updateResume(id, data) {
+    return axiosInstance.put(`/resume/${id}`, data);
+  },
+
+  /**
+   * Tailor a new ATS resume for a specific job opening without disrupting others
+   */
+  async tailorResume(data) {
+    return axiosInstance.post('/resume/tailor', data);
+  },
+
+  /**
+   * Delete a resume
+   */
+  async deleteResume(id) {
+    return axiosInstance.delete(`/resume/${id}`);
+  },
+
+  /**
+   * URL for streaming original uploaded PDF inside the browser iframe
+   */
+  getOriginalPdfUrl(analysisId) {
+    const baseURL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+    return `${baseURL}/analysis/${analysisId}/file`;
   }
 };
 

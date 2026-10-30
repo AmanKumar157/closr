@@ -33,6 +33,19 @@ const analysisSchema = new mongoose.Schema(
       type: Number,
       default: 0
     },
+    fileBuffer: {
+      type: Buffer,
+      default: null,
+      select: false
+    },
+    fileContentType: {
+      type: String,
+      default: 'application/pdf'
+    },
+    hasOriginalPdf: {
+      type: Boolean,
+      default: false
+    },
     resumeText: {
       type: String,
       required: [true, 'Resume text is required']

@@ -44,12 +44,17 @@ export const createAnalysis = asyncHandler(async (req, res) => {
 
   const fileName = req.file.originalname || 'Uploaded_Resume.pdf';
   const fileSize = req.file.size || 0;
+  const fileBuffer = req.file.buffer;
+  const fileContentType = req.file.mimetype || 'application/pdf';
 
   // 4. Save analysis document to MongoDB
   const analysis = await Analysis.create({
     userId: req.user._id,
     fileName,
     fileSize,
+    fileBuffer,
+    fileContentType,
+    hasOriginalPdf: Boolean(fileBuffer && fileBuffer.length > 0),
     resumeText,
     targetRole: targetRole.trim(),
     jobDescription: jobDescription?.trim() || '',
@@ -99,7 +104,7 @@ export const createAnalysis = asyncHandler(async (req, res) => {
  */
 export const getAnalyses = asyncHandler(async (req, res) => {
   const analyses = await Analysis.find({ userId: req.user._id })
-    .select('-resumeText') // Omit large resume text for summary list
+    .select('-resumeText -fileBuffer') // Omit large resume text and fileBuffer for summary list
     .sort({ createdAt: -1 });
 
   return new ApiResponse(200, { analyses }, 'Analyses fetched successfully').send(res);
@@ -171,4 +176,33 @@ export const compareAnalyses = asyncHandler(async (req, res) => {
     'Analyses compared successfully'
   ).send(res);
 });
+
+/**
+ * @desc    Stream original uploaded resume PDF file directly for in-app viewing
+ * @route   GET /api/analysis/:id/file
+ * @access  Protected
+ */
+export const getOriginalResumePdf = asyncHandler(async (req, res) => {
+  const analysis = await Analysis.findOne({
+    _id: req.params.id,
+    userId: req.user._id
+  }).select('+fileBuffer');
+
+  if (!analysis) {
+    throw new ApiError(404, 'Analysis report not found.');
+  }
+
+  if (!analysis.fileBuffer) {
+    throw new ApiError(404, 'Original PDF file was not stored for this older upload.');
+  }
+
+  res.set({
+    'Content-Type': analysis.fileContentType || 'application/pdf',
+    'Content-Disposition': `inline; filename="${analysis.fileName || 'original_resume.pdf'}"`,
+    'Content-Length': analysis.fileBuffer.length
+  });
+
+  return res.end(analysis.fileBuffer);
+});
+
 

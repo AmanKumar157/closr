@@ -16,7 +16,8 @@ import {
   Eye,
   EyeOff,
   Copy,
-  Check
+  Check,
+  ExternalLink
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import analysisService from '../../../services/analysisService.js';
@@ -171,6 +172,18 @@ export const AnalysisResultPage = () => {
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
+          {analysis.hasOriginalPdf && (
+            <a
+              href={`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/analysis/${analysis._id}/file`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:text-slate-900 bg-white border border-slate-200 hover:border-slate-300 rounded-lg shadow-2xs transition-colors"
+            >
+              <ExternalLink className="w-3.5 h-3.5 text-indigo-500" />
+              <span>View Original PDF</span>
+            </a>
+          )}
+
           <Button
             variant="outline"
             size="sm"

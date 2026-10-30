@@ -3,7 +3,8 @@ import {
   createAnalysis,
   getAnalyses,
   getAnalysisById,
-  compareAnalyses
+  compareAnalyses,
+  getOriginalResumePdf
 } from '../controllers/analysis.controller.js';
 import { authMiddleware } from '../middleware/auth.js';
 import { handleUpload } from '../middleware/upload.js';
@@ -22,6 +23,9 @@ router.get('/', getAnalyses);
 
 // Compare two analyses
 router.get('/compare', compareAnalyses);
+
+// Stream original uploaded resume PDF file directly
+router.get('/:id/file', getOriginalResumePdf);
 
 // Get analysis details by ID
 router.get('/:id', getAnalysisById);

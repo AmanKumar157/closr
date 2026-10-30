@@ -34,6 +34,9 @@ export const generateResume = asyncHandler(async (req, res) => {
   const generatedResume = await GeneratedResume.create({
     userId: req.user._id,
     analysisId: analysis._id,
+    companyName: 'General Application',
+    targetRole: analysis.targetRole,
+    template: 'modern',
     html
   });
 
@@ -109,4 +112,114 @@ export const getResumeById = asyncHandler(async (req, res) => {
 
   return new ApiResponse(200, { resume }, 'Resume retrieved').send(res);
 });
+
+/**
+ * @desc    Update resume content (interactive live editing) or template
+ * @route   PUT /api/resume/:id
+ * @access  Protected
+ */
+export const updateResume = asyncHandler(async (req, res) => {
+  if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+    throw new ApiError(400, 'Invalid resume ID format.');
+  }
+
+  const { html, template, companyName, targetRole } = req.body;
+
+  const resume = await GeneratedResume.findOne({
+    _id: req.params.id,
+    userId: req.user._id
+  });
+
+  if (!resume) {
+    throw new ApiError(404, 'Resume not found.');
+  }
+
+  if (html !== undefined) resume.html = html;
+  if (template !== undefined && ['modern', 'classic', 'compact'].includes(template)) {
+    resume.template = template;
+  }
+  if (companyName !== undefined) resume.companyName = companyName.trim();
+  if (targetRole !== undefined) resume.targetRole = targetRole.trim();
+
+  await resume.save();
+
+  return new ApiResponse(200, { resume }, 'Resume updated successfully').send(res);
+});
+
+/**
+ * @desc    Tailor a separate ATS resume for a specific job opening without disrupting others
+ * @route   POST /api/resume/tailor
+ * @access  Protected
+ */
+export const tailorResumeForJob = asyncHandler(async (req, res) => {
+  const { baseAnalysisId, companyName, targetRole, jobDescription } = req.body;
+
+  if (!baseAnalysisId) {
+    throw new ApiError(400, 'Base analysis ID is required.');
+  }
+
+  if (!targetRole || !targetRole.trim()) {
+    throw new ApiError(400, 'Target role is required.');
+  }
+
+  const analysis = await Analysis.findOne({
+    _id: baseAnalysisId,
+    userId: req.user._id
+  });
+
+  if (!analysis) {
+    throw new ApiError(404, 'Base analysis not found.');
+  }
+
+  // Create isolated analysis context targeting this specific company opening
+  const targetAnalysis = {
+    targetRole: targetRole.trim(),
+    jobDescription: jobDescription?.trim() || '',
+    matchedSkills: analysis.matchedSkills,
+    suggestions: [
+      `Tailored specifically for ${companyName ? `${companyName} - ` : ''}${targetRole.trim()}`,
+      ...(analysis.suggestions || [])
+    ]
+  };
+
+  const html = await generateAtsResume(analysis.resumeText, targetAnalysis);
+
+  const tailoredResume = await GeneratedResume.create({
+    userId: req.user._id,
+    analysisId: analysis._id,
+    companyName: companyName?.trim() || 'Custom Application',
+    targetRole: targetRole.trim(),
+    template: 'modern',
+    html
+  });
+
+  return new ApiResponse(
+    201,
+    { resume: tailoredResume },
+    'Tailored ATS resume generated successfully'
+  ).send(res);
+});
+
+/**
+ * @desc    Delete a tailored resume
+ * @route   DELETE /api/resume/:id
+ * @access  Protected
+ */
+export const deleteResume = asyncHandler(async (req, res) => {
+  if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+    throw new ApiError(400, 'Invalid resume ID format.');
+  }
+
+  const resume = await GeneratedResume.findOneAndDelete({
+    _id: req.params.id,
+    userId: req.user._id
+  });
+
+  if (!resume) {
+    throw new ApiError(404, 'Resume not found.');
+  }
+
+  return new ApiResponse(200, null, 'Resume deleted successfully').send(res);
+});
+
 
