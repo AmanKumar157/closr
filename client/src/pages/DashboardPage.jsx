@@ -207,10 +207,10 @@ export const DashboardPage = () => {
                 <ArrowRight className="w-4 h-4 text-sky-500 group-hover:translate-x-1 transition-transform" />
               </div>
               <h4 className="font-semibold text-slate-900 text-sm group-hover:text-sky-600 transition-colors">
-                3. 12-Week Roadmap
+                3. 12-Week Roadmap & Progress
               </h4>
               <p className="text-xs text-slate-500 mt-1">
-                Follow milestone tasks with 1 curated resource per milestone.
+                Follow milestone tasks with 1 curated resource and monitor weekly completion.
               </p>
             </Link>
 

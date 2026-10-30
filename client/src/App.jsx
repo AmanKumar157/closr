@@ -117,11 +117,7 @@ export const App = () => {
               />
               <Route
                 path="/tracker"
-                element={
-                  <ProtectedRoute>
-                    <TrackerPage />
-                  </ProtectedRoute>
-                }
+                element={<Navigate to="/roadmap" replace />}
               />
               <Route
                 path="/resume"

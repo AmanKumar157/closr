@@ -23,7 +23,6 @@ export const Navbar = () => {
     { label: 'Dashboard', path: '/dashboard', to: '/dashboard', icon: LayoutDashboard },
     { label: 'Analyze', path: '/analysis', to: '/analysis/new', icon: FileText },
     { label: 'Roadmap', path: '/roadmap', to: '/roadmap', icon: Map },
-    { label: 'Tracker', path: '/tracker', to: '/tracker', icon: TrendingUp },
     { label: 'ATS Resume', path: '/resume', to: '/resume', icon: FileText },
     { label: 'History & Diff', path: '/history', to: '/history', icon: History },
     { label: 'Profile', path: '/profile', to: '/profile', icon: User }
