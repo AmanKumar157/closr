@@ -47,6 +47,40 @@ export const createAnalysis = asyncHandler(async (req, res) => {
   const fileBuffer = req.file.buffer;
   const fileContentType = req.file.mimetype || 'application/pdf';
 
+  // Check if an identical analysis already exists for this user (avoid duplicate uploads)
+  const existingAnalysis = await Analysis.findOne({
+    userId: req.user._id,
+    cacheHash: aiResult.cacheHash
+  });
+
+  if (existingAnalysis) {
+    // Refresh with latest file buffer and name without creating a duplicate record
+    existingAnalysis.fileName = fileName;
+    existingAnalysis.fileSize = fileSize;
+    if (fileBuffer) {
+      existingAnalysis.fileBuffer = fileBuffer;
+      existingAnalysis.fileContentType = fileContentType;
+      existingAnalysis.hasOriginalPdf = true;
+    }
+    await existingAnalysis.save();
+
+    if (profile) {
+      profile.lastUploadedResume = {
+        fileName,
+        fileSize,
+        uploadedAt: new Date(),
+        analysisId: existingAnalysis._id
+      };
+      await profile.save();
+    }
+
+    return new ApiResponse(
+      200,
+      { analysis: existingAnalysis, isCached: true, isDuplicate: true },
+      `Existing analysis found for "${fileName}". Reused to avoid duplicate upload.`
+    ).send(res);
+  }
+
   // 4. Save analysis document to MongoDB
   const analysis = await Analysis.create({
     userId: req.user._id,

@@ -283,6 +283,24 @@ export const ResumeGeneratorPage = () => {
     }
   };
 
+  const handleDeleteResumeCard = async (e, resumeId) => {
+    e.stopPropagation();
+    if (!window.confirm('Delete this resume version?')) return;
+    try {
+      const res = await resumeService.deleteResume(resumeId);
+      if (res.success) {
+        toast.success('Resume version deleted.');
+        const remaining = allResumes.filter((x) => x._id !== resumeId);
+        setAllResumes(remaining);
+        if (resume?._id === resumeId && remaining.length > 0) {
+          navigate(`/resume/${remaining[0]._id}`);
+        }
+      }
+    } catch (err) {
+      toast.error('Failed to delete resume.');
+    }
+  };
+
   // Tailor for specific job opening submit
   const handleTailorSubmit = async (e) => {
     e.preventDefault();
@@ -507,24 +525,44 @@ export const ResumeGeneratorPage = () => {
           <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-thin">
             {allResumes.map((r) => {
               const isActive = r._id === resume._id;
+              const displayName =
+                r.companyName && r.companyName !== 'General Application' && r.companyName !== 'Target Role'
+                  ? r.companyName
+                  : (r.analysisId?.fileName || currentAnalysis?.fileName || 'Uploaded Resume');
+
+              const displayRole =
+                r.targetRole && r.targetRole !== 'Target Role'
+                  ? r.targetRole
+                  : (r.analysisId?.targetRole || currentAnalysis?.targetRole || 'Software Developer');
+
               return (
-                <button
+                <div
                   key={r._id}
-                  type="button"
                   onClick={() => navigate(`/resume/${r._id}`)}
-                  className={`px-3 py-2 rounded-lg text-left text-xs shrink-0 border transition-all ${
+                  className={`group relative px-3 py-2 rounded-lg text-left text-xs shrink-0 border cursor-pointer transition-all pr-8 ${
                     isActive
                       ? 'bg-white border-indigo-500 shadow-sm ring-1 ring-indigo-200'
                       : 'bg-white/80 border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-white'
                   }`}
                 >
-                  <div className="font-bold text-slate-900 truncate max-w-[180px]">
-                    {r.companyName || 'General Application'}
+                  <div className="font-bold text-slate-900 truncate max-w-[170px] flex items-center gap-1.5">
+                    <FileText className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
+                    <span className="truncate">{displayName}</span>
                   </div>
-                  <div className="text-[11px] text-slate-500 truncate max-w-[180px]">
-                    {r.targetRole || 'Target Role'} • {new Date(r.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                  <div className="text-[11px] text-slate-500 truncate max-w-[170px] mt-0.5">
+                    {displayRole} • {new Date(r.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
                   </div>
-                </button>
+
+                  {/* Quick Delete Card Button */}
+                  <button
+                    type="button"
+                    onClick={(e) => handleDeleteResumeCard(e, r._id)}
+                    title="Delete this resume version"
+                    className="absolute top-2 right-2 p-1 text-slate-400 hover:text-rose-600 rounded hover:bg-rose-50 transition-colors opacity-70 group-hover:opacity-100"
+                  >
+                    <Trash2 className="w-3 h-3" />
+                  </button>
+                </div>
               );
             })}
           </div>
@@ -539,10 +577,14 @@ export const ResumeGeneratorPage = () => {
             <span>ATS Resume Generator (Feature 8)</span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-            {resume.companyName && resume.companyName !== 'General Application' ? `${resume.companyName} Resume` : 'ATS-Optimized Resume'}
+            {resume.companyName && resume.companyName !== 'General Application' && resume.companyName !== 'Target Role'
+              ? `${resume.companyName} Resume`
+              : (currentAnalysis?.fileName || 'ATS-Optimized Resume')}
           </h1>
-          <p className="text-xs text-slate-500 mt-1 flex items-center gap-2">
-            <span>Target Role: <strong className="text-slate-700">{resume.targetRole || currentAnalysis?.targetRole || 'Target Position'}</strong></span>
+          <p className="text-xs text-slate-500 mt-1 flex flex-wrap items-center gap-2">
+            <span>Target Role: <strong className="text-slate-700">{resume.targetRole && resume.targetRole !== 'Target Role' ? resume.targetRole : (currentAnalysis?.targetRole || 'Software Developer')}</strong></span>
+            <span>•</span>
+            <span>Document: <strong className="text-slate-700">{currentAnalysis?.fileName || 'Uploaded_Resume.pdf'}</strong></span>
             <span>•</span>
             <span>Print-ready A4 with 15mm margins</span>
           </p>

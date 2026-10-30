@@ -28,17 +28,47 @@ export const generateResume = asyncHandler(async (req, res) => {
     throw new ApiError(404, 'Analysis report not found.');
   }
 
+  // Prevent creating duplicate resumes for the same base analysis
+  const existingResume = await GeneratedResume.findOne({
+    userId: req.user._id,
+    analysisId: analysis._id,
+    $or: [
+      { companyName: 'General Application' },
+      { companyName: '' },
+      { companyName: analysis.fileName }
+    ]
+  }).populate('analysisId', 'fileName targetRole matchScore');
+
+  if (existingResume) {
+    // Backfill any missing metadata on existing resume
+    if (!existingResume.targetRole || existingResume.targetRole === 'Target Role') {
+      existingResume.targetRole = analysis.targetRole;
+    }
+    if (!existingResume.companyName || existingResume.companyName === 'General Application') {
+      existingResume.companyName = analysis.fileName || 'Master Resume';
+    }
+    await existingResume.save();
+
+    return new ApiResponse(
+      200,
+      { resume: existingResume, isDuplicate: true },
+      'Existing ATS resume loaded (duplicate avoided)'
+    ).send(res);
+  }
+
   // Generate ATS HTML with Gemini
   const html = await generateAtsResume(analysis.resumeText, analysis);
 
   const generatedResume = await GeneratedResume.create({
     userId: req.user._id,
     analysisId: analysis._id,
-    companyName: 'General Application',
+    companyName: analysis.fileName || 'Master Resume',
     targetRole: analysis.targetRole,
     template: 'modern',
     html
   });
+
+  await generatedResume.populate('analysisId', 'fileName targetRole matchScore');
 
   return new ApiResponse(
     201,
@@ -85,10 +115,23 @@ export const getResumePdf = asyncHandler(async (req, res) => {
  */
 export const getResumes = asyncHandler(async (req, res) => {
   const resumes = await GeneratedResume.find({ userId: req.user._id })
+    .populate('analysisId', 'fileName targetRole matchScore')
     .select('-html')
     .sort({ createdAt: -1 });
 
-  return new ApiResponse(200, { resumes }, 'Resumes retrieved successfully').send(res);
+  // Enrich any older records with real analysis metadata (file name and target role)
+  const enrichedResumes = resumes.map((r) => {
+    const doc = r.toObject();
+    if (!doc.targetRole || doc.targetRole === 'Target Role') {
+      doc.targetRole = doc.analysisId?.targetRole || 'Software Developer';
+    }
+    if (!doc.companyName || doc.companyName === 'General Application') {
+      doc.companyName = doc.analysisId?.fileName || 'Master Resume';
+    }
+    return doc;
+  });
+
+  return new ApiResponse(200, { resumes: enrichedResumes }, 'Resumes retrieved successfully').send(res);
 });
 
 /**
@@ -104,10 +147,17 @@ export const getResumeById = asyncHandler(async (req, res) => {
   const resume = await GeneratedResume.findOne({
     _id: req.params.id,
     userId: req.user._id
-  });
+  }).populate('analysisId', 'fileName targetRole matchScore');
 
   if (!resume) {
     throw new ApiError(404, 'Resume not found.');
+  }
+
+  if (!resume.targetRole || resume.targetRole === 'Target Role') {
+    resume.targetRole = resume.analysisId?.targetRole || 'Software Developer';
+  }
+  if (!resume.companyName || resume.companyName === 'General Application') {
+    resume.companyName = resume.analysisId?.fileName || 'Master Resume';
   }
 
   return new ApiResponse(200, { resume }, 'Resume retrieved').send(res);
