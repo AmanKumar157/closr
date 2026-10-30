@@ -154,3 +154,4 @@ export const logout = asyncHandler(async (req, res) => {
 export const getMe = asyncHandler(async (req, res) => {
   return new ApiResponse(200, { user: req.user }, 'Current user profile fetched').send(res);
 });
+

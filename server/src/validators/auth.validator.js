@@ -25,3 +25,4 @@ export const loginSchema = z.object({
     .string({ required_error: 'Password is required' })
     .min(1, 'Password is required')
 });
+

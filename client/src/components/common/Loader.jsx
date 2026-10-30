@@ -19,3 +19,4 @@ export const Loader = ({ size = 'md', text = 'Loading...', inline = false }) => 
 };
 
 export default Loader;
+

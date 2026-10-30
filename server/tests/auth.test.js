@@ -73,3 +73,4 @@ test('API Response Formatter: formats success and error payloads consistently', 
   assert.equal(apiErr.success, false);
   assert.equal(apiErr.errors.length, 1);
 });
+

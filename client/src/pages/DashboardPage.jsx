@@ -64,15 +64,23 @@ export const DashboardPage = () => {
 
         <Card title="Next Steps" subtitle="Core CareerPilot pipeline" className="md:col-span-2">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-slate-50 transition-colors">
-              <div className="w-8 h-8 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center mb-3">
-                <FileCheck2 className="w-5 h-5" />
+            <Link
+              to="/profile"
+              className="p-4 rounded-xl border border-indigo-200 bg-indigo-50/30 hover:bg-indigo-50/70 transition-all group block"
+            >
+              <div className="flex items-center justify-between mb-3">
+                <div className="w-8 h-8 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center">
+                  <FileCheck2 className="w-5 h-5" />
+                </div>
+                <ArrowRight className="w-4 h-4 text-indigo-500 group-hover:translate-x-1 transition-transform" />
               </div>
-              <h4 className="font-semibold text-slate-900 text-sm">1. Profile & Target Role</h4>
+              <h4 className="font-semibold text-slate-900 text-sm group-hover:text-indigo-600 transition-colors">
+                1. Profile & Target Role
+              </h4>
               <p className="text-xs text-slate-500 mt-1">
                 Configure your target role and current skills to tailor gap analysis.
               </p>
-            </div>
+            </Link>
 
             <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-slate-50 transition-colors">
               <div className="w-8 h-8 rounded-lg bg-violet-100 text-violet-600 flex items-center justify-center mb-3">
@@ -111,3 +119,4 @@ export const DashboardPage = () => {
 };
 
 export default DashboardPage;
+

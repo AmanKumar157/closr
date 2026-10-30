@@ -19,3 +19,4 @@ export const Card = ({ children, className = '', title, subtitle, footer, ...pro
 };
 
 export default Card;
+

@@ -16,3 +16,4 @@ router.post('/logout', authMiddleware, logout);
 router.get('/me', authMiddleware, getMe);
 
 export default router;
+

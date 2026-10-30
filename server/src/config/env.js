@@ -13,3 +13,4 @@ export const ENV = {
   GEMINI_MODEL: process.env.GEMINI_MODEL || 'gemini-1.5-flash',
   YOUTUBE_API_KEY: process.env.YOUTUBE_API_KEY || ''
 };
+

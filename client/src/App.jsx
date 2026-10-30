@@ -7,6 +7,7 @@ import Navbar from './components/Navbar.jsx';
 import LoginPage from './features/auth/pages/LoginPage.jsx';
 import RegisterPage from './features/auth/pages/RegisterPage.jsx';
 import DashboardPage from './pages/DashboardPage.jsx';
+import ProfilePage from './features/profile/pages/ProfilePage.jsx';
 
 export const App = () => {
   return (
@@ -60,6 +61,14 @@ export const App = () => {
                   </ProtectedRoute>
                 }
               />
+              <Route
+                path="/profile"
+                element={
+                  <ProtectedRoute>
+                    <ProfilePage />
+                  </ProtectedRoute>
+                }
+              />
 
               {/* Catch-all 404 Route */}
               <Route
@@ -81,3 +90,4 @@ export const App = () => {
 };
 
 export default App;
+

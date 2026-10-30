@@ -42,3 +42,4 @@ export const authMiddleware = asyncHandler(async (req, res, next) => {
     throw new ApiError(401, 'Invalid authentication token.');
   }
 });
+
