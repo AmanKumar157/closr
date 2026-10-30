@@ -54,6 +54,13 @@ export const Navbar = () => {
                 <User className="w-4 h-4" />
                 Profile
               </Link>
+              <Link
+                to="/analysis/new"
+                className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50/60 rounded-lg transition-colors font-semibold"
+              >
+                <FileText className="w-4 h-4" />
+                Analyze Resume
+              </Link>
             </nav>
           )}
 

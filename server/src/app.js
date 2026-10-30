@@ -7,6 +7,7 @@ import { errorHandler } from './middleware/errorHandler.js';
 import { ApiError } from './utils/ApiError.js';
 import authRoutes from './routes/auth.routes.js';
 import profileRoutes from './routes/profile.routes.js';
+import analysisRoutes from './routes/analysis.routes.js';
 
 const app = express();
 
@@ -40,6 +41,7 @@ app.get('/api/health', (req, res) => {
 // Feature Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/profile', profileRoutes);
+app.use('/api/analysis', analysisRoutes);
 
 // Catch-all for undefined routes
 app.use('*', (req, res, next) => {

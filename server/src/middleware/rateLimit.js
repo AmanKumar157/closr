@@ -26,3 +26,17 @@ export const apiLimiter = rateLimit({
   legacyHeaders: false
 });
 
+// Per-user rate limiter for AI-intensive routes (Resume Analysis, Roadmap Generation)
+export const aiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 25, // 25 AI calls per 15 minutes per user
+  keyGenerator: (req) => req.user?._id?.toString() || req.ip,
+  message: {
+    success: false,
+    message: 'AI request limit reached. Please wait a few minutes before running another analysis.',
+    data: null
+  },
+  standardHeaders: true,
+  legacyHeaders: false
+});
+

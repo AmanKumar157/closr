@@ -52,3 +52,4 @@ export const updateProfile = asyncHandler(async (req, res) => {
 
   return new ApiResponse(200, { profile }, 'Profile updated successfully').send(res);
 });
+

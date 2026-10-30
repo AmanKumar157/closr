@@ -61,3 +61,4 @@ test('Profile Validator: rejects unsupported language code', () => {
   const result = updateProfileSchema.safeParse(payload);
   assert.equal(result.success, false);
 });
+

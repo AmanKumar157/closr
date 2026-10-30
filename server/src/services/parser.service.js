@@ -74,3 +74,4 @@ export const extractResumeText = async (buffer, originalName = '', mimeType = ''
 
   return cleanedText;
 };
+

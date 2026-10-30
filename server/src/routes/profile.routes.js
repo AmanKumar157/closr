@@ -13,3 +13,4 @@ router.get('/', getProfile);
 router.put('/', validate(updateProfileSchema), updateProfile);
 
 export default router;
+

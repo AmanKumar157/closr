@@ -33,6 +33,19 @@ export const DashboardPage = () => {
           <p className="mt-2 text-indigo-100 text-base sm:text-lg">
             Ready to discover your skill gaps and unlock your target role? CareerPilot analyzes your resume against target JDs and generates a personalized 12-week roadmap.
           </p>
+          <div className="mt-6 flex flex-wrap gap-3">
+            <Link to="/analysis/new">
+              <Button variant="primary" className="bg-white text-indigo-900 hover:bg-indigo-50 shadow-md">
+                <Sparkles className="w-4 h-4 mr-2 text-indigo-600" />
+                Analyze Your Resume Now
+              </Button>
+            </Link>
+            <Link to="/profile">
+              <Button variant="outline" className="border-indigo-300/40 text-white hover:bg-white/10 bg-transparent">
+                Update Target Role
+              </Button>
+            </Link>
+          </div>
         </div>
       </div>
 
@@ -82,15 +95,23 @@ export const DashboardPage = () => {
               </p>
             </Link>
 
-            <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-slate-50 transition-colors">
-              <div className="w-8 h-8 rounded-lg bg-violet-100 text-violet-600 flex items-center justify-center mb-3">
-                <Sparkles className="w-5 h-5" />
+            <Link
+              to="/analysis/new"
+              className="p-4 rounded-xl border border-violet-200 bg-violet-50/30 hover:bg-violet-50/70 transition-all group block"
+            >
+              <div className="flex items-center justify-between mb-3">
+                <div className="w-8 h-8 rounded-lg bg-violet-100 text-violet-600 flex items-center justify-center">
+                  <Sparkles className="w-5 h-5" />
+                </div>
+                <ArrowRight className="w-4 h-4 text-violet-500 group-hover:translate-x-1 transition-transform" />
               </div>
-              <h4 className="font-semibold text-slate-900 text-sm">2. AI Skill-Gap Analysis</h4>
+              <h4 className="font-semibold text-slate-900 text-sm group-hover:text-violet-600 transition-colors">
+                2. AI Skill-Gap Analysis
+              </h4>
               <p className="text-xs text-slate-500 mt-1">
                 Upload your resume (PDF/DOCX) to get an ATS match score and pinpoint missing skills.
               </p>
-            </div>
+            </Link>
 
             <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-slate-50 transition-colors">
               <div className="w-8 h-8 rounded-lg bg-sky-100 text-sky-600 flex items-center justify-center mb-3">

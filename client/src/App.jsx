@@ -8,6 +8,8 @@ import LoginPage from './features/auth/pages/LoginPage.jsx';
 import RegisterPage from './features/auth/pages/RegisterPage.jsx';
 import DashboardPage from './pages/DashboardPage.jsx';
 import ProfilePage from './features/profile/pages/ProfilePage.jsx';
+import NewAnalysisPage from './features/analysis/pages/NewAnalysisPage.jsx';
+import AnalysisResultPage from './features/analysis/pages/AnalysisResultPage.jsx';
 
 export const App = () => {
   return (
@@ -66,6 +68,22 @@ export const App = () => {
                 element={
                   <ProtectedRoute>
                     <ProfilePage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/analysis/new"
+                element={
+                  <ProtectedRoute>
+                    <NewAnalysisPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/analysis/:id"
+                element={
+                  <ProtectedRoute>
+                    <AnalysisResultPage />
                   </ProtectedRoute>
                 }
               />

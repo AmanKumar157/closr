@@ -140,3 +140,4 @@ export const ResumeDropzone = ({ file, onFileSelect, onFileRemove, error }) => {
 };
 
 export default ResumeDropzone;
+

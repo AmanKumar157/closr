@@ -1,0 +1,291 @@
+import React, { useState, useEffect } from 'react';
+import { useParams, Link, useNavigate } from 'react-router-dom';
+import {
+  Sparkles,
+  ArrowRight,
+  Map,
+  FileText,
+  AlertTriangle,
+  Lightbulb,
+  CheckCircle2,
+  RefreshCw,
+  Briefcase,
+  Layers,
+  Calendar
+} from 'lucide-react';
+import toast from 'react-hot-toast';
+import analysisService from '../../../services/analysisService.js';
+import ScoreGauge from '../../../components/common/ScoreGauge.jsx';
+import SkillChip from '../../../components/common/SkillChip.jsx';
+import Card from '../../../components/common/Card.jsx';
+import Button from '../../../components/common/Button.jsx';
+import Loader from '../../../components/common/Loader.jsx';
+
+export const AnalysisResultPage = () => {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const [analysis, setAnalysis] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchAnalysis = async () => {
+      try {
+        setLoading(true);
+        const res = await analysisService.getAnalysisById(id);
+        if (res.success && res.data?.analysis) {
+          setAnalysis(res.data.analysis);
+        }
+      } catch (err) {
+        toast.error('Could not find requested analysis report.');
+        navigate('/dashboard');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAnalysis();
+  }, [id, navigate]);
+
+  if (loading) {
+    return (
+      <div className="min-h-[calc(100vh-8rem)] flex items-center justify-center">
+        <Loader size="lg" text="Loading your ATS skill-gap report..." />
+      </div>
+    );
+  }
+
+  if (!analysis) {
+    return null;
+  }
+
+  const highImportanceGaps = analysis.missingSkills?.filter((m) => m.importance === 'high') || [];
+  const mediumImportanceGaps = analysis.missingSkills?.filter((m) => m.importance === 'medium') || [];
+  const lowImportanceGaps = analysis.missingSkills?.filter((m) => m.importance === 'low') || [];
+
+  return (
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+      {/* Top Banner / Actions */}
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 pb-4 border-b border-slate-200">
+        <div>
+          <div className="inline-flex items-center gap-1.5 text-indigo-600 font-semibold text-xs mb-1 uppercase tracking-wider">
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>AI Resume Gap Report</span>
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
+            <span>{analysis.targetRole}</span>
+          </h1>
+          <p className="text-xs text-slate-500 mt-1 flex items-center gap-2">
+            <Calendar className="w-3.5 h-3.5" />
+            <span>Analyzed on {new Date(analysis.createdAt).toLocaleDateString()}</span>
+          </p>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <Link to="/analysis/new">
+            <Button variant="outline" size="sm">
+              <RefreshCw className="w-3.5 h-3.5 mr-1.5" />
+              Analyze Another Resume
+            </Button>
+          </Link>
+          <Link to={`/roadmap/generate?analysisId=${analysis._id}`}>
+            <Button variant="primary" size="sm">
+              <Map className="w-3.5 h-3.5 mr-1.5" />
+              Generate 12-Week Roadmap
+              <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
+            </Button>
+          </Link>
+        </div>
+      </div>
+
+      {/* Overview Score & Key Metrics Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Score Gauge Card */}
+        <Card className="flex flex-col items-center justify-center p-6 text-center shadow-sm">
+          <ScoreGauge score={analysis.matchScore} size="lg" label="ATS Readiness Score" />
+          <p className="text-xs text-slate-500 mt-3 max-w-xs">
+            Reflects candidate alignment with technical competencies, tooling, and expected domain expertise.
+          </p>
+        </Card>
+
+        {/* Quick Breakdown Metrics */}
+        <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm flex flex-col justify-between">
+            <div>
+              <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                Matched Skills
+              </span>
+              <p className="text-3xl font-extrabold text-emerald-600 mt-2">
+                {analysis.matchedSkills?.length || 0}
+              </p>
+            </div>
+            <p className="text-xs text-slate-500 mt-2">
+              Skills from your resume verified against the role.
+            </p>
+          </div>
+
+          <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm flex flex-col justify-between">
+            <div>
+              <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                Missing Skill Gaps
+              </span>
+              <p className="text-3xl font-extrabold text-rose-600 mt-2">
+                {analysis.missingSkills?.length || 0}
+              </p>
+            </div>
+            <p className="text-xs text-slate-500 mt-2">
+              <span className="font-semibold text-red-600">{highImportanceGaps.length}</span> high-priority missing items.
+            </p>
+          </div>
+
+          <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm flex flex-col justify-between">
+            <div>
+              <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                Total Extracted Skills
+              </span>
+              <p className="text-3xl font-extrabold text-indigo-600 mt-2">
+                {analysis.extractedSkills?.length || 0}
+              </p>
+            </div>
+            <p className="text-xs text-slate-500 mt-2">
+              Technical terms parsed directly from your document.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Skill Gaps Breakdown */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Missing Skills by Priority */}
+        <Card
+          title="Missing Skills (The Gaps)"
+          subtitle="Skills expected for the target role that were not found in your resume"
+        >
+          <div className="space-y-4">
+            {highImportanceGaps.length > 0 && (
+              <div>
+                <span className="text-xs font-bold text-red-700 uppercase tracking-wider flex items-center gap-1.5 mb-2">
+                  <span className="w-2 h-2 rounded-full bg-red-500"></span>
+                  High Priority Gaps ({highImportanceGaps.length})
+                </span>
+                <div className="flex flex-wrap gap-2">
+                  {highImportanceGaps.map((m) => (
+                    <SkillChip key={m.skill} skill={m.skill} variant="high" />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {mediumImportanceGaps.length > 0 && (
+              <div>
+                <span className="text-xs font-bold text-amber-700 uppercase tracking-wider flex items-center gap-1.5 mb-2">
+                  <span className="w-2 h-2 rounded-full bg-amber-500"></span>
+                  Medium Priority Gaps ({mediumImportanceGaps.length})
+                </span>
+                <div className="flex flex-wrap gap-2">
+                  {mediumImportanceGaps.map((m) => (
+                    <SkillChip key={m.skill} skill={m.skill} variant="medium" />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {lowImportanceGaps.length > 0 && (
+              <div>
+                <span className="text-xs font-bold text-blue-700 uppercase tracking-wider flex items-center gap-1.5 mb-2">
+                  <span className="w-2 h-2 rounded-full bg-blue-500"></span>
+                  Low Priority / Nice-to-Have ({lowImportanceGaps.length})
+                </span>
+                <div className="flex flex-wrap gap-2">
+                  {lowImportanceGaps.map((m) => (
+                    <SkillChip key={m.skill} skill={m.skill} variant="low" />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {(!analysis.missingSkills || analysis.missingSkills.length === 0) && (
+              <p className="text-sm text-emerald-600 font-medium flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4" /> No critical skill gaps detected! Your resume matches the requirements.
+              </p>
+            )}
+          </div>
+        </Card>
+
+        {/* Matched Skills */}
+        <Card
+          title="Matched Skills"
+          subtitle="Skills found in your resume that fulfill target role requirements"
+        >
+          <div className="flex flex-wrap gap-2">
+            {analysis.matchedSkills?.map((skill) => (
+              <SkillChip key={skill} skill={skill} variant="matched" />
+            ))}
+            {(!analysis.matchedSkills || analysis.matchedSkills.length === 0) && (
+              <p className="text-sm text-slate-400 italic">No direct skill matches detected.</p>
+            )}
+          </div>
+        </Card>
+      </div>
+
+      {/* Weak Sections and Suggestions */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Weak Sections */}
+        <Card title="Identified Weak Areas" subtitle="Sections where ATS parsers or recruiters may deduct points">
+          <ul className="space-y-3">
+            {analysis.weakSections?.map((section, idx) => (
+              <li key={idx} className="flex items-start gap-2.5 text-sm text-slate-700">
+                <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+                <span>{section}</span>
+              </li>
+            ))}
+          </ul>
+        </Card>
+
+        {/* Suggestions */}
+        <Card title="Actionable AI Recommendations" subtitle="Immediate improvements to elevate your interview call rate">
+          <ul className="space-y-3">
+            {analysis.suggestions?.map((suggestion, idx) => (
+              <li key={idx} className="flex items-start gap-2.5 text-sm text-slate-700">
+                <Lightbulb className="w-4 h-4 text-indigo-600 shrink-0 mt-0.5" />
+                <span>{suggestion}</span>
+              </li>
+            ))}
+          </ul>
+        </Card>
+      </div>
+
+      {/* Extracted Skills Reference */}
+      <Card title="All Skills Parsed from Document" subtitle="Complete inventory of skills recognized by the ATS extractor">
+        <div className="flex flex-wrap gap-1.5">
+          {analysis.extractedSkills?.map((skill) => (
+            <SkillChip key={skill} skill={skill} variant="neutral" size="sm" />
+          ))}
+        </div>
+      </Card>
+
+      {/* Call to Action Banner (Bridge to Phase 4 Roadmap) */}
+      <div className="bg-gradient-to-r from-indigo-900 to-violet-900 rounded-2xl p-8 text-white shadow-lg flex flex-col md:flex-row items-center justify-between gap-6">
+        <div className="space-y-2 max-w-xl">
+          <div className="inline-flex items-center gap-1.5 text-indigo-300 text-xs font-semibold uppercase tracking-wider">
+            <Map className="w-4 h-4 text-emerald-400" />
+            <span>Bridge the Gap (Feature 5)</span>
+          </div>
+          <h3 className="text-2xl font-bold tracking-tight">
+            Ready to turn these gaps into a structured learning roadmap?
+          </h3>
+          <p className="text-indigo-200 text-sm">
+            Generate a personalized 12-week roadmap targeting your {highImportanceGaps.length} high-importance missing skills with exactly one verified resource per milestone.
+          </p>
+        </div>
+        <Link to={`/roadmap/generate?analysisId=${analysis._id}`}>
+          <Button variant="primary" size="lg" className="bg-white text-indigo-900 hover:bg-indigo-50 shadow-md min-w-[200px]">
+            <Map className="w-4 h-4 mr-2 text-indigo-600" />
+            Create 12-Week Roadmap
+          </Button>
+        </Link>
+      </div>
+    </div>
+  );
+};
+
+export default AnalysisResultPage;
