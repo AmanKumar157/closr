@@ -27,6 +27,10 @@ const profileSchema = new mongoose.Schema(
       type: String,
       enum: ['en', 'hi'],
       default: 'en'
+    },
+    avatar: {
+      type: String,
+      default: ''
     }
   },
   {

@@ -21,6 +21,10 @@ const userSchema = new mongoose.Schema(
     passwordHash: {
       type: String,
       required: [true, 'Password is required']
+    },
+    avatar: {
+      type: String,
+      default: ''
     }
   },
   {

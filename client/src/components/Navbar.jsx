@@ -96,17 +96,30 @@ export const Navbar = () => {
           <div className="flex items-center gap-3">
             {isAuthenticated ? (
               <div className="flex items-center gap-3">
-                <div className="hidden sm:flex flex-col text-right">
-                  <span className="text-sm font-semibold text-slate-800 leading-tight">
-                    {user?.name || 'User'}
-                  </span>
-                  <span className="text-xs text-slate-500 leading-tight">
-                    {user?.email}
-                  </span>
-                </div>
+                <Link to="/profile" className="flex items-center gap-2 group">
+                  {user?.avatar ? (
+                    <img
+                      src={user.avatar}
+                      alt={user.name || 'User'}
+                      className="w-8 h-8 rounded-full object-cover ring-2 ring-indigo-500/30 group-hover:ring-indigo-600 transition-all"
+                    />
+                  ) : (
+                    <div className="w-8 h-8 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-xs ring-2 ring-indigo-500/20 group-hover:ring-indigo-600 transition-all">
+                      {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
+                    </div>
+                  )}
+                  <div className="hidden sm:flex flex-col text-left">
+                    <span className="text-xs font-semibold text-slate-800 leading-tight group-hover:text-indigo-600 transition-colors">
+                      {user?.name || 'User'}
+                    </span>
+                    <span className="text-[10px] text-slate-400 leading-tight truncate max-w-[120px]">
+                      {user?.email}
+                    </span>
+                  </div>
+                </Link>
                 <button
                   onClick={handleLogout}
-                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-600 hover:text-red-600 hover:bg-red-50 border border-slate-200 hover:border-red-200 rounded-lg transition-colors"
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-600 hover:text-red-600 hover:bg-red-50 border border-slate-200 hover:border-red-200 rounded-lg transition-colors ml-1"
                   title="Log out"
                 >
                   <LogOut className="w-3.5 h-3.5" />

@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import roadmapService from '../../../services/roadmapService.js';
+import analysisService from '../../../services/analysisService.js';
 import ResourceCard from '../components/ResourceCard.jsx';
 import ProgressBar from '../../../components/common/ProgressBar.jsx';
 import SkillChip from '../../../components/common/SkillChip.jsx';
@@ -31,6 +32,7 @@ export const RoadmapTimelinePage = () => {
   const navigate = useNavigate();
 
   const [roadmap, setRoadmap] = useState(null);
+  const [availableAnalyses, setAvailableAnalyses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [expandedWeeks, setExpandedWeeks] = useState({ 1: true });
@@ -61,7 +63,12 @@ export const RoadmapTimelinePage = () => {
           if (res.success && res.data?.roadmaps?.length > 0) {
             setRoadmap(res.data.roadmaps[0]);
           } else {
-            navigate('/analysis/new');
+            // No roadmap generated yet: fetch past analyses so user can pick one or create one
+            const aRes = await analysisService.getAnalyses();
+            if (aRes.success) {
+              setAvailableAnalyses(aRes.data?.analyses || []);
+            }
+            setRoadmap(null);
           }
         }
       } catch (err) {
@@ -207,12 +214,128 @@ export const RoadmapTimelinePage = () => {
 
   if (!roadmap) {
     return (
-      <div className="max-w-md mx-auto py-16 text-center">
-        <h3 className="text-lg font-bold text-slate-800">No Roadmap Found</h3>
-        <p className="text-sm text-slate-500 mt-1">Run an analysis first to generate your custom roadmap.</p>
-        <Link to="/analysis/new" className="mt-4 inline-block">
-          <Button variant="primary">Start Analysis</Button>
-        </Link>
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-10">
+        {/* Header */}
+        <div className="text-center max-w-3xl mx-auto space-y-3">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 border border-indigo-200 text-indigo-700 text-xs font-semibold tracking-wide uppercase">
+            <Map className="w-3.5 h-3.5" />
+            <span>12-Week Bridge Roadmap (Feature 5)</span>
+          </div>
+          <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
+            Personalized 12-Week Bridge Roadmap
+          </h1>
+          <p className="text-base text-slate-600">
+            Bridge the gap between your current skills and target job requirements with a week-by-week curriculum and curated single-best resources.
+          </p>
+        </div>
+
+        {/* Existing Analyses with 1-Click Generation */}
+        {availableAnalyses.length > 0 ? (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-bold text-slate-900">Select an Analysis to Build Your Roadmap</h2>
+                <p className="text-xs text-slate-500">Pick any past resume analysis to generate a dedicated 12-week study plan.</p>
+              </div>
+              <Link to="/analysis/new">
+                <Button variant="outline" size="sm">
+                  + New Analysis
+                </Button>
+              </Link>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {availableAnalyses.map((a) => (
+                <Card key={a._id} className="p-5 hover:border-indigo-300 transition-all shadow-sm">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <h3 className="text-base font-bold text-slate-900">{a.targetRole || 'Target Role Analysis'}</h3>
+                      <p className="text-xs text-slate-500 mt-0.5">
+                        {new Date(a.createdAt).toLocaleDateString(undefined, { dateStyle: 'medium' })}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-100 text-slate-700 text-xs font-bold">
+                      <span>Score: {a.matchScore}%</span>
+                    </div>
+                  </div>
+
+                  <div className="mt-3 flex items-center gap-2 text-xs text-slate-600">
+                    <span className="font-semibold text-rose-600">
+                      {a.missingSkills?.length || 0} missing skills
+                    </span>
+                    <span>•</span>
+                    <span className="font-semibold text-emerald-600">
+                      {a.matchedSkills?.length || 0} matched
+                    </span>
+                  </div>
+
+                  <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
+                    <Link to={`/analysis/${a._id}`} className="text-xs text-slate-500 hover:text-indigo-600 font-medium">
+                      View Analysis →
+                    </Link>
+                    <Link to={`/roadmap?analysisId=${a._id}`}>
+                      <Button variant="primary" size="sm">
+                        <Sparkles className="w-3.5 h-3.5 mr-1.5" />
+                        Generate Roadmap
+                      </Button>
+                    </Link>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <Card className="text-center p-8 bg-gradient-to-b from-indigo-50/50 to-white border-dashed border-2 border-indigo-200">
+            <div className="w-12 h-12 rounded-xl bg-indigo-600 text-white flex items-center justify-center mx-auto shadow-md">
+              <Map className="w-6 h-6" />
+            </div>
+            <h3 className="text-lg font-bold text-slate-900 mt-4">No Roadmap Created Yet</h3>
+            <p className="text-sm text-slate-600 max-w-md mx-auto mt-2">
+              Upload your resume and target job description. CareerPilot's AI will find your missing skills and automatically generate a custom 12-week roadmap.
+            </p>
+            <div className="mt-6">
+              <Link to="/analysis/new">
+                <Button variant="primary" size="lg">
+                  <Sparkles className="w-4 h-4 mr-2" />
+                  Analyze Resume to Build Roadmap
+                </Button>
+              </Link>
+            </div>
+          </Card>
+        )}
+
+        {/* Feature Highlights Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4">
+          <Card className="p-5 border-slate-200">
+            <div className="w-9 h-9 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center mb-3">
+              <Layers className="w-5 h-5" />
+            </div>
+            <h4 className="font-bold text-sm text-slate-900">Priority-Ordered 12 Weeks</h4>
+            <p className="text-xs text-slate-600 mt-1">
+              High-importance missing skills are scheduled in weeks 1-4, ensuring you tackle critical job requirements first.
+            </p>
+          </Card>
+
+          <Card className="p-5 border-slate-200">
+            <div className="w-9 h-9 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center mb-3">
+              <CheckCircle2 className="w-5 h-5" />
+            </div>
+            <h4 className="font-bold text-sm text-slate-900">2-4 Concrete Milestones / Week</h4>
+            <p className="text-xs text-slate-600 mt-1">
+              Every milestone produces a verifiable deliverable or mini-project to prove practical competency.
+            </p>
+          </Card>
+
+          <Card className="p-5 border-slate-200">
+            <div className="w-9 h-9 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center mb-3">
+              <Sparkles className="w-5 h-5" />
+            </div>
+            <h4 className="font-bold text-sm text-slate-900">Exactly 1 Curated Resource</h4>
+            <p className="text-xs text-slate-600 mt-1">
+              No endless search lists. Only the top verified YouTube tutorial, official doc, or practice lab per milestone.
+            </p>
+          </Card>
+        </div>
       </div>
     );
   }

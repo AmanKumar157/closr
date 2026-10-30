@@ -22,6 +22,7 @@ export const updateProfileSchema = z.object({
       errorMap: () => ({ message: "Preferred language must be either 'en' or 'hi'" })
     })
     .optional()
-    .default('en')
+    .default('en'),
+  avatar: z.string().optional().default('')
 });
 

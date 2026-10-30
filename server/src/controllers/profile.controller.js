@@ -1,4 +1,5 @@
 import { Profile } from '../models/Profile.js';
+import { User } from '../models/User.js';
 import { ApiResponse } from '../utils/apiResponse.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 
@@ -30,23 +31,29 @@ export const getProfile = asyncHandler(async (req, res) => {
  * @access  Protected
  */
 export const updateProfile = asyncHandler(async (req, res) => {
-  const { currentSkills, targetRole, jobDescription, preferredLanguage } = req.body;
+  const { currentSkills, targetRole, jobDescription, preferredLanguage, avatar } = req.body;
 
   // Deduplicate and trim skills array
   const sanitizedSkills = Array.isArray(currentSkills)
     ? [...new Set(currentSkills.map((s) => s.trim()).filter(Boolean))]
     : [];
 
+  const updateFields = {
+    currentSkills: sanitizedSkills,
+    targetRole: targetRole !== undefined ? targetRole.trim() : '',
+    jobDescription: jobDescription !== undefined ? jobDescription.trim() : '',
+    preferredLanguage: preferredLanguage || 'en'
+  };
+
+  if (avatar !== undefined) {
+    updateFields.avatar = avatar;
+    // Also sync avatar with User model
+    await User.findByIdAndUpdate(req.user._id, { $set: { avatar } });
+  }
+
   const profile = await Profile.findOneAndUpdate(
     { userId: req.user._id },
-    {
-      $set: {
-        currentSkills: sanitizedSkills,
-        targetRole: targetRole !== undefined ? targetRole.trim() : '',
-        jobDescription: jobDescription !== undefined ? jobDescription.trim() : '',
-        preferredLanguage: preferredLanguage || 'en'
-      }
-    },
+    { $set: updateFields },
     { new: true, upsert: true, runValidators: true }
   );
 

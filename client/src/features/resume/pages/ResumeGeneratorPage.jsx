@@ -10,10 +10,13 @@ import {
   Sparkles,
   ArrowRight,
   ShieldCheck,
-  RefreshCw
+  RefreshCw,
+  Layers,
+  Award
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import resumeService from '../../../services/resumeService.js';
+import analysisService from '../../../services/analysisService.js';
 import Button from '../../../components/common/Button.jsx';
 import Card from '../../../components/common/Card.jsx';
 import Loader from '../../../components/common/Loader.jsx';
@@ -25,6 +28,7 @@ export const ResumeGeneratorPage = () => {
   const navigate = useNavigate();
 
   const [resume, setResume] = useState(null);
+  const [availableAnalyses, setAvailableAnalyses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [downloading, setDownloading] = useState(false);
@@ -55,7 +59,12 @@ export const ResumeGeneratorPage = () => {
           if (res.success && res.data?.resumes?.length > 0) {
             navigate(`/resume/${res.data.resumes[0]._id}`, { replace: true });
           } else {
-            navigate('/analysis/new');
+            // No resume generated yet: fetch past analyses so user can pick one or create new
+            const aRes = await analysisService.getAnalyses();
+            if (aRes.success) {
+              setAvailableAnalyses(aRes.data?.analyses || []);
+            }
+            setResume(null);
           }
         }
       } catch (err) {
@@ -120,12 +129,128 @@ export const ResumeGeneratorPage = () => {
 
   if (!resume) {
     return (
-      <div className="max-w-md mx-auto py-16 text-center">
-        <h3 className="text-lg font-bold text-slate-800">No Generated Resume Found</h3>
-        <p className="text-sm text-slate-500 mt-1">Run an analysis first to generate an ATS resume.</p>
-        <Link to="/analysis/new" className="mt-4 inline-block">
-          <Button variant="primary">Start Analysis</Button>
-        </Link>
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-10">
+        {/* Header */}
+        <div className="text-center max-w-3xl mx-auto space-y-3">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 border border-indigo-200 text-indigo-700 text-xs font-semibold tracking-wide uppercase">
+            <ShieldCheck className="w-3.5 h-3.5" />
+            <span>ATS Resume Generator (Feature 8)</span>
+          </div>
+          <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
+            ATS-Friendly Resume Optimizer
+          </h1>
+          <p className="text-base text-slate-600">
+            Reorganize your resume into a clean, recruiter-approved, single-column format that passes automated Applicant Tracking Systems and exports directly to PDF.
+          </p>
+        </div>
+
+        {/* Existing Analyses with 1-Click Generation */}
+        {availableAnalyses.length > 0 ? (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-bold text-slate-900">Select an Analysis to Generate ATS Resume</h2>
+                <p className="text-xs text-slate-500">Pick any past analysis to generate an ATS-optimized resume version.</p>
+              </div>
+              <Link to="/analysis/new">
+                <Button variant="outline" size="sm">
+                  + New Analysis
+                </Button>
+              </Link>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {availableAnalyses.map((a) => (
+                <Card key={a._id} className="p-5 hover:border-indigo-300 transition-all shadow-sm">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <h3 className="text-base font-bold text-slate-900">{a.targetRole || 'Target Role Analysis'}</h3>
+                      <p className="text-xs text-slate-500 mt-0.5">
+                        {new Date(a.createdAt).toLocaleDateString(undefined, { dateStyle: 'medium' })}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-100 text-slate-700 text-xs font-bold">
+                      <span>Score: {a.matchScore}%</span>
+                    </div>
+                  </div>
+
+                  <div className="mt-3 flex items-center gap-2 text-xs text-slate-600">
+                    <span className="font-semibold text-emerald-600">
+                      {a.matchedSkills?.length || 0} matched skills
+                    </span>
+                    <span>•</span>
+                    <span className="font-semibold text-rose-600">
+                      {a.missingSkills?.length || 0} missing
+                    </span>
+                  </div>
+
+                  <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
+                    <Link to={`/analysis/${a._id}`} className="text-xs text-slate-500 hover:text-indigo-600 font-medium">
+                      View Analysis →
+                    </Link>
+                    <Link to={`/resume?analysisId=${a._id}`}>
+                      <Button variant="primary" size="sm">
+                        <Sparkles className="w-3.5 h-3.5 mr-1.5" />
+                        Generate ATS Resume
+                      </Button>
+                    </Link>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <Card className="text-center p-8 bg-gradient-to-b from-indigo-50/50 to-white border-dashed border-2 border-indigo-200">
+            <div className="w-12 h-12 rounded-xl bg-indigo-600 text-white flex items-center justify-center mx-auto shadow-md">
+              <FileText className="w-6 h-6" />
+            </div>
+            <h3 className="text-lg font-bold text-slate-900 mt-4">No ATS Resume Generated Yet</h3>
+            <p className="text-sm text-slate-600 max-w-md mx-auto mt-2">
+              Upload your resume for AI skill-gap analysis. Once analyzed, you can convert it into an ATS-compliant PDF with one click.
+            </p>
+            <div className="mt-6">
+              <Link to="/analysis/new">
+                <Button variant="primary" size="lg">
+                  <Sparkles className="w-4 h-4 mr-2" />
+                  Analyze Resume First
+                </Button>
+              </Link>
+            </div>
+          </Card>
+        )}
+
+        {/* Feature Highlights Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4">
+          <Card className="p-5 border-slate-200">
+            <div className="w-9 h-9 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center mb-3">
+              <Layers className="w-5 h-5" />
+            </div>
+            <h4 className="font-bold text-sm text-slate-900">Single-Column Hierarchy</h4>
+            <p className="text-xs text-slate-600 mt-1">
+              Guaranteed readability across Workday, Greenhouse, Taleo, and Lever without parser column-swapping errors.
+            </p>
+          </Card>
+
+          <Card className="p-5 border-slate-200">
+            <div className="w-9 h-9 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center mb-3">
+              <Code className="w-5 h-5" />
+            </div>
+            <h4 className="font-bold text-sm text-slate-900">Semantic Clean HTML</h4>
+            <p className="text-xs text-slate-600 mt-1">
+              Standard recruiter headings: Summary, Skills, Experience, Projects, and Education with print-friendly inline CSS.
+            </p>
+          </Card>
+
+          <Card className="p-5 border-slate-200">
+            <div className="w-9 h-9 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center mb-3">
+              <Download className="w-5 h-5" />
+            </div>
+            <h4 className="font-bold text-sm text-slate-900">Headless PDF Export</h4>
+            <p className="text-xs text-slate-600 mt-1">
+              One-click PDF download generated directly by Puppeteer with standard A4 format and 15mm margins.
+            </p>
+          </Card>
+        </div>
       </div>
     );
   }

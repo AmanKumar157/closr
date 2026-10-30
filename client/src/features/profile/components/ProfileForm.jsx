@@ -1,8 +1,20 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
-import { Briefcase, FileText, Globe, Plus, Sparkles, Save } from 'lucide-react';
+import {
+  Briefcase,
+  FileText,
+  Globe,
+  Plus,
+  Sparkles,
+  Save,
+  Camera,
+  Trash2,
+  User as UserIcon,
+  Upload
+} from 'lucide-react';
 import toast from 'react-hot-toast';
 import profileService from '../../../services/profileService.js';
+import { useAuth } from '../../../hooks/useAuth.js';
 import Button from '../../../components/common/Button.jsx';
 import Input from '../../../components/common/Input.jsx';
 import SkillChip from '../../../components/common/SkillChip.jsx';
@@ -24,10 +36,13 @@ const POPULAR_SKILL_SUGGESTIONS = [
 ];
 
 export const ProfileForm = () => {
+  const { user, setUser } = useAuth();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [skills, setSkills] = useState([]);
   const [newSkillInput, setNewSkillInput] = useState('');
+  const [avatar, setAvatar] = useState('');
+  const fileInputRef = useRef(null);
 
   const {
     register,
@@ -56,6 +71,7 @@ export const ProfileForm = () => {
             preferredLanguage: profile.preferredLanguage || 'en'
           });
           setSkills(profile.currentSkills || []);
+          setAvatar(profile.avatar || user?.avatar || '');
         }
       } catch (err) {
         toast.error('Failed to load profile details.');
@@ -65,7 +81,35 @@ export const ProfileForm = () => {
     };
 
     fetchProfile();
-  }, [reset]);
+  }, [reset, user?.avatar]);
+
+  const handleAvatarFile = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error('Profile photo must be under 2MB.');
+      return;
+    }
+
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please upload a valid image file (PNG, JPG, WebP).');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      setAvatar(reader.result);
+      toast.success('Photo selected! Click "Save Preferences" to apply.');
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleRemoveAvatar = () => {
+    setAvatar('');
+    if (fileInputRef.current) fileInputRef.current.value = '';
+    toast.success('Photo removed. Click "Save Preferences" to confirm.');
+  };
 
   const handleAddSkill = (skillToAdd) => {
     const trimmed = (skillToAdd || newSkillInput).trim();
@@ -96,11 +140,15 @@ export const ProfileForm = () => {
       setSaving(true);
       const payload = {
         ...data,
-        currentSkills: skills
+        currentSkills: skills,
+        avatar
       };
       const res = await profileService.updateProfile(payload);
       if (res.success) {
-        toast.success('Profile preferences saved successfully!');
+        toast.success('Profile preferences & photo saved successfully!');
+        if (setUser) {
+          setUser((prev) => (prev ? { ...prev, avatar } : prev));
+        }
       }
     } catch (err) {
       toast.error(err.message || 'Failed to update profile.');
@@ -119,6 +167,65 @@ export const ProfileForm = () => {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+      {/* Profile Photo Upload */}
+      <div className="flex flex-col sm:flex-row sm:items-center gap-5 p-4 rounded-xl border border-slate-200 bg-slate-50/50">
+        <div className="relative group shrink-0">
+          {avatar ? (
+            <img
+              src={avatar}
+              alt="Profile"
+              className="w-20 h-20 rounded-full object-cover ring-4 ring-indigo-500/20 border border-slate-200 shadow-sm"
+            />
+          ) : (
+            <div className="w-20 h-20 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-2xl ring-4 ring-indigo-500/10 border border-indigo-200 shadow-inner">
+              {user?.name ? user.name.charAt(0).toUpperCase() : <UserIcon className="w-8 h-8 text-indigo-500" />}
+            </div>
+          )}
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className="absolute bottom-0 right-0 p-1.5 rounded-full bg-indigo-600 text-white shadow-md hover:bg-indigo-700 transition-colors"
+            title="Upload photo"
+          >
+            <Camera className="w-3.5 h-3.5" />
+          </button>
+        </div>
+
+        <div className="space-y-1.5 flex-1 min-w-0">
+          <h4 className="text-sm font-semibold text-slate-800">Profile Photo</h4>
+          <p className="text-xs text-slate-500">
+            Upload your picture (JPG, PNG, WebP up to 2MB). It will appear across your navigation bar and account profile.
+          </p>
+          <div className="flex items-center gap-2 pt-1">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleAvatarFile}
+              className="hidden"
+            />
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors shadow-sm"
+            >
+              <Upload className="w-3.5 h-3.5" />
+              Upload New Photo
+            </button>
+            {avatar && (
+              <button
+                type="button"
+                onClick={handleRemoveAvatar}
+                className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                Remove
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+
       {/* Target Role & Preferred Language */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Input
