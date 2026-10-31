@@ -43,6 +43,28 @@ export const analysisService = {
    */
   async deleteAnalysis(id) {
     return axiosInstance.delete(`/analysis/${id}`);
+  },
+
+  /**
+   * Download original uploaded resume file directly
+   * @param {string} id
+   * @param {string} fileName
+   */
+  async downloadOriginalResumeFile(id, fileName = 'Uploaded_Resume.pdf') {
+    const response = await axiosInstance.get(`/analysis/${id}/file`, {
+      responseType: 'blob'
+    });
+    const blob = new Blob([response.data], {
+      type: response.headers['content-type'] || 'application/pdf'
+    });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = fileName || 'Uploaded_Resume.pdf';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
   }
 };
 

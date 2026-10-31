@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import Button from './Button.jsx';
 import resumeService from '../../services/resumeService.js';
+import analysisService from '../../services/analysisService.js';
 
 export const PdfViewerModal = ({
   isOpen,
@@ -62,6 +63,16 @@ export const PdfViewerModal = ({
         window.URL.revokeObjectURL(url);
       } catch (err) {
         window.print();
+      }
+    } else if (analysisId) {
+      try {
+        await analysisService.downloadOriginalResumeFile(analysisId, title);
+      } catch (err) {
+        if (originalPdfUrl) {
+          window.open(originalPdfUrl, '_blank');
+        } else {
+          window.print();
+        }
       }
     } else {
       window.print();

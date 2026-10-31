@@ -115,7 +115,11 @@ export const Navbar = () => {
                 <button
                   type="button"
                   onClick={() => setAccountMenuOpen((prev) => !prev)}
-                  className="flex items-center gap-2 p-1 pl-1.5 pr-2.5 rounded-full border border-slate-200 hover:border-indigo-300 hover:bg-slate-50 transition-all cursor-pointer focus:outline-none"
+                  className={`flex items-center gap-2 p-1 pl-1.5 pr-2.5 rounded-full border transition-all cursor-pointer focus:outline-none ${
+                    accountMenuOpen
+                      ? 'border-indigo-500 bg-indigo-50/60 shadow-xs ring-2 ring-indigo-500/20'
+                      : 'border-slate-200 hover:border-indigo-300 hover:bg-slate-50'
+                  }`}
                   title="Account menu"
                 >
                   <div className="w-8 h-8 rounded-full overflow-hidden shrink-0 ring-2 ring-indigo-500/40 bg-slate-100">
@@ -140,12 +144,12 @@ export const Navbar = () => {
                   <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform ${accountMenuOpen ? 'rotate-180' : ''}`} />
                 </button>
 
-                {/* Google-styled Account Popover Dropdown (Matches User Reference Image) */}
+                {/* Google-styled Account Popover Dropdown (Flawless edges, borders, and margins) */}
                 {accountMenuOpen && (
-                  <div className="absolute right-0 mt-2.5 w-72 bg-slate-900 text-white rounded-3xl shadow-2xl border border-slate-800 p-4.5 z-50 animate-fadeIn select-none overflow-hidden">
+                  <div className="absolute right-0 mt-2.5 w-80 bg-slate-900 text-white rounded-2xl shadow-2xl border border-slate-700/80 p-5 z-50 animate-fadeIn select-none">
                     {/* Header: Title & Close Button */}
-                    <div className="flex items-center justify-between pb-3">
-                      <span className="text-[11px] font-bold tracking-wider text-slate-400 uppercase">
+                    <div className="flex items-center justify-between pb-3.5 mb-3 border-b border-slate-800/90">
+                      <span className="text-[11px] font-bold tracking-wider text-slate-300 uppercase">
                         CareerPilot Account
                       </span>
                       <button
@@ -159,8 +163,8 @@ export const Navbar = () => {
                     </div>
 
                     {/* User Identity Card: Strictly-sized Circular Avatar + Name + Email + PRO Badge */}
-                    <div className="flex items-center gap-3 pb-3.5 border-b border-slate-800">
-                      <div className="w-12 h-12 rounded-full overflow-hidden shrink-0 ring-2 ring-indigo-500 shadow-sm bg-slate-800">
+                    <div className="flex items-center gap-3 pb-4 mb-3.5 border-b border-slate-800/90">
+                      <div className="relative w-12 h-12 rounded-full overflow-hidden shrink-0 ring-2 ring-indigo-500/80 shadow-md bg-slate-800">
                         {user?.avatar ? (
                           <img
                             src={user.avatar}
@@ -177,7 +181,7 @@ export const Navbar = () => {
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-1.5">
                           <h4 className="text-sm font-bold text-white truncate">{user?.name || 'User'}</h4>
-                          <span className="px-1.5 py-0.2 rounded text-[10px] font-extrabold bg-indigo-950 text-indigo-300 border border-indigo-700">
+                          <span className="px-1.5 py-0.5 rounded text-[10px] font-extrabold bg-indigo-950 text-indigo-300 border border-indigo-700/80">
                             PRO
                           </span>
                         </div>
@@ -185,42 +189,42 @@ export const Navbar = () => {
                       </div>
                     </div>
 
-                    {/* Menu Options (Pill Buttons like Google in Image 2) */}
-                    <div className="space-y-2 py-4 border-b border-slate-800">
+                    {/* Menu Options (Pill Buttons like Google reference) */}
+                    <div className="space-y-2 pb-3.5 mb-3.5 border-b border-slate-800/90">
                       <Link
                         to="/profile"
                         onClick={() => setAccountMenuOpen(false)}
-                        className="flex items-center justify-between px-4 py-2.5 rounded-full bg-slate-800/80 hover:bg-slate-800 text-xs font-semibold text-slate-200 hover:text-white border border-slate-700/60 transition-colors"
+                        className="flex items-center justify-between px-4 py-2.5 rounded-full bg-slate-800/70 hover:bg-slate-800 text-xs font-semibold text-slate-200 hover:text-white border border-slate-700/70 transition-colors"
                       >
                         <span className="flex items-center gap-2.5">
-                          <User className="w-4 h-4 text-indigo-400" />
+                          <User className="w-4 h-4 text-indigo-400 shrink-0" />
                           Profile & Career Settings
                         </span>
-                        <span className="text-[10px] text-slate-400">Settings</span>
+                        <span className="text-[10px] font-medium text-slate-400">Settings</span>
                       </Link>
 
                       <Link
                         to="/resume"
                         onClick={() => setAccountMenuOpen(false)}
-                        className="flex items-center justify-between px-4 py-2.5 rounded-full bg-slate-800/80 hover:bg-slate-800 text-xs font-semibold text-slate-200 hover:text-white border border-slate-700/60 transition-colors"
+                        className="flex items-center justify-between px-4 py-2.5 rounded-full bg-slate-800/70 hover:bg-slate-800 text-xs font-semibold text-slate-200 hover:text-white border border-slate-700/70 transition-colors"
                       >
                         <span className="flex items-center gap-2.5">
-                          <FileText className="w-4 h-4 text-violet-400" />
+                          <FileText className="w-4 h-4 text-violet-400 shrink-0" />
                           ATS Resumes & Documents
                         </span>
-                        <span className="text-[10px] text-slate-400">Resumes</span>
+                        <span className="text-[10px] font-medium text-slate-400">Resumes</span>
                       </Link>
                     </div>
 
-                    {/* Sign Out Button (Pill button like Google in Image 2) */}
-                    <div className="pt-3">
+                    {/* Sign Out Button (Pill button like Google reference) */}
+                    <div>
                       <button
                         type="button"
                         onClick={() => {
                           setAccountMenuOpen(false);
                           handleLogout();
                         }}
-                        className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-full bg-slate-800/80 hover:bg-rose-950/40 text-xs font-semibold text-slate-300 hover:text-rose-300 border border-slate-700/60 hover:border-rose-800/50 transition-colors cursor-pointer"
+                        className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-full bg-slate-800/60 hover:bg-rose-950/40 text-xs font-semibold text-slate-300 hover:text-rose-300 border border-slate-700/70 hover:border-rose-800/60 transition-colors cursor-pointer"
                       >
                         <LogOut className="w-3.5 h-3.5 text-rose-400" />
                         Sign out

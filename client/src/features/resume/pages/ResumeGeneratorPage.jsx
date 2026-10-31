@@ -29,7 +29,10 @@ import {
   Printer,
   ZoomIn,
   ZoomOut,
-  Maximize2
+  Maximize2,
+  Upload,
+  FileUp,
+  Folder
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import resumeService from '../../../services/resumeService.js';
@@ -74,6 +77,14 @@ export const ResumeGeneratorPage = () => {
   const [showAllResumes, setShowAllResumes] = useState(false);
   const [currentAnalysis, setCurrentAnalysis] = useState(null);
   const [availableAnalyses, setAvailableAnalyses] = useState([]);
+
+  // Active view tab: 'uploaded' (Original Uploaded Resumes) | 'tailored' (ATS AI Builder)
+  const [activeTab, setActiveTab] = useState('uploaded');
+  const [showUploadBox, setShowUploadBox] = useState(false);
+  const [uploadFile, setUploadFile] = useState(null);
+  const [uploadTargetRole, setUploadTargetRole] = useState('');
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef(null);
 
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
@@ -174,18 +185,15 @@ export const ResumeGeneratorPage = () => {
             }
           }
         } else {
-          // List user resumes
-          const res = await resumeService.getResumes();
-          if (res.success && res.data?.resumes?.length > 0) {
-            navigate(`/resume/${res.data.resumes[0]._id}`, { replace: true });
-          } else {
-            // No resume generated yet: fetch analyses
-            const aRes = await analysisService.getAnalyses();
-            if (aRes.success) {
-              setAvailableAnalyses(aRes.data?.analyses || []);
-            }
-            setResume(null);
-          }
+          // Navigated to /resume directly (no specific resume ID):
+          // Show the Original Uploaded Resumes manager by default!
+          setResume(null);
+          const [aRes, rRes] = await Promise.all([
+            analysisService.getAnalyses(),
+            resumeService.getResumes()
+          ]);
+          if (aRes.success) setAvailableAnalyses(aRes.data?.analyses || []);
+          if (rRes.success) setAllResumes(rRes.data?.resumes || []);
         }
       } catch (err) {
         toast.error(err.message || 'Failed to load resume.');
@@ -348,6 +356,103 @@ export const ResumeGeneratorPage = () => {
     }
   };
 
+  // Document Formatting & Actions for Uploaded Resumes
+  const formatFileSize = (bytes) => {
+    if (!bytes || bytes === 0) return '0 KB';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+  };
+
+  const handleFileSelect = (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error('File size must be under 5MB.');
+        return;
+      }
+      setUploadFile(file);
+    }
+  };
+
+  const handleUploadResumeSubmit = async (e, forceOverwrite = false) => {
+    if (e) e.preventDefault();
+    if (!uploadFile) {
+      toast.error('Please select a resume file (PDF or DOCX).');
+      return;
+    }
+    const role = uploadTargetRole.trim() || 'Software Engineer';
+
+    const formData = new FormData();
+    formData.append('resume', uploadFile);
+    formData.append('targetRole', role);
+    if (forceOverwrite) {
+      formData.append('overwrite', 'true');
+    }
+
+    try {
+      setIsUploading(true);
+      const res = await analysisService.createAnalysis(formData);
+      if (res.success) {
+        toast.success(`Resume "${uploadFile.name}" uploaded successfully!`);
+        setUploadFile(null);
+        setUploadTargetRole('');
+        setShowUploadBox(false);
+        if (fileInputRef.current) fileInputRef.current.value = '';
+        await loadLists();
+      }
+    } catch (err) {
+      if (err.response?.status === 409 || err.message?.includes('already exists')) {
+        if (window.confirm('A resume with this file name and content already exists for this role. Do you want to overwrite it with this upload?')) {
+          await handleUploadResumeSubmit(null, true);
+          return;
+        }
+      } else {
+        toast.error(err.response?.data?.message || err.message || 'Failed to upload resume.');
+      }
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleDownloadOriginalFile = async (analysisId, fileName) => {
+    try {
+      toast.loading(`Downloading ${fileName}...`, { id: `download-${analysisId}` });
+      await analysisService.downloadOriginalResumeFile(analysisId, fileName);
+      toast.success('Download complete!', { id: `download-${analysisId}` });
+    } catch (err) {
+      toast.error('Failed to download resume file.', { id: `download-${analysisId}` });
+    }
+  };
+
+  const handleViewOriginalResume = (analysis) => {
+    setPdfModalData({
+      title: analysis.fileName || 'Uploaded Resume',
+      targetRole: analysis.targetRole,
+      score: null,
+      analysisId: analysis._id,
+      hasOriginalPdf: analysis.hasOriginalPdf !== false,
+      rawResumeText: analysis.resumeText || ''
+    });
+  };
+
+  const handleDeleteUploadedResume = async (analysisId, fileName) => {
+    if (!window.confirm(`Permanently remove "${fileName}" from your account? This will completely delete this resume from the database.`)) {
+      return;
+    }
+    try {
+      const res = await analysisService.deleteAnalysis(analysisId);
+      if (res.success) {
+        toast.success(`"${fileName}" deleted from database.`);
+        setAvailableAnalyses((prev) => prev.filter((a) => a._id !== analysisId));
+        await loadLists();
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to delete resume.');
+    }
+  };
+
   // Tailor for specific job opening submit
   const handleTailorSubmit = async (e) => {
     e.preventDefault();
@@ -403,230 +508,409 @@ export const ResumeGeneratorPage = () => {
 
   if (!resume || showAllResumes) {
     return (
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
         {/* Return Button if a resume is currently selected */}
         {resume && (
           <div className="flex items-center justify-between pb-3 border-b border-slate-200">
             <button
               type="button"
               onClick={() => setShowAllResumes(false)}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-indigo-700 bg-indigo-50 border border-indigo-200 hover:bg-indigo-100 rounded-lg shadow-2xs transition-colors"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-indigo-700 bg-indigo-50 border border-indigo-200 hover:bg-indigo-100 rounded-lg shadow-2xs transition-colors cursor-pointer"
             >
               <ArrowLeft className="w-3.5 h-3.5" />
-              <span>← Return to Active Resume ({resume.companyName || currentAnalysis?.fileName || 'Resume'})</span>
+              <span>← Return to Active Resume Editor ({resume.companyName || currentAnalysis?.fileName || 'Resume'})</span>
             </button>
             <span className="text-xs text-slate-500 font-medium">Select any resume below to open it</span>
           </div>
         )}
 
-        {/* Header */}
-        <div className="text-center max-w-3xl mx-auto space-y-3">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 border border-indigo-200 text-indigo-700 text-xs font-semibold tracking-wide uppercase">
-            <ShieldCheck className="w-3.5 h-3.5" />
-            <span>ATS Resume Generator (Feature 8)</span>
+        {/* Header & View Mode Switcher */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-slate-200">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-indigo-50 border border-indigo-200 text-indigo-600 flex items-center justify-center shrink-0">
+              <Folder className="w-5 h-5" />
+            </div>
+            <div>
+              <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+                ATS Resumes & Documents
+              </h1>
+              <p className="text-xs text-slate-500">
+                Manage your uploaded resumes and generate tailored ATS versions.
+              </p>
+            </div>
           </div>
-          <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
-            Your Tailored & Master ATS Resumes
-          </h1>
-          <p className="text-base text-slate-600">
-            Select a tailored resume to view and export, or generate an ATS-optimized version from any of your analyzed resumes.
-          </p>
+
+          {/* Primary View Switcher Tabs */}
+          <div className="inline-flex p-1 bg-slate-100 rounded-xl border border-slate-200 text-xs font-semibold self-start sm:self-auto">
+            <button
+              type="button"
+              onClick={() => setActiveTab('uploaded')}
+              className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg transition-all cursor-pointer ${
+                activeTab === 'uploaded'
+                  ? 'bg-white text-indigo-700 shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <FileText className="w-4 h-4 text-indigo-500" />
+              <span>Uploaded Resumes</span>
+              <span className="px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-indigo-100 text-indigo-700">
+                {availableAnalyses.length}
+              </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveTab('tailored')}
+              className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg transition-all cursor-pointer ${
+                activeTab === 'tailored'
+                  ? 'bg-white text-indigo-700 shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <Sparkles className="w-4 h-4 text-violet-500" />
+              <span>Tailored ATS Builder</span>
+              <span className="px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-slate-200 text-slate-700">
+                {allResumes.length}
+              </span>
+            </button>
+          </div>
         </div>
 
-        {/* Section 1: All User Resumes */}
-        {allResumes.length > 0 && (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
+        {/* TAB 1: Uploaded Resumes (User's Core Requirement: View, Download, Delete, Upload - Nothing Extra) */}
+        {activeTab === 'uploaded' && (
+          <div className="space-y-6 animate-fadeIn">
+            {/* Top Toolbar */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs">
               <div>
-                <h2 className="text-lg font-bold text-slate-900">Your Resumes & Openings ({allResumes.length})</h2>
-                <p className="text-xs text-slate-500">Pick any resume version to edit, preview, or export to PDF.</p>
+                <h2 className="text-base font-bold text-slate-900">
+                  Your Uploaded Resume Documents ({availableAnalyses.length})
+                </h2>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  View documents in the PDF reader, download original files to your computer, or delete any resume.
+                </p>
               </div>
+
+              <button
+                type="button"
+                onClick={() => setShowUploadBox((prev) => !prev)}
+                className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-sm transition-all cursor-pointer shrink-0"
+              >
+                <Upload className="w-3.5 h-3.5" />
+                <span>{showUploadBox ? 'Close Upload Box' : '+ Upload Resume'}</span>
+              </button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {allResumes.map((r) => {
-                const isActive = r._id === resume?._id;
-                const displayName =
-                  r.companyName && r.companyName !== 'General Application' && r.companyName !== 'Target Role'
-                    ? r.companyName
-                    : (r.analysisId?.fileName || currentAnalysis?.fileName || 'Uploaded Resume');
-                const displayRole =
-                  r.targetRole && r.targetRole !== 'Target Role'
-                    ? r.targetRole
-                    : (r.analysisId?.targetRole || currentAnalysis?.targetRole || 'Software Developer');
+            {/* Inline Upload Dropzone Card */}
+            {(showUploadBox || availableAnalyses.length === 0) && (
+              <div className="bg-white rounded-2xl border-2 border-dashed border-indigo-200 p-6 sm:p-8 space-y-5 shadow-sm animate-fadeIn">
+                <div className="text-center max-w-md mx-auto space-y-1">
+                  <div className="w-12 h-12 rounded-2xl bg-indigo-50 border border-indigo-200 text-indigo-600 flex items-center justify-center mx-auto mb-2">
+                    <FileUp className="w-6 h-6" />
+                  </div>
+                  <h3 className="text-sm font-bold text-slate-900">Upload Original Resume</h3>
+                  <p className="text-xs text-slate-500">
+                    Upload your PDF or DOCX file (up to 5MB) to save it in your document vault.
+                  </p>
+                </div>
 
-                return (
-                  <Card
-                    key={r._id}
-                    className={`p-5 hover:border-indigo-300 transition-all shadow-sm ${
-                      isActive ? 'ring-2 ring-indigo-300 border-indigo-500 bg-indigo-50/20' : ''
+                <form onSubmit={handleUploadResumeSubmit} className="max-w-lg mx-auto space-y-4">
+                  {/* File Dropzone Area */}
+                  <div
+                    onClick={() => fileInputRef.current?.click()}
+                    className={`border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-colors ${
+                      uploadFile
+                        ? 'border-emerald-400 bg-emerald-50/30'
+                        : 'border-slate-300 hover:border-indigo-400 bg-slate-50/50 hover:bg-indigo-50/30'
                     }`}
                   >
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                            {new Date(r.createdAt).toLocaleDateString()}
-                          </span>
-                          {isActive && (
-                            <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-indigo-100 text-indigo-700">
-                              Active
-                            </span>
-                          )}
-                        </div>
-                        <h3 className="text-base font-bold text-slate-900 mt-1">{displayName}</h3>
-                        <p className="text-xs text-slate-500 mt-0.5">{displayRole}</p>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                      onChange={handleFileSelect}
+                      className="hidden"
+                    />
+                    {uploadFile ? (
+                      <div className="flex items-center justify-center gap-2 text-emerald-700 font-semibold text-xs">
+                        <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+                        <span className="truncate max-w-xs">{uploadFile.name}</span>
+                        <span className="text-slate-400 font-normal">({formatFileSize(uploadFile.size)})</span>
                       </div>
+                    ) : (
+                      <div className="space-y-1">
+                        <p className="text-xs font-semibold text-slate-700">Click to browse or drag & drop resume file</p>
+                        <p className="text-[11px] text-slate-400">Supported: PDF, DOCX (Max 5MB)</p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Target Role Field */}
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">
+                      Target Role / Position <span className="text-slate-400 font-normal">(optional)</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={uploadTargetRole}
+                      onChange={(e) => setUploadTargetRole(e.target.value)}
+                      placeholder="e.g. Software Engineer, QA Tester, Full Stack Developer"
+                      className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                    />
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="flex items-center justify-end gap-2 pt-2">
+                    {availableAnalyses.length > 0 && (
                       <button
                         type="button"
-                        onClick={(e) => handleDeleteResumeCard(e, r._id)}
-                        className="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition-colors"
-                        title="Delete this resume"
+                        onClick={() => {
+                          setShowUploadBox(false);
+                          setUploadFile(null);
+                        }}
+                        className="px-3.5 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
                       >
-                        <Trash2 className="w-4 h-4" />
+                        Cancel
                       </button>
+                    )}
+                    <Button
+                      type="submit"
+                      variant="primary"
+                      size="sm"
+                      isLoading={isUploading}
+                      disabled={!uploadFile || isUploading}
+                    >
+                      <Upload className="w-3.5 h-3.5 mr-1.5" />
+                      Upload Document
+                    </Button>
+                  </div>
+                </form>
+              </div>
+            )}
+
+            {/* List of Original Uploaded Resumes */}
+            {availableAnalyses.length === 0 ? (
+              <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center space-y-3">
+                <div className="w-12 h-12 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center mx-auto">
+                  <FileText className="w-6 h-6" />
+                </div>
+                <h3 className="text-base font-bold text-slate-800">No Resumes Uploaded Yet</h3>
+                <p className="text-xs text-slate-500 max-w-sm mx-auto">
+                  Upload your resume above to preview it in the PDF reader, download anytime, or generate ATS versions.
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {availableAnalyses.map((a) => (
+                  <div
+                    key={a._id}
+                    className="bg-white rounded-2xl border border-slate-200/90 hover:border-indigo-300 hover:shadow-md transition-all p-5 flex flex-col justify-between gap-4"
+                  >
+                    <div className="flex items-start gap-3.5">
+                      {/* Document Icon Badge */}
+                      <div className="w-11 h-11 rounded-xl bg-rose-50 text-rose-600 border border-rose-200/80 flex items-center justify-center shrink-0 shadow-2xs">
+                        <FileText className="w-5 h-5" />
+                      </div>
+
+                      {/* File Details */}
+                      <div className="min-w-0 flex-1">
+                        <h3
+                          className="text-sm sm:text-base font-bold text-slate-900 truncate"
+                          title={a.fileName || 'Uploaded Resume'}
+                        >
+                          {a.fileName || 'Uploaded_Resume.pdf'}
+                        </h3>
+                        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-1 text-xs text-slate-500">
+                          <span className="font-semibold text-slate-700">{a.targetRole || 'General'}</span>
+                          <span>•</span>
+                          <span>{formatFileSize(a.fileSize)}</span>
+                          <span>•</span>
+                          <span>
+                            Uploaded {new Date(a.createdAt).toLocaleDateString(undefined, { dateStyle: 'medium' })}
+                          </span>
+                        </div>
+                      </div>
                     </div>
 
-                    <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
-                      <span className="text-xs font-semibold text-slate-500">A4 • Single Column ATS</span>
-                      <Button
-                        variant={isActive ? 'secondary' : 'primary'}
-                        size="sm"
-                        onClick={() => {
-                          setResume(r);
-                          setShowAllResumes(false);
-                          navigate(`/resume/${r._id}`);
-                        }}
+                    {/* Bottom Actions: View, Download, Delete (Zero extra scores/skills) */}
+                    <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        {/* View in PDF Viewer */}
+                        <button
+                          type="button"
+                          onClick={() => handleViewOriginalResume(a)}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-700 bg-slate-50 hover:bg-indigo-50 hover:text-indigo-700 border border-slate-200 hover:border-indigo-200 rounded-lg transition-colors cursor-pointer"
+                          title="Open in PDF viewer"
+                        >
+                          <Eye className="w-3.5 h-3.5 text-indigo-500" />
+                          <span>View</span>
+                        </button>
+
+                        {/* Download Original File */}
+                        <button
+                          type="button"
+                          onClick={() => handleDownloadOriginalFile(a._id, a.fileName)}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-700 bg-slate-50 hover:bg-emerald-50 hover:text-emerald-700 border border-slate-200 hover:border-emerald-200 rounded-lg transition-colors cursor-pointer"
+                          title="Download original file"
+                        >
+                          <Download className="w-3.5 h-3.5 text-emerald-600" />
+                          <span>Download</span>
+                        </button>
+                      </div>
+
+                      {/* Delete From Database */}
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteUploadedResume(a._id, a.fileName)}
+                        className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold text-slate-400 hover:text-rose-600 hover:bg-rose-50 border border-transparent hover:border-rose-200 rounded-lg transition-colors cursor-pointer"
+                        title="Permanently delete from database"
                       >
-                        <span>{isActive ? 'Resume Active →' : 'Open Resume →'}</span>
-                      </Button>
+                        <Trash2 className="w-3.5 h-3.5" />
+                        <span>Delete</span>
+                      </button>
                     </div>
-                  </Card>
-                );
-              })}
-            </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
-        {/* Section 2: Existing Analyses with 1-Click Generation */}
-        {availableAnalyses.length > 0 ? (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
+        {/* TAB 2: Tailored ATS Resumes */}
+        {activeTab === 'tailored' && (
+          <div className="space-y-6 animate-fadeIn">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs">
               <div>
-                <h2 className="text-lg font-bold text-slate-900">Generate ATS Resume from Analysis</h2>
-                <p className="text-xs text-slate-500">Pick any past resume analysis to convert it into an ATS-compliant PDF.</p>
+                <h2 className="text-base font-bold text-slate-900">
+                  Tailored & Master ATS Resumes ({allResumes.length})
+                </h2>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Pick any ATS-optimized resume to edit, customize with templates, or export to A4 PDF.
+                </p>
               </div>
-              <Link to="/analysis/new">
-                <Button variant="outline" size="sm">
-                  + New Analysis
+
+              {availableAnalyses.length > 0 && (
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={() => {
+                    setTailorForm((prev) => ({
+                      ...prev,
+                      baseAnalysisId: availableAnalyses[0]?._id || ''
+                    }));
+                    setShowTailorModal(true);
+                  }}
+                  className="shrink-0"
+                >
+                  <Sparkles className="w-3.5 h-3.5 mr-1.5" />
+                  + Tailor for Opening
                 </Button>
-              </Link>
+              )}
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {availableAnalyses.map((a) => (
-                <Card key={a._id} className="p-5 hover:border-indigo-300 transition-all shadow-sm">
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <h3 className="text-base font-bold text-slate-900">{a.targetRole || 'Target Role Analysis'}</h3>
-                      <div className="flex items-center gap-2 mt-0.5 text-xs text-slate-500">
-                        <span>{new Date(a.createdAt).toLocaleDateString(undefined, { dateStyle: 'medium' })}</span>
-                        {a.fileName && (
-                          <>
-                            <span>•</span>
-                            <span className="inline-flex items-center gap-1 font-medium text-slate-600 truncate max-w-[160px]">
-                              <FileText className="w-3 h-3 text-indigo-500 shrink-0" />
-                              <span className="truncate">{a.fileName}</span>
+            {allResumes.length === 0 ? (
+              <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center space-y-3">
+                <div className="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-500 flex items-center justify-center mx-auto">
+                  <Sparkles className="w-6 h-6" />
+                </div>
+                <h3 className="text-base font-bold text-slate-800">No Tailored ATS Resumes Created Yet</h3>
+                <p className="text-xs text-slate-500 max-w-sm mx-auto">
+                  Convert any of your uploaded resumes into an ATS-compliant resume tailored for your target company or job role.
+                </p>
+                {availableAnalyses.length > 0 && (
+                  <div className="pt-2">
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      onClick={() => handleGenerateResume(availableAnalyses[0]._id)}
+                      isLoading={generating}
+                    >
+                      <Sparkles className="w-3.5 h-3.5 mr-1.5" />
+                      Generate ATS Resume from {availableAnalyses[0].fileName || 'Uploaded Resume'}
+                    </Button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {allResumes.map((r) => {
+                  const isActive = r._id === resume?._id;
+                  const displayName =
+                    r.companyName && r.companyName !== 'General Application' && r.companyName !== 'Target Role'
+                      ? r.companyName
+                      : (r.analysisId?.fileName || 'ATS Master Resume');
+                  const displayRole =
+                    r.targetRole && r.targetRole !== 'Target Role'
+                      ? r.targetRole
+                      : (r.analysisId?.targetRole || 'Software Developer');
+
+                  return (
+                    <Card
+                      key={r._id}
+                      className={`p-5 hover:border-indigo-300 transition-all shadow-sm ${
+                        isActive ? 'ring-2 ring-indigo-300 border-indigo-500 bg-indigo-50/20' : ''
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                              {new Date(r.createdAt).toLocaleDateString()}
                             </span>
-                          </>
-                        )}
+                            {isActive && (
+                              <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-indigo-100 text-indigo-700">
+                                Active
+                              </span>
+                            )}
+                          </div>
+                          <h3 className="text-base font-bold text-slate-900 mt-1">{displayName}</h3>
+                          <p className="text-xs text-slate-500 mt-0.5">{displayRole}</p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={(e) => handleDeleteResumeCard(e, r._id)}
+                          className="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition-colors cursor-pointer"
+                          title="Delete this resume"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
                       </div>
-                    </div>
-                    <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-100 text-slate-700 text-xs font-bold">
-                      <span>Score: {a.matchScore}%</span>
-                    </div>
-                  </div>
 
-                  <div className="mt-3 flex items-center gap-2 text-xs text-slate-600">
-                    <span className="font-semibold text-emerald-600">
-                      {a.matchedSkills?.length || 0} matched skills
-                    </span>
-                    <span>•</span>
-                    <span className="font-semibold text-rose-600">
-                      {a.missingSkills?.length || 0} missing
-                    </span>
-                  </div>
-
-                  <div className="mt-4 pt-3 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs">
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setPdfModalData({
-                            title: a.fileName || `${a.targetRole} Resume`,
-                            targetRole: a.targetRole,
-                            score: a.matchScore,
-                            analysisId: a._id,
-                            hasOriginalPdf: a.hasOriginalPdf,
-                            rawResumeText: a.resumeText || ''
-                          })
-                        }
-                        className="text-xs text-indigo-600 hover:text-indigo-800 font-semibold inline-flex items-center gap-1 hover:underline cursor-pointer"
-                        title="Open this resume in full PDF viewer"
-                      >
-                        <Eye className="w-3.5 h-3.5 text-indigo-500" />
-                        Preview PDF
-                      </button>
-                      <Link to={`/analysis/${a._id}`} className="text-xs text-slate-600 hover:text-indigo-600 font-medium inline-flex items-center">
-                        View Analysis →
-                      </Link>
-                      <button
-                        type="button"
-                        onClick={() => handleDeleteAnalysisCard(a._id, a.fileName || a.targetRole)}
-                        className="text-xs text-rose-600 hover:text-rose-800 font-medium inline-flex items-center gap-1 hover:underline cursor-pointer"
-                        title="Delete this analysis and its records from database"
-                      >
-                        <Trash2 className="w-3.5 h-3.5 text-rose-500" />
-                        Delete
-                      </button>
-                    </div>
-                    <div className="shrink-0">
-                      <Button
-                        variant="primary"
-                        size="sm"
-                        className="w-full sm:w-auto shadow-xs whitespace-nowrap"
-                        onClick={() => handleGenerateResume(a._id)}
-                        isLoading={generating}
-                      >
-                        <Sparkles className="w-3.5 h-3.5 mr-1.5" />
-                        Generate ATS Resume
-                      </Button>
-                    </div>
-                  </div>
-                </Card>
-              ))}
-            </div>
+                      <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
+                        <span className="text-xs font-semibold text-slate-500">A4 • Single Column ATS</span>
+                        <Button
+                          variant={isActive ? 'secondary' : 'primary'}
+                          size="sm"
+                          onClick={() => {
+                            setResume(r);
+                            setShowAllResumes(false);
+                            navigate(`/resume/${r._id}`);
+                          }}
+                        >
+                          <span>{isActive ? 'Resume Active →' : 'Open Resume Editor →'}</span>
+                        </Button>
+                      </div>
+                    </Card>
+                  );
+                })}
+              </div>
+            )}
           </div>
-        ) : (
-          allResumes.length === 0 && (
-            <Card className="text-center p-8 bg-gradient-to-b from-indigo-50/50 to-white border-dashed border-2 border-indigo-200">
-              <div className="w-12 h-12 rounded-xl bg-indigo-600 text-white flex items-center justify-center mx-auto shadow-md">
-                <FileText className="w-6 h-6" />
-              </div>
-              <h3 className="text-lg font-bold text-slate-900 mt-4">No ATS Resume Generated Yet</h3>
-              <p className="text-sm text-slate-600 max-w-md mx-auto mt-2">
-                Upload your resume for AI skill-gap analysis. Once analyzed, you can convert it into an ATS-compliant PDF with one click.
-              </p>
-              <div className="mt-6">
-                <Link to="/analysis/new">
-                  <Button variant="primary" size="lg">
-                    <Sparkles className="w-4 h-4 mr-2" />
-                    Analyze Resume First
-                  </Button>
-                </Link>
-              </div>
-            </Card>
-          )
+        )}
+
+        {/* PDF Viewer Popup Modal in List View */}
+        {pdfModalData && (
+          <PdfViewerModal
+            isOpen={Boolean(pdfModalData)}
+            onClose={() => setPdfModalData(null)}
+            title={pdfModalData.title}
+            targetRole={pdfModalData.targetRole}
+            score={pdfModalData.score}
+            analysisId={pdfModalData.analysisId}
+            resumeId={pdfModalData.resumeId}
+            htmlContent={pdfModalData.htmlContent}
+            hasOriginalPdf={pdfModalData.hasOriginalPdf}
+            rawResumeText={pdfModalData.rawResumeText}
+          />
         )}
       </div>
     );
@@ -650,20 +934,12 @@ export const ResumeGeneratorPage = () => {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2 text-xs">
           <Link
-            to="/dashboard"
-            className="text-slate-500 hover:text-indigo-600 font-medium transition-colors"
+            to="/resume"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-100 border border-slate-200 rounded-lg transition-colors shadow-2xs"
           >
-            Dashboard
+            <ArrowLeft className="w-3.5 h-3.5 text-slate-500" />
+            <span>← Back to Uploaded Resumes</span>
           </Link>
-          <span className="text-slate-300">/</span>
-          <button
-            type="button"
-            onClick={() => setShowAllResumes(true)}
-            className="text-slate-500 hover:text-indigo-600 font-medium transition-colors cursor-pointer"
-            title="Click to view all resumes"
-          >
-            ATS Resumes
-          </button>
           <span className="text-slate-300">/</span>
           <span className="font-semibold text-slate-800 truncate max-w-[200px] sm:max-w-[280px]">
             {resume.companyName && resume.companyName !== 'General Application' && resume.companyName !== 'Target Role'
@@ -676,11 +952,11 @@ export const ResumeGeneratorPage = () => {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => setShowAllResumes(true)}
+            onClick={() => navigate('/resume')}
             className="text-indigo-600 border-indigo-200 hover:bg-indigo-50 text-xs font-semibold"
           >
             <Layers className="w-3.5 h-3.5 mr-1.5" />
-            <span>Switch / View All ({allResumes.length})</span>
+            <span>All Resumes & Documents ({availableAnalyses.length})</span>
           </Button>
 
           {targetAnalysisId && (
