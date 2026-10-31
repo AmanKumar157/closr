@@ -18,7 +18,18 @@ axiosInstance.interceptors.response.use(
   },
   (error) => {
     const errorResponse = error.response?.data;
-    const message = errorResponse?.message || error.message || 'An unexpected error occurred';
+    let message = errorResponse?.message;
+
+    // Handle proxy 500 when backend server is stopped / connection refused
+    if (!message) {
+      if (error.response?.status === 500) {
+        message = 'Backend server is offline or restarting. Please ensure the backend server is running on port 5000.';
+      } else if (error.code === 'ERR_NETWORK') {
+        message = 'Cannot connect to backend server. Please verify your connection.';
+      } else {
+        message = error.message || 'An unexpected error occurred';
+      }
+    }
     
     // Create an augmented error object with status and backend details
     const formattedError = new Error(message);
