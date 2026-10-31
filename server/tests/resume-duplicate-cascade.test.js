@@ -38,23 +38,27 @@ test('Duplicate Prevention: SHA-256 hash detects identical resume text content',
   assert.notEqual(hashA, hashC, 'Different texts must have different SHA-256 hashes');
 });
 
-test('Duplicate Prevention: duplicate detection rejects identical or similar resume with 409 ApiError', () => {
+test('Duplicate Prevention: duplicate detection rejects identical resume for SAME target role, but allows for DIFFERENT target roles', () => {
   const existingAnalyses = [
     {
       _id: 'analysis_001',
-      fileName: 'Uploaded Resume.pdf',
-      targetRole: 'MERN STACK developer',
+      fileName: 'Aman_Kumar_Resume_Engineering_Support.pdf',
+      targetRole: 'java developer',
       resumeTextHash: crypto.createHash('sha256').update('Full resume text of Aman').digest('hex'),
       cacheHash: 'cache_hash_001'
     }
   ];
 
-  const checkDuplicate = (newFileName, newText, newCacheHash) => {
+  const checkDuplicate = (newFileName, newText, newCacheHash, newRole, overwrite = false) => {
+    if (overwrite) return; // Overwrite bypasses duplicate check
     const cleanName = (name) => (name || '').toLowerCase().replace(/\.[^/.]+$/, '').replace(/[^a-z0-9]/g, '');
     const currentCleanName = cleanName(newFileName);
     const resumeTextHash = crypto.createHash('sha256').update(newText.trim()).digest('hex');
+    const normalizedTargetRole = (newRole || '').trim().toLowerCase();
 
     const duplicate = existingAnalyses.find((a) => {
+      const isSameRole = (a.targetRole || '').trim().toLowerCase() === normalizedTargetRole;
+      if (!isSameRole) return false; // Different role is allowed!
       if (a.resumeTextHash && a.resumeTextHash === resumeTextHash) return true;
       if (a.cacheHash && a.cacheHash === newCacheHash) return true;
       if (currentCleanName && cleanName(a.fileName) === currentCleanName) return true;
@@ -64,35 +68,40 @@ test('Duplicate Prevention: duplicate detection rejects identical or similar res
     if (duplicate) {
       throw new ApiError(
         409,
-        `Duplicate resume detected: "${newFileName}" (or a file with similar name "${duplicate.fileName}" / identical content) has already been uploaded for "${duplicate.targetRole}".`
+        `Duplicate resume detected: "${newFileName}" has already been analyzed for "${duplicate.targetRole}".`
       );
     }
   };
 
-  // 1. Same file name with underscore
-  assert.throws(
-    () => checkDuplicate('Uploaded_Resume.pdf', 'Different text', 'hash_unique'),
-    (err) => {
-      assert.equal(err.statusCode, 409);
-      assert.match(err.message, /Duplicate resume detected/);
-      return true;
-    }
-  );
-
-  // 2. Same text content but renamed file
-  assert.throws(
-    () => checkDuplicate('Completely_New_Name.pdf', 'Full resume text of Aman', 'hash_unique_2'),
-    (err) => {
-      assert.equal(err.statusCode, 409);
-      assert.match(err.message, /Duplicate resume detected/);
-      return true;
-    }
-  );
-
-  // 3. Genuinely new resume succeeds without error
+  // 1. Same resume uploaded for DIFFERENT role (python developer vs java developer) -> MUST SUCCEED!
   assert.doesNotThrow(() => {
-    checkDuplicate('Jane_Doe_Resume.pdf', 'Entirely different content of Jane', 'cache_hash_jane');
-  });
+    checkDuplicate('Aman_Kumar_Resume_Engineering_Support.pdf', 'Full resume text of Aman', 'cache_hash_001', 'python developer');
+  }, 'Uploading the same resume file for a different target role must succeed!');
+
+  // 2. Same resume uploaded for the SAME role (java developer) -> MUST BE REJECTED with 409!
+  assert.throws(
+    () => checkDuplicate('Aman_Kumar_Resume_Engineering_Support.pdf', 'Full resume text of Aman', 'cache_hash_001', 'java developer'),
+    (err) => {
+      assert.equal(err.statusCode, 409);
+      assert.match(err.message, /Duplicate resume detected/);
+      return true;
+    }
+  );
+
+  // 3. Same file with minor name change for the SAME role -> MUST BE REJECTED!
+  assert.throws(
+    () => checkDuplicate('Aman-Kumar-Resume-Engineering-Support.pdf', 'Different text', 'hash_unique', 'Java Developer'),
+    (err) => {
+      assert.equal(err.statusCode, 409);
+      assert.match(err.message, /Duplicate resume detected/);
+      return true;
+    }
+  );
+
+  // 4. Overwrite flag set to true -> MUST SUCCEED even for same role!
+  assert.doesNotThrow(() => {
+    checkDuplicate('Aman_Kumar_Resume_Engineering_Support.pdf', 'Full resume text of Aman', 'cache_hash_001', 'java developer', true);
+  }, 'Overwrite flag must allow re-analysis for the same role');
 });
 
 test('Cascade Deletion Simulation: deleting analysis removes all associated resumes and roadmaps', () => {

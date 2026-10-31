@@ -102,9 +102,10 @@ export const getResumePdf = asyncHandler(async (req, res) => {
   // Render PDF using Puppeteer
   const pdfBuffer = await generatePdfFromHtml(generatedResume.html);
 
+  const disposition = req.query.inline === 'true' ? 'inline' : 'attachment';
   res.set({
     'Content-Type': 'application/pdf',
-    'Content-Disposition': `attachment; filename="CareerPilot_ATS_Resume_${req.params.id}.pdf"`,
+    'Content-Disposition': `${disposition}; filename="CareerPilot_ATS_Resume_${req.params.id}.pdf"`,
     'Content-Length': pdfBuffer.length
   });
 
@@ -277,15 +278,26 @@ export const deleteResume = asyncHandler(async (req, res) => {
   const analysisId = resume.analysisId;
   await GeneratedResume.deleteOne({ _id: resume._id });
 
-  // If cascade=true, also completely remove the analysis, roadmaps, and all linked resumes from the app
-  if (req.query.cascade === 'true' && analysisId) {
+  // Always delete associated analysis, roadmaps, and all linked resumes from the app by default (cascade unless cascade=false)
+  const shouldCascade = req.query.cascade !== 'false';
+  if (shouldCascade && analysisId) {
     await Analysis.deleteOne({ _id: analysisId, userId: req.user._id });
-    await Roadmap.deleteMany({ analysisId, userId: req.user._id });
-    await GeneratedResume.deleteMany({ analysisId, userId: req.user._id });
+    await Roadmap.deleteMany({
+      userId: req.user._id,
+      $or: [{ analysisId: analysisId }, { analysisId: analysisId.toString() }]
+    });
+    await GeneratedResume.deleteMany({
+      userId: req.user._id,
+      $or: [{ analysisId: analysisId }, { analysisId: analysisId.toString() }]
+    });
 
     const profile = await Profile.findOne({ userId: req.user._id });
     if (profile?.lastUploadedResume?.analysisId?.toString() === analysisId.toString()) {
-      const latestRemaining = await Analysis.findOne({ userId: req.user._id }).sort({ createdAt: -1 });
+      const latestRemaining = await Analysis.findOne({
+        userId: req.user._id,
+        _id: { $ne: analysisId }
+      }).sort({ createdAt: -1 });
+
       if (latestRemaining) {
         profile.lastUploadedResume = {
           fileName: latestRemaining.fileName,
@@ -300,7 +312,11 @@ export const deleteResume = asyncHandler(async (req, res) => {
     }
   }
 
-  return new ApiResponse(200, null, 'Resume deleted successfully').send(res);
+  return new ApiResponse(
+    200,
+    null,
+    'Resume and all associated database records completely deleted from app.'
+  ).send(res);
 });
 
 

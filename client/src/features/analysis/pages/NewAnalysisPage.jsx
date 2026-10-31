@@ -24,16 +24,19 @@ export const NewAnalysisPage = () => {
   const [fileError, setFileError] = useState('');
   const [analyzing, setAnalyzing] = useState(false);
   const [stageIndex, setStageIndex] = useState(0);
+  const [duplicateConflict, setDuplicateConflict] = useState(null);
 
   const {
     register,
     handleSubmit,
     setValue,
+    getValues,
     formState: { errors }
   } = useForm({
     defaultValues: {
       targetRole: '',
-      jobDescription: ''
+      jobDescription: '',
+      overwrite: false
     }
   });
 
@@ -68,12 +71,13 @@ export const NewAnalysisPage = () => {
     return () => clearInterval(interval);
   }, [analyzing]);
 
-  const onSubmit = async (data) => {
+  const runAnalysis = async (data, forceOverwrite = false) => {
     if (!file) {
       setFileError('Please select or drop your resume (PDF or DOCX).');
       return;
     }
     setFileError('');
+    setDuplicateConflict(null);
 
     try {
       setAnalyzing(true);
@@ -82,6 +86,9 @@ export const NewAnalysisPage = () => {
       formData.append('targetRole', data.targetRole);
       if (data.jobDescription) {
         formData.append('jobDescription', data.jobDescription);
+      }
+      if (forceOverwrite || data.overwrite) {
+        formData.append('overwrite', 'true');
       }
 
       const res = await analysisService.createAnalysis(formData);
@@ -94,10 +101,18 @@ export const NewAnalysisPage = () => {
         navigate(`/analysis/${res.data.analysis._id}`);
       }
     } catch (err) {
+      if (err.message && err.message.toLowerCase().includes('duplicate resume detected')) {
+        setDuplicateConflict({
+          message: err.message,
+          data
+        });
+      }
       toast.error(err.message || 'Failed to analyze resume. Please try again.');
       setAnalyzing(false);
     }
   };
+
+  const onSubmit = (data) => runAnalysis(data, false);
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
@@ -202,8 +217,57 @@ export const NewAnalysisPage = () => {
                   Providing a real JD enables high-precision ATS matching and tailored missing-skill detection.
                 </p>
               </div>
+
+              {/* Overwrite Option Checkbox */}
+              <div className="pt-2 border-t border-slate-100 flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="overwrite-checkbox"
+                  className="w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500"
+                  {...register('overwrite')}
+                />
+                <label htmlFor="overwrite-checkbox" className="text-xs text-slate-600 font-medium cursor-pointer">
+                  Overwrite / Replace previous analysis if this resume was already evaluated for this target role
+                </label>
+              </div>
             </div>
           </Card>
+
+          {/* Duplicate Conflict Resolution Banner */}
+          {duplicateConflict && (
+            <div className="bg-amber-50 border border-amber-300 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 animate-fadeIn">
+              <div className="text-xs text-amber-900 space-y-1">
+                <div className="font-bold flex items-center gap-1.5 text-amber-900">
+                  <span>Resume already evaluated for this role</span>
+                </div>
+                <p>{duplicateConflict.message}</p>
+                <p className="text-[11px] text-amber-700">
+                  Would you like to force an overwrite and re-analyze this resume right now?
+                </p>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setDuplicateConflict(null)}
+                  className="border-amber-300 text-amber-900 hover:bg-amber-100/70"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="button"
+                  variant="primary"
+                  size="sm"
+                  onClick={() => runAnalysis(duplicateConflict.data, true)}
+                  className="bg-amber-600 hover:bg-amber-700 text-white"
+                >
+                  <Sparkles className="w-3.5 h-3.5 mr-1" />
+                  Overwrite & Re-analyze
+                </Button>
+              </div>
+            </div>
+          )}
 
           {/* Action Button */}
           <div className="flex justify-end pt-2">

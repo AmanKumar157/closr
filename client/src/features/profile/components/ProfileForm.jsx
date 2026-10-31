@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import profileService from '../../../services/profileService.js';
+import analysisService from '../../../services/analysisService.js';
 import { useAuth } from '../../../hooks/useAuth.js';
 import Button from '../../../components/common/Button.jsx';
 import Input from '../../../components/common/Input.jsx';
@@ -45,7 +46,32 @@ export const ProfileForm = () => {
   const [newSkillInput, setNewSkillInput] = useState('');
   const [avatar, setAvatar] = useState('');
   const [lastUploadedResume, setLastUploadedResume] = useState(null);
+  const [deletingResume, setDeletingResume] = useState(false);
   const fileInputRef = useRef(null);
+
+  const handleDeleteTrackedResume = async () => {
+    if (!lastUploadedResume?.analysisId) return;
+    if (
+      !window.confirm(
+        `Permanently remove "${lastUploadedResume.fileName || 'this resume'}" from your account? This will completely delete the resume file, AI analysis report, and roadmaps from the database.`
+      )
+    ) {
+      return;
+    }
+
+    try {
+      setDeletingResume(true);
+      const res = await analysisService.deleteAnalysis(lastUploadedResume.analysisId);
+      if (res.success) {
+        toast.success('Resume and all associated records completely deleted from database.');
+        setLastUploadedResume(null);
+      }
+    } catch (err) {
+      toast.error('Failed to delete resume.');
+    } finally {
+      setDeletingResume(false);
+    }
+  };
 
   const {
     register,
@@ -383,15 +409,27 @@ export const ProfileForm = () => {
           </div>
         </div>
 
-        <div>
+        <div className="flex items-center gap-2">
           {lastUploadedResume?.analysisId ? (
-            <a
-              href={`/analysis/${lastUploadedResume.analysisId}`}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-indigo-600 hover:text-indigo-700 bg-white border border-indigo-200 rounded-lg shadow-sm hover:bg-indigo-50/50 transition-colors"
-            >
-              <Eye className="w-3.5 h-3.5" />
-              View Analysis
-            </a>
+            <>
+              <a
+                href={`/analysis/${lastUploadedResume.analysisId}`}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-indigo-600 hover:text-indigo-700 bg-white border border-indigo-200 rounded-lg shadow-sm hover:bg-indigo-50/50 transition-colors"
+              >
+                <Eye className="w-3.5 h-3.5" />
+                View Analysis
+              </a>
+              <button
+                type="button"
+                onClick={handleDeleteTrackedResume}
+                disabled={deletingResume}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-rose-600 hover:text-rose-700 bg-white border border-rose-200 rounded-lg shadow-sm hover:bg-rose-50 transition-colors"
+                title="Permanently remove this resume from database"
+              >
+                <Trash2 className="w-3.5 h-3.5 text-rose-500" />
+                Delete
+              </button>
+            </>
           ) : (
             <a
               href="/analysis/new"

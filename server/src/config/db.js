@@ -17,7 +17,8 @@ export const connectDB = async (retries = 5, delayMs = 2000) => {
       } else {
         console.error(`[Database Error] Failed to connect to MongoDB after ${retries} attempts.`);
         console.error(`[Database Error] Please ensure your current IP is whitelisted in MongoDB Atlas Network Access.`);
-        process.exit(1);
+        console.log(`[Database] Continuing background reconnect attempts in 5s (preventing app crash)...`);
+        setTimeout(() => connectDB(3, 5000), 5000);
       }
     }
   }

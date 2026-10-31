@@ -27,6 +27,7 @@ import SkillChip from '../../../components/common/SkillChip.jsx';
 import Card from '../../../components/common/Card.jsx';
 import Button from '../../../components/common/Button.jsx';
 import Loader from '../../../components/common/Loader.jsx';
+import PdfViewerModal from '../../../components/common/PdfViewerModal.jsx';
 
 export const AnalysisResultPage = () => {
   const { id } = useParams();
@@ -35,6 +36,7 @@ export const AnalysisResultPage = () => {
   const [loading, setLoading] = useState(true);
   const [showResumeText, setShowResumeText] = useState(false);
   const [copiedText, setCopiedText] = useState(false);
+  const [showPdfModal, setShowPdfModal] = useState(false);
 
   const handleCopyResumeText = () => {
     if (!analysis?.resumeText) return;
@@ -197,7 +199,17 @@ export const AnalysisResultPage = () => {
           </div>
         </div>
 
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex flex-wrap items-center gap-2 shrink-0">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowPdfModal(true)}
+            className="border-indigo-200 text-indigo-700 hover:bg-indigo-50 font-semibold"
+          >
+            <FileText className="w-3.5 h-3.5 mr-1.5 text-indigo-600" />
+            <span>Open in PDF Viewer</span>
+          </Button>
+
           {analysis.hasOriginalPdf && (
             <a
               href={`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/analysis/${analysis._id}/file`}
@@ -206,7 +218,7 @@ export const AnalysisResultPage = () => {
               className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:text-slate-900 bg-white border border-slate-200 hover:border-slate-300 rounded-lg shadow-2xs transition-colors"
             >
               <ExternalLink className="w-3.5 h-3.5 text-indigo-500" />
-              <span>View Original PDF</span>
+              <span>New Tab</span>
             </a>
           )}
 
@@ -434,6 +446,20 @@ export const AnalysisResultPage = () => {
           </Button>
         </Link>
       </div>
+
+      {/* PDF Viewer Modal */}
+      {showPdfModal && (
+        <PdfViewerModal
+          isOpen={showPdfModal}
+          onClose={() => setShowPdfModal(false)}
+          title={analysis.fileName || 'Uploaded_Resume.pdf'}
+          targetRole={analysis.targetRole}
+          score={analysis.matchScore}
+          analysisId={analysis._id}
+          hasOriginalPdf={analysis.hasOriginalPdf}
+          rawResumeText={analysis.resumeText || ''}
+        />
+      )}
     </div>
   );
 };

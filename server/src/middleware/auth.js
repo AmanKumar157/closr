@@ -6,11 +6,15 @@ import { User } from '../models/User.js';
 import { BlacklistedToken } from '../models/BlacklistedToken.js';
 
 export const authMiddleware = asyncHandler(async (req, res, next) => {
-  // Extract token from HTTP-only cookie or Bearer Authorization header
+  // Extract token from HTTP-only cookie, Bearer Authorization header, or query param (for embedded PDF iframe streams)
   let token = req.cookies?.token || req.cookies?.jwt;
 
   if (!token && req.headers.authorization && req.headers.authorization.startsWith('Bearer ')) {
     token = req.headers.authorization.split(' ')[1];
+  }
+
+  if (!token && req.query?.token) {
+    token = req.query.token;
   }
 
   if (!token) {

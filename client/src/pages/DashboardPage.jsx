@@ -3,6 +3,8 @@ import { useAuth } from '../hooks/useAuth.js';
 import Card from '../components/common/Card.jsx';
 import Button from '../components/common/Button.jsx';
 import analysisService from '../services/analysisService.js';
+import PdfViewerModal from '../components/common/PdfViewerModal.jsx';
+import toast from 'react-hot-toast';
 import {
   User,
   ShieldCheck,
@@ -14,7 +16,8 @@ import {
   FileText,
   Calendar,
   Eye,
-  UploadCloud
+  UploadCloud,
+  Trash2
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
@@ -22,6 +25,37 @@ export const DashboardPage = () => {
   const { user } = useAuth();
   const [latestAnalysis, setLatestAnalysis] = useState(null);
   const [loadingAnalysis, setLoadingAnalysis] = useState(true);
+  const [showPdfModal, setShowPdfModal] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  const handleDeleteActiveResume = async () => {
+    if (!latestAnalysis) return;
+    if (
+      !window.confirm(
+        `Permanently delete "${latestAnalysis.fileName || 'this resume'}"? This will completely remove this resume, its AI analysis, and roadmaps from the database.`
+      )
+    ) {
+      return;
+    }
+
+    try {
+      setDeleting(true);
+      const res = await analysisService.deleteAnalysis(latestAnalysis._id);
+      if (res.success) {
+        toast.success('Resume and all associated records completely deleted from database.');
+        setLatestAnalysis(null);
+        // Refresh analysis list
+        const refreshed = await analysisService.getAnalyses();
+        if (refreshed.success && refreshed.data?.analyses?.length > 0) {
+          setLatestAnalysis(refreshed.data.analyses[0]);
+        }
+      }
+    } catch (err) {
+      toast.error('Failed to delete resume.');
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   useEffect(() => {
     const fetchLatest = async () => {
@@ -97,19 +131,39 @@ export const DashboardPage = () => {
             </div>
           </div>
 
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex flex-wrap items-center gap-2 shrink-0">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowPdfModal(true)}
+              className="border-indigo-200 text-indigo-700 hover:bg-indigo-50 font-semibold"
+            >
+              <FileText className="w-3.5 h-3.5 mr-1.5 text-indigo-600" />
+              Open PDF Viewer
+            </Button>
             <Link to={`/analysis/${latestAnalysis._id}`}>
               <Button variant="outline" size="sm">
                 <Eye className="w-3.5 h-3.5 mr-1.5" />
-                View Analysis Report
+                Analysis Report
               </Button>
             </Link>
             <Link to="/analysis/new">
               <Button variant="primary" size="sm">
                 <UploadCloud className="w-3.5 h-3.5 mr-1.5" />
-                Upload New Version
+                Upload New
               </Button>
             </Link>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleDeleteActiveResume}
+              isLoading={deleting}
+              className="text-rose-600 border-rose-200 hover:bg-rose-50 hover:border-rose-300"
+              title="Permanently remove this resume from database"
+            >
+              <Trash2 className="w-3.5 h-3.5 mr-1 text-rose-500" />
+              Delete
+            </Button>
           </div>
         </div>
       ) : !loadingAnalysis ? (
@@ -234,6 +288,20 @@ export const DashboardPage = () => {
           </div>
         </Card>
       </div>
+
+      {/* In-App PDF Viewer Modal */}
+      {showPdfModal && latestAnalysis && (
+        <PdfViewerModal
+          isOpen={showPdfModal}
+          onClose={() => setShowPdfModal(false)}
+          title={latestAnalysis.fileName || 'Uploaded_Resume.pdf'}
+          targetRole={latestAnalysis.targetRole}
+          score={latestAnalysis.matchScore}
+          analysisId={latestAnalysis._id}
+          hasOriginalPdf={latestAnalysis.hasOriginalPdf}
+          rawResumeText={latestAnalysis.resumeText || ''}
+        />
+      )}
     </div>
   );
 };

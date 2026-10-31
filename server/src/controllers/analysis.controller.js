@@ -54,19 +54,25 @@ export const createAnalysis = asyncHandler(async (req, res) => {
   // Compute resume text hash to detect duplicate uploads
   const resumeTextHash = crypto.createHash('sha256').update(resumeText.trim()).digest('hex');
 
-  // Prevent duplicate uploads: if not an explicit re-analysis comparison loop, block identical resume uploads or same/similar filenames
-  if (!previousAnalysisId) {
+  // Prevent duplicate uploads: if not an explicit re-analysis comparison loop or overwrite, block identical resume uploads for the same target role
+  const isOverwrite = req.body.overwrite === 'true' || req.body.overwrite === true;
+  if (!previousAnalysisId && !isOverwrite) {
     const userAnalyses = await Analysis.find({ userId: req.user._id }).select('fileName resumeTextHash cacheHash targetRole');
     
     const cleanName = (name) => (name || '').toLowerCase().replace(/\.[^/.]+$/, '').replace(/[^a-z0-9]/g, '');
     const currentCleanName = cleanName(fileName);
+    const normalizedTargetRole = (targetRole || '').trim().toLowerCase();
 
     const existingDuplicate = userAnalyses.find((a) => {
-      // 1. Identical extracted text content (exact same resume file)
+      // Duplicates are evaluated strictly per target role: users CAN upload the same resume for different roles (e.g. Python vs Java)
+      const isSameRole = (a.targetRole || '').trim().toLowerCase() === normalizedTargetRole;
+      if (!isSameRole) return false;
+
+      // 1. Identical extracted text content (exact same resume file) for the same role
       if (a.resumeTextHash && a.resumeTextHash === resumeTextHash) return true;
-      // 2. Identical AI query cache hash
+      // 2. Identical AI query cache hash for the same role
       if (a.cacheHash && a.cacheHash === aiResult.cacheHash) return true;
-      // 3. Exact or similar file name (e.g. "Uploaded_Resume.pdf" vs "Uploaded Resume.pdf")
+      // 3. Exact or similar file name for the same role
       if (currentCleanName && cleanName(a.fileName) === currentCleanName) return true;
       return false;
     });
@@ -74,7 +80,7 @@ export const createAnalysis = asyncHandler(async (req, res) => {
     if (existingDuplicate) {
       throw new ApiError(
         409,
-        `Duplicate resume detected: "${fileName}" (or a file with similar name "${existingDuplicate.fileName}" / identical content) has already been uploaded for "${existingDuplicate.targetRole}". To analyze a new version, please delete the previous resume first, or upload an updated file.`
+        `Duplicate resume detected: "${fileName}" has already been analyzed for "${existingDuplicate.targetRole}". To analyze a new version for this role, delete the previous analysis or check "Overwrite existing analysis".`
       );
     }
   }
@@ -235,25 +241,49 @@ export const getOriginalResumePdf = asyncHandler(async (req, res) => {
 
   if (!analysis.fileBuffer) {
     res.set('Content-Type', 'text/html');
+    const safeText = (analysis.resumeText || 'No text extracted')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+
     return res.status(200).send(`
       <!DOCTYPE html>
       <html>
       <head>
         <meta charset="utf-8">
+        <title>${analysis.fileName || 'Original Resume'}</title>
         <style>
-          body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f8fafc; color: #334155; padding: 40px 20px; text-align: center; }
-          .card { max-width: 500px; margin: 40px auto; background: white; padding: 32px; border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
-          h2 { color: #0f172a; margin-top: 0; font-size: 20px; }
-          p { font-size: 14px; line-height: 1.6; color: #64748b; }
-          .badge { display: inline-block; padding: 4px 12px; background: #e0e7ff; color: #4338ca; border-radius: 9999px; font-size: 12px; font-weight: 600; margin-bottom: 16px; }
+          @page { size: A4; margin: 15mm; }
+          body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: #525659; margin: 0; padding: 24px 12px; color: #1e293b; display: flex; justify-content: center; }
+          .a4-container { width: 100%; max-width: 794px; min-height: 1123px; background: white; padding: 48px 56px; box-shadow: 0 10px 30px rgba(0,0,0,0.35); border-radius: 2px; box-sizing: border-box; }
+          .doc-header { border-bottom: 2px solid #334155; padding-bottom: 16px; margin-bottom: 28px; display: flex; justify-content: space-between; align-items: flex-start; }
+          .doc-title { font-size: 22px; font-weight: 800; color: #0f172a; margin: 0 0 4px 0; }
+          .doc-meta { font-size: 12px; color: #64748b; font-weight: 500; }
+          .badge { display: inline-block; font-size: 11px; font-weight: 700; color: #4338ca; background: #e0e7ff; padding: 3px 10px; border-radius: 9999px; text-transform: uppercase; }
+          .doc-body { font-size: 13px; line-height: 1.7; color: #1e293b; white-space: pre-wrap; word-break: break-word; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+          .print-toolbar { position: fixed; top: 12px; right: 20px; z-index: 100; }
+          .print-btn { background: #4f46e5; color: white; border: none; padding: 8px 16px; border-radius: 8px; font-weight: 600; font-size: 13px; cursor: pointer; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.2); }
+          .print-btn:hover { background: #4338ca; }
+          @media print {
+            body { background: white; padding: 0; }
+            .a4-container { box-shadow: none; padding: 0; max-width: 100%; }
+            .print-toolbar { display: none; }
+          }
         </style>
       </head>
       <body>
-        <div class="card">
-          <div class="badge">Older Resume Upload</div>
-          <h2>Original PDF Preview Not Available</h2>
-          <p>This resume was uploaded in an earlier session before PDF archiving was active.</p>
-          <p>All newly uploaded resumes retain full in-app PDF previewing.</p>
+        <div class="print-toolbar">
+          <button class="print-btn" onclick="window.print()">Print Document</button>
+        </div>
+        <div class="a4-container">
+          <div class="doc-header">
+            <div>
+              <h1 class="doc-title">${analysis.fileName || 'Uploaded Resume'}</h1>
+              <div class="doc-meta">Target Position: <strong>${analysis.targetRole}</strong> • Match Score: <strong>${analysis.matchScore}%</strong></div>
+            </div>
+            <span class="badge">A4 Verified Document</span>
+          </div>
+          <div class="doc-body">${safeText}</div>
         </div>
       </body>
       </html>

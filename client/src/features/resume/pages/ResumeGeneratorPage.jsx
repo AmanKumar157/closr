@@ -25,7 +25,11 @@ import {
   ChevronDown,
   Building,
   CheckCircle2,
-  AlertCircle
+  AlertCircle,
+  Printer,
+  ZoomIn,
+  ZoomOut,
+  Maximize2
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import resumeService from '../../../services/resumeService.js';
@@ -33,6 +37,7 @@ import analysisService from '../../../services/analysisService.js';
 import Button from '../../../components/common/Button.jsx';
 import Card from '../../../components/common/Card.jsx';
 import Loader from '../../../components/common/Loader.jsx';
+import PdfViewerModal from '../../../components/common/PdfViewerModal.jsx';
 
 const TEMPLATES = [
   {
@@ -75,9 +80,11 @@ export const ResumeGeneratorPage = () => {
   const [downloading, setDownloading] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  // View modes: 'preview' | 'split' | 'original' | 'code'
+  // View modes: 'preview' (A4 PDF layout) | 'native' (Browser PDF stream) | 'split' | 'original' | 'code'
   const [viewMode, setViewMode] = useState('preview');
   const [selectedTemplate, setSelectedTemplate] = useState('modern');
+  const [zoom, setZoom] = useState(100);
+  const [pdfModalData, setPdfModalData] = useState(null);
 
   // Live Interactive Editing (Google Docs / Notion style)
   const [isEditing, setIsEditing] = useState(false);
@@ -328,11 +335,12 @@ export const ResumeGeneratorPage = () => {
   };
 
   const handleDeleteAnalysisCard = async (analysisIdToDelete, name) => {
-    if (!window.confirm(`Permanently remove "${name}" from your app? This will completely delete this resume analysis and any roadmaps.`)) return;
+    if (!window.confirm(`Permanently remove "${name}" from your app? This will completely delete this resume analysis and any roadmaps from the database.`)) return;
     try {
       const res = await analysisService.deleteAnalysis(analysisIdToDelete);
       if (res.success) {
-        toast.success('Resume analysis completely removed from app.');
+        toast.success('Resume analysis completely removed from database.');
+        setAvailableAnalyses((prev) => prev.filter((x) => x._id !== analysisIdToDelete));
         await loadLists();
       }
     } catch (err) {
@@ -556,8 +564,27 @@ export const ResumeGeneratorPage = () => {
                       </Link>
                       <button
                         type="button"
+                        onClick={() =>
+                          setPdfModalData({
+                            title: a.fileName || `${a.targetRole} Resume`,
+                            targetRole: a.targetRole,
+                            score: a.matchScore,
+                            analysisId: a._id,
+                            hasOriginalPdf: a.hasOriginalPdf,
+                            rawResumeText: a.resumeText || ''
+                          })
+                        }
+                        className="text-xs text-indigo-600 hover:text-indigo-800 font-semibold inline-flex items-center gap-1 hover:underline"
+                        title="Open this resume in full PDF viewer"
+                      >
+                        <Eye className="w-3 h-3" />
+                        Preview PDF
+                      </button>
+                      <button
+                        type="button"
                         onClick={() => handleDeleteAnalysisCard(a._id, a.fileName || a.targetRole)}
                         className="text-xs text-rose-500 hover:text-rose-700 font-medium inline-flex items-center gap-1 hover:underline"
+                        title="Delete this analysis and its records from database"
                       >
                         <Trash2 className="w-3 h-3" />
                         Delete
@@ -869,19 +896,31 @@ export const ResumeGeneratorPage = () => {
           </div>
         </div>
 
-        {/* View Switcher: Full ATS | Side-by-Side (Compare) | Original Uploaded PDF */}
+        {/* View Switcher: Full ATS | Native PDF Stream | Side-by-Side (Compare) | Original Uploaded PDF */}
         <div className="flex items-center gap-2">
           <span className="text-xs font-bold text-slate-500 uppercase tracking-wider shrink-0">View:</span>
-          <div className="flex rounded-lg border border-slate-200 p-0.5 bg-slate-100">
+          <div className="flex rounded-lg border border-slate-200 p-0.5 bg-slate-100 flex-wrap">
             <button
               type="button"
               onClick={() => setViewMode('preview')}
               className={`flex items-center gap-1 px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${
-                viewMode === 'preview' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'
+                viewMode === 'preview' ? 'bg-white text-slate-900 shadow-sm font-bold' : 'text-slate-600 hover:text-slate-900'
               }`}
             >
               <Eye className="w-3.5 h-3.5" />
-              ATS Preview
+              ATS Preview (A4)
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setViewMode('native')}
+              className={`flex items-center gap-1 px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${
+                viewMode === 'native' ? 'bg-white text-indigo-700 shadow-sm font-bold' : 'text-slate-600 hover:text-slate-900'
+              }`}
+              title="View in native browser PDF reader stream"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-indigo-500" />
+              Native PDF Stream
             </button>
 
             <button
@@ -900,7 +939,7 @@ export const ResumeGeneratorPage = () => {
               type="button"
               onClick={() => setViewMode('original')}
               className={`flex items-center gap-1 px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${
-                viewMode === 'original' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'
+                viewMode === 'original' ? 'bg-white text-slate-900 shadow-sm font-bold' : 'text-slate-600 hover:text-slate-900'
               }`}
               title="View original uploaded PDF"
             >
@@ -912,7 +951,7 @@ export const ResumeGeneratorPage = () => {
               type="button"
               onClick={() => setViewMode('code')}
               className={`flex items-center gap-1 px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${
-                viewMode === 'code' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'
+                viewMode === 'code' ? 'bg-white text-slate-900 shadow-sm font-bold' : 'text-slate-600 hover:text-slate-900'
               }`}
             >
               <Code className="w-3.5 h-3.5" />
@@ -1063,12 +1102,114 @@ export const ResumeGeneratorPage = () => {
             <pre>{editableHtml || resume.html}</pre>
           </div>
         </Card>
+      ) : viewMode === 'native' ? (
+        /* Native Browser PDF Stream View (Puppeteer Binary Engine) */
+        <Card className="shadow-2xl p-0 overflow-hidden bg-[#525659] border-slate-700">
+          <div className="bg-slate-900 px-4 py-2 text-xs text-slate-300 flex items-center justify-between border-b border-slate-800">
+            <span className="flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-indigo-400" />
+              <strong>Native Browser PDF Engine</strong> (Exact high-resolution binary preview)
+            </span>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => window.print()}
+                className="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-white font-medium inline-flex items-center gap-1 text-xs"
+              >
+                <Printer className="w-3.5 h-3.5" />
+                Print
+              </button>
+              <button
+                type="button"
+                onClick={handleDownloadPdf}
+                className="px-2.5 py-1 rounded bg-indigo-600 hover:bg-indigo-500 text-white font-medium inline-flex items-center gap-1 text-xs"
+              >
+                <Download className="w-3.5 h-3.5" />
+                Download PDF
+              </button>
+            </div>
+          </div>
+          <div className="h-[950px] w-full bg-[#525659]">
+            <iframe
+              src={`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/resume/${resume._id}/pdf?inline=true`}
+              className="w-full h-full border-none shadow-2xl"
+              title="CareerPilot Native PDF Reader"
+            />
+          </div>
+        </Card>
       ) : (
-        /* Standard Full A4 ATS Preview */
-        <Card className="shadow-lg p-0 overflow-hidden bg-white border-slate-300">
-          <div className="p-4 sm:p-8 bg-slate-100 flex justify-center">
-            {/* Standard A4 Paper Aspect Ratio Container */}
-            <div className="w-full max-w-3xl bg-white shadow-xl rounded-sm p-6 sm:p-12 border border-slate-200 min-h-[850px]">
+        /* Standard Full A4 ATS Preview (Acrobat/Docs Style PDF Reader) */
+        <Card className="shadow-2xl p-0 overflow-hidden bg-[#525659] border-slate-700">
+          {/* PDF Viewer Dark Control Bar */}
+          <div className="bg-slate-900 text-slate-200 px-4 py-2.5 border-b border-slate-800 flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-2 text-xs">
+              <span className="font-bold text-white uppercase tracking-wider bg-indigo-900/60 px-2 py-0.5 rounded border border-indigo-700 text-[10px]">
+                PDF Document
+              </span>
+              <span className="text-slate-400">Page 1 of 1 • 210 × 297 mm (A4 Single-Column)</span>
+            </div>
+
+            {/* Zoom & PDF Controls */}
+            <div className="flex items-center gap-2">
+              <div className="flex items-center bg-slate-800 rounded-lg border border-slate-700 px-1 py-0.5 text-xs text-slate-300">
+                <button
+                  type="button"
+                  onClick={() => setZoom((prev) => Math.max(prev - 15, 60))}
+                  title="Zoom Out"
+                  className="p-1 hover:text-white rounded hover:bg-slate-700"
+                >
+                  <ZoomOut className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setZoom(100)}
+                  title="Reset to 100%"
+                  className="px-2 font-mono text-[11px] hover:text-white"
+                >
+                  {zoom}%
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setZoom((prev) => Math.min(prev + 15, 175))}
+                  title="Zoom In"
+                  className="p-1 hover:text-white rounded hover:bg-slate-700"
+                >
+                  <ZoomIn className="w-3.5 h-3.5" />
+                </button>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => window.print()}
+                title="Print Document"
+                className="px-2.5 py-1 text-xs rounded-lg bg-slate-800 hover:bg-slate-700 text-white font-medium inline-flex items-center gap-1 border border-slate-700 transition-colors"
+              >
+                <Printer className="w-3.5 h-3.5" />
+                Print
+              </button>
+
+              <button
+                type="button"
+                onClick={handleDownloadPdf}
+                title="Download PDF"
+                className="px-2.5 py-1 text-xs rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-semibold inline-flex items-center gap-1 shadow-sm transition-colors"
+              >
+                <Download className="w-3.5 h-3.5" />
+                Download PDF
+              </button>
+            </div>
+          </div>
+
+          <div className="p-4 sm:p-10 bg-[#525659] flex justify-center overflow-auto min-h-[900px] scrollbar-thin">
+            {/* Standard A4 Paper Sheet with realistic drop shadow */}
+            <div
+              style={{
+                transform: `scale(${zoom / 100})`,
+                transformOrigin: 'top center',
+                transition: 'transform 0.15s ease-out'
+              }}
+              className="w-full max-w-[794px] min-h-[1123px] bg-white text-slate-900 shadow-2xl rounded-[1px] p-8 sm:p-14 border border-slate-300 relative my-2 print:m-0 print:p-0 print:shadow-none print:border-none"
+            >
               <div
                 ref={resumeRef}
                 contentEditable={isEditing}
@@ -1184,6 +1325,22 @@ export const ResumeGeneratorPage = () => {
             </form>
           </div>
         </div>
+      )}
+
+      {/* PDF Viewer Popup Modal */}
+      {pdfModalData && (
+        <PdfViewerModal
+          isOpen={Boolean(pdfModalData)}
+          onClose={() => setPdfModalData(null)}
+          title={pdfModalData.title}
+          targetRole={pdfModalData.targetRole}
+          score={pdfModalData.score}
+          analysisId={pdfModalData.analysisId}
+          resumeId={pdfModalData.resumeId}
+          htmlContent={pdfModalData.htmlContent}
+          hasOriginalPdf={pdfModalData.hasOriginalPdf}
+          rawResumeText={pdfModalData.rawResumeText}
+        />
       )}
     </div>
   );

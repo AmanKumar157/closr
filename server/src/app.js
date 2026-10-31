@@ -14,8 +14,14 @@ import resumeRoutes from './routes/resume.routes.js';
 
 const app = express();
 
-// Secure HTTP headers with Helmet
-app.use(helmet());
+// Secure HTTP headers with Helmet - allow embedding PDFs in iframes from trusted client
+app.use(
+  helmet({
+    frameguard: false,
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
+    contentSecurityPolicy: false
+  })
+);
 
 // Cross-Origin Resource Sharing with credentials enabled for httpOnly cookies
 app.use(

@@ -33,6 +33,7 @@ import SkillChip from '../../../components/common/SkillChip.jsx';
 import Button from '../../../components/common/Button.jsx';
 import Card from '../../../components/common/Card.jsx';
 import Loader from '../../../components/common/Loader.jsx';
+import PdfViewerModal from '../../../components/common/PdfViewerModal.jsx';
 
 export const HistoryPage = () => {
   const [activeTab, setActiveTab] = useState('analyses'); // 'analyses' | 'roadmaps' | 'resumes'
@@ -41,6 +42,7 @@ export const HistoryPage = () => {
   const [resumes, setResumes] = useState([]);
   const [scoreHistory, setScoreHistory] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [pdfModalData, setPdfModalData] = useState(null);
 
   // Compare selection state (select any two analysis IDs)
   const [selectedForCompare, setSelectedForCompare] = useState([]);
@@ -413,13 +415,32 @@ export const HistoryPage = () => {
                       {isSelected ? '✓ Selected for Compare' : '+ Click to Select'}
                     </span>
                     <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setPdfModalData({
+                            title: a.fileName || 'Resume Document',
+                            targetRole: a.targetRole,
+                            score: a.matchScore,
+                            analysisId: a._id,
+                            hasOriginalPdf: a.hasOriginalPdf,
+                            rawResumeText: a.resumeText || ''
+                          });
+                        }}
+                        className="text-xs text-indigo-600 hover:text-indigo-800 font-semibold inline-flex items-center gap-1 hover:underline"
+                        title="Open in PDF Viewer"
+                      >
+                        <FileText className="w-3.5 h-3.5 text-indigo-500" />
+                        PDF View
+                      </button>
                       <Link
                         to={`/analysis/${a._id}`}
                         onClick={(e) => e.stopPropagation()}
                         className="text-xs text-slate-600 hover:text-slate-900 font-medium inline-flex items-center gap-1"
                       >
                         <Eye className="w-3.5 h-3.5" />
-                        View Report
+                        Report
                       </Link>
                       <button
                         type="button"
@@ -522,18 +543,53 @@ export const HistoryPage = () => {
 
                 <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
                   <span className="text-xs text-slate-400">ATS Pass Ready • Single Column</span>
-                  <Link
-                    to={`/resume/${res._id}`}
-                    className="text-xs text-indigo-600 hover:text-indigo-800 font-semibold inline-flex items-center gap-1"
-                  >
-                    <span>Open Resume</span>
-                    <ArrowRight className="w-3.5 h-3.5" />
-                  </Link>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setPdfModalData({
+                          title: displayName,
+                          targetRole: displayRole,
+                          resumeId: res._id,
+                          analysisId: typeof res.analysisId === 'object' ? res.analysisId?._id : res.analysisId,
+                          htmlContent: res.html,
+                          hasOriginalPdf: res.analysisId?.hasOriginalPdf
+                        })
+                      }
+                      className="text-xs text-slate-600 hover:text-indigo-600 font-semibold inline-flex items-center gap-1"
+                    >
+                      <Eye className="w-3.5 h-3.5 text-indigo-500" />
+                      <span>PDF View</span>
+                    </button>
+                    <Link
+                      to={`/resume/${res._id}`}
+                      className="text-xs text-indigo-600 hover:text-indigo-800 font-semibold inline-flex items-center gap-1"
+                    >
+                      <span>Open Page</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </Link>
+                  </div>
                 </div>
               </div>
             );
           })}
         </div>
+      )}
+
+      {/* In-App PDF Viewer Modal */}
+      {pdfModalData && (
+        <PdfViewerModal
+          isOpen={Boolean(pdfModalData)}
+          onClose={() => setPdfModalData(null)}
+          title={pdfModalData.title}
+          targetRole={pdfModalData.targetRole}
+          score={pdfModalData.score}
+          analysisId={pdfModalData.analysisId}
+          resumeId={pdfModalData.resumeId}
+          htmlContent={pdfModalData.htmlContent}
+          hasOriginalPdf={pdfModalData.hasOriginalPdf}
+          rawResumeText={pdfModalData.rawResumeText}
+        />
       )}
     </div>
   );
