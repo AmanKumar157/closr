@@ -1118,24 +1118,10 @@ export const ResumeGeneratorPage = () => {
                   </p>
                 </div>
 
-                {/* STEP 6: Required Skills from the Job */}
+                {/* STEP 6: Target Job Description */}
                 <div>
                   <label className="text-xs font-bold text-slate-700 block mb-1">
-                    6. Required Skills from Job Post <span className="text-slate-400 font-normal">(optional)</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={tailorForm.requiredSkills}
-                    onChange={(e) => setTailorForm({ ...tailorForm, requiredSkills: e.target.value })}
-                    placeholder="e.g. Python, SQL, REST APIs, CI/CD, Problem Solving"
-                    className="w-full text-xs px-3.5 py-2.5 border rounded-xl border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white"
-                  />
-                </div>
-
-                {/* STEP 7: Target Job Description */}
-                <div>
-                  <label className="text-xs font-bold text-slate-700 block mb-1">
-                    7. Paste Job Description <span className="text-slate-400 font-normal">(optional)</span>
+                    6. Paste Job Description <span className="text-slate-400 font-normal">(optional)</span>
                   </label>
                   <textarea
                     rows={3}
@@ -1921,24 +1907,10 @@ export const ResumeGeneratorPage = () => {
                 </p>
               </div>
 
-              {/* STEP 6: Required Skills from the Job */}
+              {/* STEP 6: Target Job Description */}
               <div>
                 <label className="text-xs font-bold text-slate-700 block mb-1">
-                  6. Required Skills from Job Post <span className="text-slate-400 font-normal">(optional)</span>
-                </label>
-                <input
-                  type="text"
-                  value={tailorForm.requiredSkills}
-                  onChange={(e) => setTailorForm({ ...tailorForm, requiredSkills: e.target.value })}
-                  placeholder="e.g. Python, SQL, REST APIs, CI/CD, Problem Solving"
-                  className="w-full text-xs px-3.5 py-2.5 border rounded-xl border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white"
-                />
-              </div>
-
-              {/* STEP 7: Target Job Description */}
-              <div>
-                <label className="text-xs font-bold text-slate-700 block mb-1">
-                  7. Paste Job Description <span className="text-slate-400 font-normal">(optional)</span>
+                  6. Paste Job Description <span className="text-slate-400 font-normal">(optional)</span>
                 </label>
                 <textarea
                   rows={3}
