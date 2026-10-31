@@ -11,7 +11,8 @@ const generatedResumeSchema = new mongoose.Schema(
     analysisId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Analysis',
-      required: true,
+      required: false,
+      default: null,
       index: true
     },
     html: {

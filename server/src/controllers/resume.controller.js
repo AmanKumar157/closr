@@ -3,6 +3,7 @@ import { GeneratedResume } from '../models/GeneratedResume.js';
 import { Analysis } from '../models/Analysis.js';
 import { Roadmap } from '../models/Roadmap.js';
 import { Profile } from '../models/Profile.js';
+import { extractResumeText } from '../services/parser.service.js';
 import { generateAtsResume } from '../services/gemini.service.js';
 import { generatePdfFromHtml } from '../services/pdf.service.js';
 import { ApiError } from '../utils/ApiError.js';
@@ -208,6 +209,7 @@ export const updateResume = asyncHandler(async (req, res) => {
 export const tailorResumeForJob = asyncHandler(async (req, res) => {
   const {
     baseAnalysisId,
+    baseResumeId,
     companyName,
     targetRole,
     experienceLevel,
@@ -217,21 +219,44 @@ export const tailorResumeForJob = asyncHandler(async (req, res) => {
     jobDescription
   } = req.body;
 
-  if (!baseAnalysisId) {
-    throw new ApiError(400, 'Base analysis ID is required.');
-  }
-
   if (!targetRole || !targetRole.trim()) {
     throw new ApiError(400, 'Target role is required.');
   }
 
-  const analysis = await Analysis.findOne({
-    _id: baseAnalysisId,
-    userId: req.user._id
-  });
+  let sourceResumeText = '';
+  let linkedAnalysisId = null;
 
-  if (!analysis) {
-    throw new ApiError(404, 'Base analysis not found.');
+  if (req.file) {
+    sourceResumeText = await extractResumeText(
+      req.file.buffer,
+      req.file.originalname,
+      req.file.mimetype
+    );
+  } else if (baseResumeId && mongoose.Types.ObjectId.isValid(baseResumeId)) {
+    const baseResume = await GeneratedResume.findOne({
+      _id: baseResumeId,
+      userId: req.user._id
+    }).populate('analysisId');
+    if (baseResume) {
+      linkedAnalysisId = baseResume.analysisId?._id || null;
+      sourceResumeText = baseResume.analysisId?.resumeText || baseResume.html?.replace(/<[^>]+>/g, ' ') || '';
+    }
+  } else if (baseAnalysisId && mongoose.Types.ObjectId.isValid(baseAnalysisId)) {
+    const analysis = await Analysis.findOne({
+      _id: baseAnalysisId,
+      userId: req.user._id
+    });
+    if (analysis) {
+      linkedAnalysisId = analysis._id;
+      sourceResumeText = analysis.resumeText || '';
+    }
+  }
+
+  // If no source resume text from file or previous resume, fall back to Profile
+  if (!sourceResumeText || sourceResumeText.trim().length < 20) {
+    const profile = await Profile.findOne({ userId: req.user._id });
+    const profileSkills = profile?.currentSkills?.join(', ') || 'Software Engineering, Problem Solving';
+    sourceResumeText = `${req.user.name || 'Candidate Professional'}\n${req.user.email || ''}\nTarget Role: ${targetRole}\nSkills: ${profileSkills}\n${profile?.jobDescription || ''}`;
   }
 
   // Parse required skills from array or comma-separated string
@@ -265,30 +290,27 @@ export const tailorResumeForJob = asyncHandler(async (req, res) => {
     specificTools: parsedTools,
     requiredSkills: parsedSkills,
     jobDescription: jobDescription?.trim() || '',
-    matchedSkills: analysis.matchedSkills || [],
+    matchedSkills: parsedSkills.slice(0, 8),
     suggestions: [
-      `Tailored specifically for ${companyName ? `${companyName} - ` : ''}${targetRole.trim()}`,
-      ...(analysis.suggestions || [])
+      `Tailored specifically for ${companyName ? `${companyName} - ` : ''}${targetRole.trim()}`
     ]
   };
 
-  const html = await generateAtsResume(analysis.resumeText, targetAnalysis);
+  const html = await generateAtsResume(sourceResumeText, targetAnalysis);
 
   const tailoredResume = await GeneratedResume.create({
     userId: req.user._id,
-    analysisId: analysis._id,
+    analysisId: linkedAnalysisId || null,
     companyName: companyName?.trim() || 'Custom Application',
     targetRole: targetRole.trim(),
     template: 'modern',
     html
   });
 
-  await tailoredResume.populate('analysisId', 'fileName targetRole matchScore hasOriginalPdf resumeText');
-
   return new ApiResponse(
     201,
     { resume: tailoredResume },
-    'Tailored ATS resume generated successfully'
+    'Tailored ATS resume created successfully'
   ).send(res);
 });
 

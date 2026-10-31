@@ -42,6 +42,11 @@ export const resumeService = {
    * Tailor a new ATS resume for a specific job opening without disrupting others
    */
   async tailorResume(data) {
+    if (data instanceof FormData) {
+      return axiosInstance.post('/resume/tailor', data, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+    }
     return axiosInstance.post('/resume/tailor', data);
   },
 
