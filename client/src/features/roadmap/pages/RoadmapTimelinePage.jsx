@@ -41,6 +41,8 @@ export const RoadmapTimelinePage = () => {
   const navigate = useNavigate();
 
   const [roadmap, setRoadmap] = useState(null);
+  const [allRoadmaps, setAllRoadmaps] = useState([]);
+  const [showAllRoadmaps, setShowAllRoadmaps] = useState(false);
   const [availableAnalyses, setAvailableAnalyses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
@@ -69,6 +71,24 @@ export const RoadmapTimelinePage = () => {
   const [submittingEdit, setSubmittingEdit] = useState(false);
   const [deletingKey, setDeletingKey] = useState(null);
 
+  // Load all user roadmaps & analyses list for switching
+  const loadRoadmapLists = async () => {
+    try {
+      const [rRes, aRes] = await Promise.all([
+        roadmapService.getRoadmaps(),
+        analysisService.getAnalyses()
+      ]);
+      if (rRes.success) setAllRoadmaps(rRes.data?.roadmaps || []);
+      if (aRes.success) setAvailableAnalyses(aRes.data?.analyses || []);
+    } catch (e) {
+      console.error('Failed to load roadmap lists', e);
+    }
+  };
+
+  useEffect(() => {
+    loadRoadmapLists();
+  }, []);
+
   // Load or generate roadmap
   useEffect(() => {
     const initRoadmap = async () => {
@@ -85,6 +105,7 @@ export const RoadmapTimelinePage = () => {
             toast.success('Your 12-week roadmap is ready!');
             setRoadmap(res.data.roadmap);
             navigate(`/roadmap/${res.data.roadmap._id}`);
+            loadRoadmapLists();
           }
         } else if (isObjectId) {
           // Load existing roadmap by specific MongoDB ID
@@ -116,6 +137,32 @@ export const RoadmapTimelinePage = () => {
 
     initRoadmap();
   }, [id, analysisId, remainingGapsOnly, navigate]);
+
+  const handleDeleteRoadmap = async (e, roadmapIdToDelete, roleName) => {
+    if (e) e.stopPropagation();
+    if (!window.confirm(`Permanently delete the 12-week roadmap for "${roleName || 'this role'}"?`)) return;
+
+    try {
+      const res = await roadmapService.deleteRoadmap(roadmapIdToDelete);
+      if (res.success) {
+        toast.success('Roadmap deleted successfully');
+        const remaining = allRoadmaps.filter((r) => r._id !== roadmapIdToDelete);
+        setAllRoadmaps(remaining);
+        await loadRoadmapLists();
+        if (roadmap?._id === roadmapIdToDelete) {
+          if (remaining.length > 0) {
+            navigate(`/roadmap/${remaining[0]._id}`);
+          } else {
+            setRoadmap(null);
+            setShowAllRoadmaps(true);
+            navigate('/roadmap', { replace: true });
+          }
+        }
+      }
+    } catch (err) {
+      toast.error('Failed to delete roadmap.');
+    }
+  };
 
   const handleGenerateRoadmap = async (targetAnalysisId) => {
     try {
@@ -378,9 +425,24 @@ export const RoadmapTimelinePage = () => {
     );
   }
 
-  if (!roadmap) {
+  if (!roadmap || showAllRoadmaps) {
     return (
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-10">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
+        {/* Return Button if a roadmap is currently selected */}
+        {roadmap && (
+          <div className="flex items-center justify-between pb-3 border-b border-slate-200">
+            <button
+              type="button"
+              onClick={() => setShowAllRoadmaps(false)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-indigo-700 bg-indigo-50 border border-indigo-200 hover:bg-indigo-100 rounded-lg shadow-2xs transition-colors"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" />
+              <span>← Return to Active Roadmap ({roadmap.targetRole})</span>
+            </button>
+            <span className="text-xs text-slate-500 font-medium">Select any roadmap below to open it</span>
+          </div>
+        )}
+
         {/* Header */}
         <div className="text-center max-w-3xl mx-auto space-y-3">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 border border-indigo-200 text-indigo-700 text-xs font-semibold tracking-wide uppercase">
@@ -388,20 +450,86 @@ export const RoadmapTimelinePage = () => {
             <span>12-Week Bridge Roadmap (Feature 5)</span>
           </div>
           <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
-            Personalized 12-Week Bridge Roadmap
+            Your 12-Week Career Roadmaps
           </h1>
           <p className="text-base text-slate-600">
-            Bridge the gap between your current skills and target job requirements with a week-by-week curriculum and curated single-best resources.
+            Select a roadmap to continue your progress, or generate a new study plan from any of your analyzed resumes.
           </p>
         </div>
 
-        {/* Existing Analyses with 1-Click Generation */}
+        {/* Section 1: All User Roadmaps */}
+        {allRoadmaps.length > 0 && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-bold text-slate-900">Your Active Roadmaps ({allRoadmaps.length})</h2>
+                <p className="text-xs text-slate-500">Pick any roadmap to resume your milestones and verified resources.</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {allRoadmaps.map((r) => {
+                const isActive = r._id === roadmap?._id;
+                return (
+                  <Card
+                    key={r._id}
+                    className={`p-5 hover:border-indigo-300 transition-all shadow-sm ${
+                      isActive ? 'ring-2 ring-indigo-300 border-indigo-500 bg-indigo-50/20' : ''
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                            {new Date(r.createdAt).toLocaleDateString()}
+                          </span>
+                          {isActive && (
+                            <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-indigo-100 text-indigo-700">
+                              Active
+                            </span>
+                          )}
+                        </div>
+                        <h3 className="text-base font-bold text-slate-900 mt-1">{r.targetRole || '12-Week Roadmap'}</h3>
+                        <p className="text-xs text-slate-500 mt-0.5">{r.weeks?.length || 12} Weeks • Curated Milestones</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={(e) => handleDeleteRoadmap(e, r._id, r.targetRole)}
+                        className="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition-colors"
+                        title="Delete this roadmap"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+
+                    <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
+                      <span className="text-xs font-semibold text-slate-500">Weekly Deliverables</span>
+                      <Button
+                        variant={isActive ? 'secondary' : 'primary'}
+                        size="sm"
+                        onClick={() => {
+                          setRoadmap(r);
+                          setShowAllRoadmaps(false);
+                          navigate(`/roadmap/${r._id}`);
+                        }}
+                      >
+                        <span>{isActive ? 'Resume Active →' : 'Open Roadmap →'}</span>
+                      </Button>
+                    </div>
+                  </Card>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Section 2: Existing Analyses with 1-Click Generation */}
         {availableAnalyses.length > 0 ? (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-lg font-bold text-slate-900">Select an Analysis to Build Your Roadmap</h2>
-                <p className="text-xs text-slate-500">Pick any past resume analysis to generate a dedicated 12-week study plan.</p>
+                <h2 className="text-lg font-bold text-slate-900">Build Roadmap from Another Analysis</h2>
+                <p className="text-xs text-slate-500">Select any analyzed resume to generate a dedicated 12-week study plan.</p>
               </div>
               <Link to="/analysis/new">
                 <Button variant="outline" size="sm">
@@ -463,57 +591,26 @@ export const RoadmapTimelinePage = () => {
             </div>
           </div>
         ) : (
-          <Card className="text-center p-8 bg-gradient-to-b from-indigo-50/50 to-white border-dashed border-2 border-indigo-200">
-            <div className="w-12 h-12 rounded-xl bg-indigo-600 text-white flex items-center justify-center mx-auto shadow-md">
-              <Map className="w-6 h-6" />
-            </div>
-            <h3 className="text-lg font-bold text-slate-900 mt-4">No Roadmap Created Yet</h3>
-            <p className="text-sm text-slate-600 max-w-md mx-auto mt-2">
-              Upload your resume and target job description. CareerPilot's AI will find your missing skills and automatically generate a custom 12-week roadmap.
-            </p>
-            <div className="mt-6">
-              <Link to="/analysis/new">
-                <Button variant="primary" size="lg">
-                  <Sparkles className="w-4 h-4 mr-2" />
-                  Analyze Resume to Build Roadmap
-                </Button>
-              </Link>
-            </div>
-          </Card>
+          allRoadmaps.length === 0 && (
+            <Card className="text-center p-8 bg-gradient-to-b from-indigo-50/50 to-white border-dashed border-2 border-indigo-200">
+              <div className="w-12 h-12 rounded-xl bg-indigo-600 text-white flex items-center justify-center mx-auto shadow-md">
+                <Map className="w-6 h-6" />
+              </div>
+              <h3 className="text-lg font-bold text-slate-900 mt-4">No Roadmap Created Yet</h3>
+              <p className="text-sm text-slate-600 max-w-md mx-auto mt-2">
+                Upload your resume and target job description. CareerPilot's AI will find your missing skills and automatically generate a custom 12-week roadmap.
+              </p>
+              <div className="mt-6">
+                <Link to="/analysis/new">
+                  <Button variant="primary" size="lg">
+                    <Sparkles className="w-4 h-4 mr-2" />
+                    Analyze Resume to Build Roadmap
+                  </Button>
+                </Link>
+              </div>
+            </Card>
+          )
         )}
-
-        {/* Feature Highlights Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4">
-          <Card className="p-5 border-slate-200">
-            <div className="w-9 h-9 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center mb-3">
-              <Layers className="w-5 h-5" />
-            </div>
-            <h4 className="font-bold text-sm text-slate-900">Priority-Ordered 12 Weeks</h4>
-            <p className="text-xs text-slate-600 mt-1">
-              High-importance missing skills are scheduled in weeks 1-4, ensuring you tackle critical job requirements first.
-            </p>
-          </Card>
-
-          <Card className="p-5 border-slate-200">
-            <div className="w-9 h-9 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center mb-3">
-              <CheckCircle2 className="w-5 h-5" />
-            </div>
-            <h4 className="font-bold text-sm text-slate-900">2-4 Concrete Milestones / Week</h4>
-            <p className="text-xs text-slate-600 mt-1">
-              Every milestone produces a verifiable deliverable or mini-project to prove practical competency.
-            </p>
-          </Card>
-
-          <Card className="p-5 border-slate-200">
-            <div className="w-9 h-9 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center mb-3">
-              <Sparkles className="w-5 h-5" />
-            </div>
-            <h4 className="font-bold text-sm text-slate-900">Exactly 1 Curated Resource</h4>
-            <p className="text-xs text-slate-600 mt-1">
-              No endless search lists. Only the top verified YouTube tutorial, official doc, or practice lab per milestone.
-            </p>
-          </Card>
-        </div>
       </div>
     );
   }
@@ -545,27 +642,94 @@ export const RoadmapTimelinePage = () => {
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
-      {/* Navigation Breadcrumbs / Back Button */}
-      <div className="flex items-center gap-2">
-        <button
-          type="button"
-          onClick={() => navigate(-1)}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:text-slate-900 bg-white border border-slate-200 hover:border-slate-300 rounded-lg shadow-2xs transition-colors"
-        >
-          <ArrowLeft className="w-3.5 h-3.5" />
-          <span>← Back</span>
-        </button>
-
-        {roadmap?.analysisId && (
-          <Link
-            to={`/analysis/${roadmap.analysisId}`}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-indigo-600 hover:text-indigo-700 bg-indigo-50/70 hover:bg-indigo-100/70 border border-indigo-200 rounded-lg transition-colors"
+      {/* Navigation Breadcrumbs / Back Button & Switcher */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => navigate(-1)}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:text-slate-900 bg-white border border-slate-200 hover:border-slate-300 rounded-lg shadow-2xs transition-colors"
           >
-            <FileText className="w-3.5 h-3.5" />
-            <span>Back to Analysis Report</span>
-          </Link>
-        )}
+            <ArrowLeft className="w-3.5 h-3.5" />
+            <span>← Back</span>
+          </button>
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowAllRoadmaps(true)}
+            className="text-indigo-600 border-indigo-200 hover:bg-indigo-50 text-xs font-semibold"
+          >
+            <Layers className="w-3.5 h-3.5 mr-1.5" />
+            <span>Switch / View All Roadmaps ({allRoadmaps.length})</span>
+          </Button>
+
+          {roadmap?.analysisId && (
+            <Link
+              to={`/analysis/${roadmap.analysisId}`}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-indigo-600 hover:text-indigo-700 bg-indigo-50/70 hover:bg-indigo-100/70 border border-indigo-200 rounded-lg transition-colors"
+            >
+              <FileText className="w-3.5 h-3.5" />
+              <span>Back to Analysis Report</span>
+            </Link>
+          )}
+        </div>
+
+        <Link to="/analysis/new">
+          <Button variant="secondary" size="sm">
+            <Plus className="w-3.5 h-3.5 mr-1 text-indigo-600" />
+            <span>+ Build from New Analysis</span>
+          </Button>
+        </Link>
       </div>
+
+      {/* Multiple Roadmaps Switcher Shelf */}
+      {allRoadmaps.length > 0 && (
+        <div className="bg-slate-50 border border-slate-200 rounded-xl p-3.5">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-bold text-slate-600 uppercase tracking-wider flex items-center gap-1.5">
+              <Map className="w-3.5 h-3.5 text-indigo-600" />
+              Your 12-Week Roadmaps ({allRoadmaps.length})
+            </span>
+            <span className="text-[11px] text-slate-400">Click any card to switch roadmap • Click trash to delete</span>
+          </div>
+
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-thin">
+            {allRoadmaps.map((r) => {
+              const isActive = r._id === roadmap._id;
+              return (
+                <div
+                  key={r._id}
+                  onClick={() => navigate(`/roadmap/${r._id}`)}
+                  className={`group relative px-3 py-2 rounded-lg text-left text-xs shrink-0 border cursor-pointer transition-all pr-8 ${
+                    isActive
+                      ? 'bg-white border-indigo-500 shadow-sm ring-1 ring-indigo-200'
+                      : 'bg-white/80 border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-white'
+                  }`}
+                >
+                  <div className="font-bold text-slate-900 truncate max-w-[170px] flex items-center gap-1.5">
+                    <Target className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
+                    <span className="truncate">{r.targetRole || '12-Week Roadmap'}</span>
+                  </div>
+                  <div className="text-[11px] text-slate-500 truncate max-w-[170px] mt-0.5">
+                    {r.weeks?.length || 12} Weeks • {new Date(r.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                  </div>
+
+                  {/* Quick Delete Card Button */}
+                  <button
+                    type="button"
+                    onClick={(e) => handleDeleteRoadmap(e, r._id, r.targetRole)}
+                    title="Delete this roadmap"
+                    className="absolute top-2 right-2 p-1 text-slate-400 hover:text-rose-600 rounded hover:bg-rose-50 transition-colors opacity-70 group-hover:opacity-100"
+                  >
+                    <Trash2 className="w-3 h-3" />
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Roadmap Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 pb-4 border-b border-slate-200">
@@ -602,6 +766,18 @@ export const RoadmapTimelinePage = () => {
               Generate ATS Resume
             </Button>
           </Link>
+
+          {/* Delete Roadmap Button */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={(e) => handleDeleteRoadmap(e, roadmap._id, roadmap.targetRole)}
+            className="text-rose-600 border-rose-200 hover:bg-rose-50 hover:border-rose-300"
+            title="Permanently delete this roadmap"
+          >
+            <Trash2 className="w-3.5 h-3.5 mr-1 text-rose-500" />
+            <span>Delete</span>
+          </Button>
         </div>
       </div>
 

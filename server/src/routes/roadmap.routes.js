@@ -9,7 +9,8 @@ import {
   updateResourceStatus,
   addCustomMilestone,
   updateCustomMilestone,
-  deleteCustomMilestone
+  deleteCustomMilestone,
+  deleteRoadmap
 } from '../controllers/roadmap.controller.js';
 import { authMiddleware } from '../middleware/auth.js';
 import { aiLimiter } from '../middleware/rateLimit.js';
@@ -24,6 +25,7 @@ router.post('/generate', aiLimiter, generateRoadmapController);
 // Roadmap queries
 router.get('/', getRoadmaps);
 router.get('/:id', getRoadmapById);
+router.delete('/:id', deleteRoadmap);
 
 // Milestone completion status
 router.patch('/:id/milestone', updateMilestoneCompletion);

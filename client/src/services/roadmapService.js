@@ -83,6 +83,13 @@ export const roadmapService = {
    */
   async deleteMilestone(id, weekNumber, milestoneIndex) {
     return axiosInstance.delete(`/roadmap/${id}/weeks/${weekNumber}/milestones/${milestoneIndex}`);
+  },
+
+  /**
+   * Permanently delete a roadmap
+   */
+  async deleteRoadmap(id) {
+    return axiosInstance.delete(`/roadmap/${id}`);
   }
 };
 

@@ -424,4 +424,39 @@ export const deleteCustomMilestone = asyncHandler(async (req, res) => {
   ).send(res);
 });
 
+/**
+ * @desc    Permanently delete a roadmap
+ * @route   DELETE /api/roadmap/:id
+ * @access  Protected
+ */
+export const deleteRoadmap = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    throw new ApiError(400, 'Invalid roadmap ID format.');
+  }
+
+  const roadmap = await Roadmap.findOne({
+    _id: id,
+    userId: req.user._id
+  });
+
+  if (!roadmap) {
+    throw new ApiError(404, 'Roadmap not found.');
+  }
+
+  await Roadmap.deleteOne({ _id: roadmap._id });
+
+  // Update associated Analysis if it referenced this roadmapId
+  if (roadmap.analysisId) {
+    await Analysis.updateOne(
+      { _id: roadmap.analysisId, userId: req.user._id },
+      { $set: { roadmapId: null } }
+    );
+  }
+
+  return new ApiResponse(200, null, 'Roadmap deleted successfully').send(res);
+});
+
+
 

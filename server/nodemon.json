@@ -4,3 +4,4 @@
   "ignore": ["tests/*", "node_modules/*", "*.test.js"],
   "delay": 500
 }
+

@@ -66,6 +66,7 @@ export const ResumeGeneratorPage = () => {
 
   const [resume, setResume] = useState(null);
   const [allResumes, setAllResumes] = useState([]);
+  const [showAllResumes, setShowAllResumes] = useState(false);
   const [currentAnalysis, setCurrentAnalysis] = useState(null);
   const [availableAnalyses, setAvailableAnalyses] = useState([]);
 
@@ -392,9 +393,24 @@ export const ResumeGeneratorPage = () => {
     );
   }
 
-  if (!resume) {
+  if (!resume || showAllResumes) {
     return (
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-10">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
+        {/* Return Button if a resume is currently selected */}
+        {resume && (
+          <div className="flex items-center justify-between pb-3 border-b border-slate-200">
+            <button
+              type="button"
+              onClick={() => setShowAllResumes(false)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-indigo-700 bg-indigo-50 border border-indigo-200 hover:bg-indigo-100 rounded-lg shadow-2xs transition-colors"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" />
+              <span>← Return to Active Resume ({resume.companyName || currentAnalysis?.fileName || 'Resume'})</span>
+            </button>
+            <span className="text-xs text-slate-500 font-medium">Select any resume below to open it</span>
+          </div>
+        )}
+
         {/* Header */}
         <div className="text-center max-w-3xl mx-auto space-y-3">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 border border-indigo-200 text-indigo-700 text-xs font-semibold tracking-wide uppercase">
@@ -402,20 +418,95 @@ export const ResumeGeneratorPage = () => {
             <span>ATS Resume Generator (Feature 8)</span>
           </div>
           <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
-            ATS-Friendly Resume Optimizer
+            Your Tailored & Master ATS Resumes
           </h1>
           <p className="text-base text-slate-600">
-            Reorganize your resume into a clean, recruiter-approved, single-column format that passes automated Applicant Tracking Systems and exports directly to PDF.
+            Select a tailored resume to view and export, or generate an ATS-optimized version from any of your analyzed resumes.
           </p>
         </div>
 
-        {/* Existing Analyses with 1-Click Generation */}
+        {/* Section 1: All User Resumes */}
+        {allResumes.length > 0 && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-bold text-slate-900">Your Resumes & Openings ({allResumes.length})</h2>
+                <p className="text-xs text-slate-500">Pick any resume version to edit, preview, or export to PDF.</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {allResumes.map((r) => {
+                const isActive = r._id === resume?._id;
+                const displayName =
+                  r.companyName && r.companyName !== 'General Application' && r.companyName !== 'Target Role'
+                    ? r.companyName
+                    : (r.analysisId?.fileName || currentAnalysis?.fileName || 'Uploaded Resume');
+                const displayRole =
+                  r.targetRole && r.targetRole !== 'Target Role'
+                    ? r.targetRole
+                    : (r.analysisId?.targetRole || currentAnalysis?.targetRole || 'Software Developer');
+
+                return (
+                  <Card
+                    key={r._id}
+                    className={`p-5 hover:border-indigo-300 transition-all shadow-sm ${
+                      isActive ? 'ring-2 ring-indigo-300 border-indigo-500 bg-indigo-50/20' : ''
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                            {new Date(r.createdAt).toLocaleDateString()}
+                          </span>
+                          {isActive && (
+                            <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-indigo-100 text-indigo-700">
+                              Active
+                            </span>
+                          )}
+                        </div>
+                        <h3 className="text-base font-bold text-slate-900 mt-1">{displayName}</h3>
+                        <p className="text-xs text-slate-500 mt-0.5">{displayRole}</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={(e) => handleDeleteResumeCard(e, r._id)}
+                        className="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition-colors"
+                        title="Delete this resume"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+
+                    <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
+                      <span className="text-xs font-semibold text-slate-500">A4 • Single Column ATS</span>
+                      <Button
+                        variant={isActive ? 'secondary' : 'primary'}
+                        size="sm"
+                        onClick={() => {
+                          setResume(r);
+                          setShowAllResumes(false);
+                          navigate(`/resume/${r._id}`);
+                        }}
+                      >
+                        <span>{isActive ? 'Resume Active →' : 'Open Resume →'}</span>
+                      </Button>
+                    </div>
+                  </Card>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Section 2: Existing Analyses with 1-Click Generation */}
         {availableAnalyses.length > 0 ? (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-lg font-bold text-slate-900">Select an Analysis to Generate ATS Resume</h2>
-                <p className="text-xs text-slate-500">Pick any past analysis to generate an ATS-optimized resume version.</p>
+                <h2 className="text-lg font-bold text-slate-900">Generate ATS Resume from Analysis</h2>
+                <p className="text-xs text-slate-500">Pick any past resume analysis to convert it into an ATS-compliant PDF.</p>
               </div>
               <Link to="/analysis/new">
                 <Button variant="outline" size="sm">
@@ -487,23 +578,25 @@ export const ResumeGeneratorPage = () => {
             </div>
           </div>
         ) : (
-          <Card className="text-center p-8 bg-gradient-to-b from-indigo-50/50 to-white border-dashed border-2 border-indigo-200">
-            <div className="w-12 h-12 rounded-xl bg-indigo-600 text-white flex items-center justify-center mx-auto shadow-md">
-              <FileText className="w-6 h-6" />
-            </div>
-            <h3 className="text-lg font-bold text-slate-900 mt-4">No ATS Resume Generated Yet</h3>
-            <p className="text-sm text-slate-600 max-w-md mx-auto mt-2">
-              Upload your resume for AI skill-gap analysis. Once analyzed, you can convert it into an ATS-compliant PDF with one click.
-            </p>
-            <div className="mt-6">
-              <Link to="/analysis/new">
-                <Button variant="primary" size="lg">
-                  <Sparkles className="w-4 h-4 mr-2" />
-                  Analyze Resume First
-                </Button>
-              </Link>
-            </div>
-          </Card>
+          allResumes.length === 0 && (
+            <Card className="text-center p-8 bg-gradient-to-b from-indigo-50/50 to-white border-dashed border-2 border-indigo-200">
+              <div className="w-12 h-12 rounded-xl bg-indigo-600 text-white flex items-center justify-center mx-auto shadow-md">
+                <FileText className="w-6 h-6" />
+              </div>
+              <h3 className="text-lg font-bold text-slate-900 mt-4">No ATS Resume Generated Yet</h3>
+              <p className="text-sm text-slate-600 max-w-md mx-auto mt-2">
+                Upload your resume for AI skill-gap analysis. Once analyzed, you can convert it into an ATS-compliant PDF with one click.
+              </p>
+              <div className="mt-6">
+                <Link to="/analysis/new">
+                  <Button variant="primary" size="lg">
+                    <Sparkles className="w-4 h-4 mr-2" />
+                    Analyze Resume First
+                  </Button>
+                </Link>
+              </div>
+            </Card>
+          )
         )}
       </div>
     );
@@ -534,6 +627,16 @@ export const ResumeGeneratorPage = () => {
             <ArrowLeft className="w-3.5 h-3.5" />
             <span>← Back</span>
           </button>
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowAllResumes(true)}
+            className="text-indigo-600 border-indigo-200 hover:bg-indigo-50 text-xs font-semibold"
+          >
+            <Layers className="w-3.5 h-3.5 mr-1.5" />
+            <span>Switch / View All Resumes ({allResumes.length})</span>
+          </Button>
 
           {targetAnalysisId && (
             <Link
