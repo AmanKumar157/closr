@@ -324,11 +324,8 @@ export const deleteAnalysis = asyncHandler(async (req, res) => {
     analysisId: analysis._id
   });
 
-  // 2. Delete any 12-week roadmap linked to this analysis
-  await Roadmap.deleteMany({
-    userId: req.user._id,
-    analysisId: analysis._id
-  });
+  // 2. Roadmaps are preserved! User explicitly manages and deletes roadmaps separately.
+  // Multiple roadmaps remain stored and accessible in the Roadmap section.
 
   // 3. Delete the analysis document itself
   await Analysis.deleteOne({ _id: analysis._id });

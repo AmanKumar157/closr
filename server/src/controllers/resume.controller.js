@@ -257,7 +257,7 @@ export const tailorResumeForJob = asyncHandler(async (req, res) => {
 });
 
 /**
- * @desc    Delete a tailored resume
+ * @desc    Delete a tailored resume (deletes ONLY this specific tailored resume, never the original uploaded resume or roadmap)
  * @route   DELETE /api/resume/:id
  * @access  Protected
  */
@@ -275,47 +275,13 @@ export const deleteResume = asyncHandler(async (req, res) => {
     throw new ApiError(404, 'Resume not found.');
   }
 
-  const analysisId = resume.analysisId;
+  // Delete ONLY this specific generated resume document
   await GeneratedResume.deleteOne({ _id: resume._id });
-
-  // Always delete associated analysis, roadmaps, and all linked resumes from the app by default (cascade unless cascade=false)
-  const shouldCascade = req.query.cascade !== 'false';
-  if (shouldCascade && analysisId) {
-    await Analysis.deleteOne({ _id: analysisId, userId: req.user._id });
-    await Roadmap.deleteMany({
-      userId: req.user._id,
-      $or: [{ analysisId: analysisId }, { analysisId: analysisId.toString() }]
-    });
-    await GeneratedResume.deleteMany({
-      userId: req.user._id,
-      $or: [{ analysisId: analysisId }, { analysisId: analysisId.toString() }]
-    });
-
-    const profile = await Profile.findOne({ userId: req.user._id });
-    if (profile?.lastUploadedResume?.analysisId?.toString() === analysisId.toString()) {
-      const latestRemaining = await Analysis.findOne({
-        userId: req.user._id,
-        _id: { $ne: analysisId }
-      }).sort({ createdAt: -1 });
-
-      if (latestRemaining) {
-        profile.lastUploadedResume = {
-          fileName: latestRemaining.fileName,
-          fileSize: latestRemaining.fileSize,
-          uploadedAt: latestRemaining.createdAt,
-          analysisId: latestRemaining._id
-        };
-      } else {
-        profile.lastUploadedResume = null;
-      }
-      await profile.save();
-    }
-  }
 
   return new ApiResponse(
     200,
     null,
-    'Resume and all associated database records completely deleted from app.'
+    'Tailored ATS resume deleted successfully.'
   ).send(res);
 });
 

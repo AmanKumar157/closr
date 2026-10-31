@@ -1,11 +1,12 @@
 import React from 'react';
 import ProfileForm from '../components/ProfileForm.jsx';
+import UploadedResumesSection from '../components/UploadedResumesSection.jsx';
 import Card from '../../../components/common/Card.jsx';
-import { UserCog, Compass, Sparkles, CheckCircle2 } from 'lucide-react';
+import { UserCog, Sparkles } from 'lucide-react';
 
 export const ProfilePage = () => {
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-2 border-b border-slate-200">
         <div>
@@ -14,7 +15,7 @@ export const ProfilePage = () => {
             <span>Profile & Preferences</span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-            Target Career Settings
+            Target Career Settings & Profile
           </h1>
           <p className="text-sm text-slate-500 mt-1">
             Define your dream job role and current skills to customize AI analysis and roadmap creation.
@@ -22,10 +23,13 @@ export const ProfilePage = () => {
         </div>
       </div>
 
-      {/* Main Form Card */}
+      {/* Main Settings Form Card */}
       <Card className="shadow-sm">
         <ProfileForm />
       </Card>
+
+      {/* Original Uploaded Resumes Section (User's Point 3: Inside Profile Section) */}
+      <UploadedResumesSection />
 
       {/* Helpful Hint Card */}
       <div className="bg-gradient-to-r from-indigo-50 to-violet-50 rounded-xl p-5 border border-indigo-100/80">

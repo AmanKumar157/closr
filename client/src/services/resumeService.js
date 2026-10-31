@@ -46,10 +46,10 @@ export const resumeService = {
   },
 
   /**
-   * Delete a resume (pass cascade=true to completely remove parent analysis & roadmaps from app)
+   * Delete a tailored resume
    */
-  async deleteResume(id, cascade = false) {
-    return axiosInstance.delete(`/resume/${id}${cascade ? '?cascade=true' : ''}`);
+  async deleteResume(id) {
+    return axiosInstance.delete(`/resume/${id}`);
   },
 
   /**
