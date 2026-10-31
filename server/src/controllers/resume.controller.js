@@ -210,6 +210,7 @@ export const tailorResumeForJob = asyncHandler(async (req, res) => {
   const {
     baseAnalysisId,
     baseResumeId,
+    customResumeText,
     companyName,
     targetRole,
     experienceLevel,
@@ -226,7 +227,12 @@ export const tailorResumeForJob = asyncHandler(async (req, res) => {
   let sourceResumeText = '';
   let linkedAnalysisId = null;
 
-  if (req.file) {
+  if (customResumeText && customResumeText.trim().length > 20) {
+    sourceResumeText = customResumeText.trim();
+    if (baseAnalysisId && mongoose.Types.ObjectId.isValid(baseAnalysisId)) {
+      linkedAnalysisId = baseAnalysisId;
+    }
+  } else if (req.file) {
     sourceResumeText = await extractResumeText(
       req.file.buffer,
       req.file.originalname,

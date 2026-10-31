@@ -38,6 +38,15 @@ export const analysisService = {
   },
 
   /**
+   * Update an original resume document (resumeText, targetRole, fileName)
+   * @param {string} id
+   * @param {object} data
+   */
+  async updateAnalysis(id, data) {
+    return axiosInstance.put(`/analysis/${id}`, data);
+  },
+
+  /**
    * Permanently delete an analysis and cascade delete all its generated ATS resumes & roadmaps
    * @param {string} id
    */

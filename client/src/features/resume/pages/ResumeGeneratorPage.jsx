@@ -96,7 +96,7 @@ export const ResumeGeneratorPage = () => {
 
   // Tailor for specific job opening modal
   const [showTailorModal, setShowTailorModal] = useState(false);
-  const [tailorSourceType, setTailorSourceType] = useState('upload'); // 'upload' or 'existing'
+  const [tailorSourceType, setTailorSourceType] = useState('document'); // 'document' | 'upload' | 'existing'
   const [tailorResumeFile, setTailorResumeFile] = useState(null);
   const tailorFileInputRef = useRef(null);
   const [tailorForm, setTailorForm] = useState({
@@ -105,11 +105,26 @@ export const ResumeGeneratorPage = () => {
     experienceLevel: 'Fresher / Student (0-1 yrs)',
     experienceDetails: '',
     specificTools: '',
-    requiredSkills: '',
     jobDescription: '',
-    baseResumeId: ''
+    baseAnalysisId: '',
+    baseResumeId: '',
+    customResumeText: ''
   });
   const [tailoring, setTailoring] = useState(false);
+
+  // Original Documents vault states & manual editing modal
+  const [availableAnalyses, setAvailableAnalyses] = useState([]);
+  const [activeTab, setActiveTab] = useState('all'); // 'all' | 'documents' | 'tailored'
+  const [showUploadBox, setShowUploadBox] = useState(false);
+  const [uploadFile, setUploadFile] = useState(null);
+  const [uploadTargetRole, setUploadTargetRole] = useState('');
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef(null);
+
+  // Edit Original Resume Document modal state
+  const [editingDoc, setEditingDoc] = useState(null);
+  const [editDocForm, setEditDocForm] = useState({ fileName: '', targetRole: '', resumeText: '' });
+  const [savingDoc, setSavingDoc] = useState(false);
 
   // Computed targetAnalysisId right here at top level to completely prevent TDZ errors
   const targetAnalysisId =
@@ -117,13 +132,17 @@ export const ResumeGeneratorPage = () => {
     (typeof resume?.analysisId === 'object' ? resume.analysisId?._id : resume?.analysisId) ||
     '';
 
-  // Load user resumes list
+  // Load user resumes and analyses list
   const loadLists = async () => {
     try {
-      const rRes = await resumeService.getResumes();
+      const [rRes, aRes] = await Promise.all([
+        resumeService.getResumes(),
+        analysisService.getAnalyses()
+      ]);
       if (rRes.success) setAllResumes(rRes.data?.resumes || []);
+      if (aRes.success) setAvailableAnalyses(aRes.data?.analyses || []);
     } catch (err) {
-      console.error('Error fetching resumes list', err);
+      console.error('Error fetching resume lists', err);
     }
   };
 
@@ -186,10 +205,14 @@ export const ResumeGeneratorPage = () => {
           }
         } else {
           // Navigated to /resume directly (no specific resume ID):
-          // Show the Tailored ATS Resumes list by default
+          // Show the ATS Resumes & Documents hub by default
           setResume(null);
-          const rRes = await resumeService.getResumes();
+          const [rRes, aRes] = await Promise.all([
+            resumeService.getResumes(),
+            analysisService.getAnalyses()
+          ]);
           if (rRes.success) setAllResumes(rRes.data?.resumes || []);
+          if (aRes.success) setAvailableAnalyses(aRes.data?.analyses || []);
         }
       } catch (err) {
         toast.error(err.message || 'Failed to load resume.');
@@ -348,21 +371,211 @@ export const ResumeGeneratorPage = () => {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
   };
 
-  const handleOpenTailorModal = (preferredBaseResumeId = null) => {
-    const defaultResumeId = preferredBaseResumeId || (allResumes.length > 0 ? allResumes[0]._id : '');
-    const foundResume = allResumes.find((r) => r._id === defaultResumeId);
+  const handleFileSelect = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const allowed = ['.pdf', '.doc', '.docx'];
+    const ext = '.' + file.name.split('.').pop().toLowerCase();
+    if (!allowed.includes(ext)) {
+      toast.error('Only PDF or DOC/DOCX files are supported.');
+      return;
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error('File size must be under 10MB.');
+      return;
+    }
+
+    setUploadFile(file);
+    if (!uploadTargetRole) {
+      const cleanName = file.name
+        .replace(/\.[^/.]+$/, '')
+        .replace(/resume/gi, '')
+        .replace(/cv/gi, '')
+        .replace(/[_-]+/g, ' ')
+        .trim();
+      if (cleanName && cleanName.length > 2) {
+        setUploadTargetRole(cleanName);
+      }
+    }
+  };
+
+  const handleUploadResumeSubmit = async (e, forceOverwrite = false) => {
+    if (e) e.preventDefault();
+    if (!uploadFile) {
+      toast.error('Please select a resume file (PDF or DOCX).');
+      return;
+    }
+    if (!uploadTargetRole.trim()) {
+      toast.error('Please enter a target role.');
+      return;
+    }
+
+    try {
+      setIsUploading(true);
+      const formData = new FormData();
+      formData.append('resume', uploadFile);
+      formData.append('targetRole', uploadTargetRole.trim());
+      if (forceOverwrite) formData.append('overwrite', 'true');
+
+      const res = await analysisService.createAnalysis(formData);
+      if (res.success) {
+        toast.success(`Resume "${uploadFile.name}" uploaded successfully!`);
+        setUploadFile(null);
+        setUploadTargetRole('');
+        setShowUploadBox(false);
+        if (fileInputRef.current) fileInputRef.current.value = '';
+        await loadLists();
+      }
+    } catch (err) {
+      if (err.response?.status === 409 || err.message?.includes('Duplicate resume detected')) {
+        if (window.confirm('A resume document for this role already exists. Overwrite it with this upload?')) {
+          await handleUploadResumeSubmit(null, true);
+          return;
+        }
+      } else {
+        toast.error(err.message || 'Failed to upload resume document.');
+      }
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleDownloadOriginalFile = async (e, id, fileName) => {
+    if (e) e.stopPropagation();
+    try {
+      toast.loading('Preparing download...', { id: 'dl-toast' });
+      await analysisService.downloadOriginalResumeFile(id, fileName);
+      toast.success('Download started', { id: 'dl-toast' });
+    } catch (err) {
+      toast.error('Failed to download resume file', { id: 'dl-toast' });
+    }
+  };
+
+  const handleViewOriginalResume = (e, a) => {
+    if (e) e.stopPropagation();
+    setPdfModalData({
+      title: a.fileName || 'Uploaded Resume',
+      targetRole: a.targetRole || 'Software Professional',
+      analysisId: a._id,
+      hasOriginalPdf: a.hasOriginalPdf !== false,
+      rawResumeText: a.resumeText || ''
+    });
+  };
+
+  const handleDeleteUploadedResume = async (e, id, fileName) => {
+    if (e) e.stopPropagation();
+    if (
+      !window.confirm(
+        `Permanently delete "${fileName || 'this resume'}"?\n\nNote: Your roadmaps will remain intact and will NOT be deleted.`
+      )
+    ) {
+      return;
+    }
+    try {
+      const res = await analysisService.deleteAnalysis(id);
+      if (res.success) {
+        toast.success(`"${fileName || 'Resume'}" deleted successfully.`);
+        await loadLists();
+      }
+    } catch (err) {
+      toast.error(err.message || 'Failed to delete resume document.');
+    }
+  };
+
+  const handleOpenEditDoc = (e, a) => {
+    if (e) e.stopPropagation();
+    setEditingDoc(a);
+    setEditDocForm({
+      fileName: a.fileName || 'Uploaded Resume',
+      targetRole: a.targetRole || '',
+      resumeText: a.resumeText || ''
+    });
+  };
+
+  const handleSaveEditDoc = async (addAfter = false) => {
+    if (!editingDoc) return;
+    if (!editDocForm.resumeText.trim()) {
+      toast.error('Resume text cannot be empty.');
+      return;
+    }
+    try {
+      setSavingDoc(true);
+      const res = await analysisService.updateAnalysis(editingDoc._id, {
+        fileName: editDocForm.fileName.trim(),
+        targetRole: editDocForm.targetRole.trim(),
+        resumeText: editDocForm.resumeText.trim()
+      });
+      if (res.success) {
+        toast.success('Original resume document updated successfully!');
+        await loadLists();
+        const updatedDoc = res.data?.analysis || {
+          ...editingDoc,
+          ...editDocForm
+        };
+        setEditingDoc(null);
+
+        if (addAfter) {
+          handleOpenTailorModalForDoc(updatedDoc);
+        }
+      }
+    } catch (err) {
+      toast.error(err.message || 'Failed to update document.');
+    } finally {
+      setSavingDoc(false);
+    }
+  };
+
+  const handleOpenTailorModalForDoc = (doc) => {
+    setTailorSourceType('document');
     setTailorForm({
-      baseResumeId: defaultResumeId,
-      targetRole: foundResume?.targetRole && foundResume.targetRole !== 'Target Role' ? foundResume.targetRole : '',
+      baseAnalysisId: doc._id,
+      baseResumeId: '',
+      customResumeText: doc.resumeText || '',
+      targetRole: doc.targetRole || '',
       companyName: '',
       experienceLevel: 'Fresher / Student (0-1 yrs)',
       experienceDetails: '',
       specificTools: '',
-      requiredSkills: '',
       jobDescription: ''
     });
     setTailorResumeFile(null);
-    setTailorSourceType(allResumes.length > 0 ? 'existing' : 'upload');
+    setShowTailorModal(true);
+  };
+
+  const handleOpenTailorModal = (preferredBaseResumeId = null) => {
+    if (availableAnalyses.length > 0) {
+      const defaultDoc = availableAnalyses[0];
+      setTailorSourceType('document');
+      setTailorForm({
+        baseAnalysisId: defaultDoc._id,
+        baseResumeId: '',
+        customResumeText: defaultDoc.resumeText || '',
+        targetRole: defaultDoc.targetRole || '',
+        companyName: '',
+        experienceLevel: 'Fresher / Student (0-1 yrs)',
+        experienceDetails: '',
+        specificTools: '',
+        jobDescription: ''
+      });
+    } else {
+      const defaultResumeId = preferredBaseResumeId || (allResumes.length > 0 ? allResumes[0]._id : '');
+      const foundResume = allResumes.find((r) => r._id === defaultResumeId);
+      setTailorSourceType(allResumes.length > 0 ? 'existing' : 'upload');
+      setTailorForm({
+        baseAnalysisId: '',
+        baseResumeId: defaultResumeId,
+        customResumeText: '',
+        targetRole: foundResume?.targetRole && foundResume.targetRole !== 'Target Role' ? foundResume.targetRole : '',
+        companyName: '',
+        experienceLevel: 'Fresher / Student (0-1 yrs)',
+        experienceDetails: '',
+        specificTools: '',
+        jobDescription: ''
+      });
+    }
+    setTailorResumeFile(null);
     setShowTailorModal(true);
   };
 
@@ -379,6 +592,11 @@ export const ResumeGeneratorPage = () => {
       return;
     }
 
+    if (tailorSourceType === 'document' && !tailorForm.baseAnalysisId && !tailorForm.customResumeText) {
+      toast.error('Please select an original resume document to tailor.');
+      return;
+    }
+
     const companyToUse = tailorForm.companyName?.trim() || 'Custom Application';
 
     try {
@@ -386,9 +604,13 @@ export const ResumeGeneratorPage = () => {
       const formData = new FormData();
       if (tailorSourceType === 'upload' && tailorResumeFile) {
         formData.append('resume', tailorResumeFile);
+      } else if (tailorSourceType === 'document') {
+        if (tailorForm.baseAnalysisId) formData.append('baseAnalysisId', tailorForm.baseAnalysisId);
+        if (tailorForm.customResumeText) formData.append('customResumeText', tailorForm.customResumeText);
       } else if (tailorSourceType === 'existing' && tailorForm.baseResumeId) {
         formData.append('baseResumeId', tailorForm.baseResumeId);
       }
+
       formData.append('companyName', companyToUse);
       formData.append('targetRole', tailorForm.targetRole.trim());
       formData.append('experienceLevel', tailorForm.experienceLevel || 'Fresher / Student (0-1 yrs)');
@@ -408,9 +630,10 @@ export const ResumeGeneratorPage = () => {
           experienceLevel: 'Fresher / Student (0-1 yrs)',
           experienceDetails: '',
           specificTools: '',
-          requiredSkills: '',
           jobDescription: '',
-          baseResumeId: ''
+          baseAnalysisId: '',
+          baseResumeId: '',
+          customResumeText: ''
         });
         setResume(res.data.resume);
         setEditableHtml(res.data.resume.html);
@@ -423,6 +646,128 @@ export const ResumeGeneratorPage = () => {
     } finally {
       setTailoring(false);
     }
+  };
+
+  const renderEditDocModal = () => {
+    if (!editingDoc) return null;
+
+    const charCount = editDocForm.resumeText.length;
+    const wordCount = editDocForm.resumeText.trim() ? editDocForm.resumeText.trim().split(/\s+/).length : 0;
+
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fadeIn">
+        <div className="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-2xl border border-slate-200 space-y-4 max-h-[92vh] flex flex-col">
+          {/* Header */}
+          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+            <div>
+              <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                <Edit3 className="w-5 h-5 text-indigo-600" />
+                Edit Original Resume Document
+              </h3>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Manually edit the text and role of this document. Save changes or instantly convert it into a tailored ATS resume.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setEditingDoc(null)}
+              className="p-1 rounded-lg text-slate-400 hover:text-slate-600 cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          {/* Form Fields */}
+          <div className="space-y-4 overflow-y-auto flex-1 pr-1">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs font-bold text-slate-700 block mb-1">
+                  Document / File Name
+                </label>
+                <input
+                  type="text"
+                  value={editDocForm.fileName}
+                  onChange={(e) => setEditDocForm({ ...editDocForm, fileName: e.target.value })}
+                  placeholder="e.g. Aman_Kumar_Resume.pdf"
+                  className="w-full text-xs px-3.5 py-2 border rounded-xl border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-slate-700 block mb-1">
+                  Target Job Role *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={editDocForm.targetRole}
+                  onChange={(e) => setEditDocForm({ ...editDocForm, targetRole: e.target.value })}
+                  placeholder="e.g. Software Engineer, Frontend Lead"
+                  className="w-full text-xs px-3.5 py-2 border rounded-xl border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white"
+                />
+              </div>
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-xs font-bold text-slate-700">
+                  Extracted Resume Text (Editable)
+                </label>
+                <span className="text-[10px] text-slate-400 font-mono">
+                  {wordCount} words • {charCount} chars
+                </span>
+              </div>
+              <textarea
+                rows={13}
+                value={editDocForm.resumeText}
+                onChange={(e) => setEditDocForm({ ...editDocForm, resumeText: e.target.value })}
+                placeholder="Edit your resume content, experience bullet points, skills, education, projects..."
+                className="w-full text-xs p-3.5 border rounded-xl border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-slate-50/50 font-mono leading-relaxed"
+              />
+              <p className="text-[11px] text-slate-400 mt-1">
+                Tip: You can correct any OCR typos, add new bullet points, or paste an updated summary here.
+              </p>
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex flex-wrap items-center justify-between gap-2 pt-3 border-t border-slate-100">
+            <button
+              type="button"
+              onClick={() => setEditingDoc(null)}
+              className="px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-800 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors cursor-pointer"
+            >
+              Cancel
+            </button>
+
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                isLoading={savingDoc}
+                onClick={() => handleSaveEditDoc(false)}
+              >
+                <Save className="w-3.5 h-3.5 mr-1.5" />
+                Save Changes
+              </Button>
+
+              <Button
+                type="button"
+                variant="primary"
+                size="sm"
+                isLoading={savingDoc}
+                onClick={() => handleSaveEditDoc(true)}
+                className="bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs"
+              >
+                <Sparkles className="w-3.5 h-3.5 mr-1.5" />
+                Save & Add to Tailored Resume →
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   };
 
   const renderTailorModal = () => {
@@ -455,32 +800,100 @@ export const ResumeGeneratorPage = () => {
               </label>
 
               {/* Source Switcher Tabs */}
-              <div className="grid grid-cols-2 gap-2 p-1 bg-slate-100 rounded-xl mb-3">
+              <div className="grid grid-cols-3 gap-1.5 p-1 bg-slate-100 rounded-xl mb-3 text-center">
+                <button
+                  type="button"
+                  onClick={() => setTailorSourceType('document')}
+                  className={`py-1.5 px-2 text-[11px] font-semibold rounded-lg transition-all cursor-pointer ${
+                    tailorSourceType === 'document'
+                      ? 'bg-white text-indigo-700 shadow-xs font-bold'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  Original Doc ({availableAnalyses.length})
+                </button>
                 <button
                   type="button"
                   onClick={() => setTailorSourceType('upload')}
-                  className={`py-1.5 px-3 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
+                  className={`py-1.5 px-2 text-[11px] font-semibold rounded-lg transition-all cursor-pointer ${
                     tailorSourceType === 'upload'
                       ? 'bg-white text-indigo-700 shadow-xs font-bold'
                       : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
-                  Upload Resume File (PDF/DOCX)
+                  Upload File
                 </button>
                 <button
                   type="button"
                   onClick={() => setTailorSourceType('existing')}
-                  className={`py-1.5 px-3 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
+                  className={`py-1.5 px-2 text-[11px] font-semibold rounded-lg transition-all cursor-pointer ${
                     tailorSourceType === 'existing'
                       ? 'bg-white text-indigo-700 shadow-xs font-bold'
                       : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
-                  Use Existing Tailored ({allResumes.length})
+                  Tailored ({allResumes.length})
                 </button>
               </div>
 
-              {tailorSourceType === 'upload' ? (
+              {tailorSourceType === 'document' ? (
+                <div>
+                  {availableAnalyses.length === 0 ? (
+                    <div className="p-3.5 rounded-xl border border-amber-200 bg-amber-50 text-amber-800 text-xs flex items-center justify-between">
+                      <span>No original documents found yet.</span>
+                      <button
+                        type="button"
+                        onClick={() => setTailorSourceType('upload')}
+                        className="px-2.5 py-1 bg-amber-600 text-white rounded-lg text-xs font-bold hover:bg-amber-700 cursor-pointer"
+                      >
+                        + Upload Resume File
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                      {availableAnalyses.map((a) => {
+                        const isSelected = tailorForm.baseAnalysisId === a._id;
+                        return (
+                          <div
+                            key={a._id}
+                            onClick={() => {
+                              setTailorForm((prev) => ({
+                                ...prev,
+                                baseAnalysisId: a._id,
+                                customResumeText: a.resumeText || '',
+                                targetRole: a.targetRole || prev.targetRole,
+                                jobDescription: prev.jobDescription || a.jobDescription || ''
+                              }));
+                            }}
+                            className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${
+                              isSelected
+                                ? 'border-indigo-500 bg-indigo-50/60 ring-2 ring-indigo-500/20'
+                                : 'border-slate-200 hover:border-indigo-300 hover:bg-slate-50'
+                            }`}
+                          >
+                            <div
+                              className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 ${
+                                isSelected ? 'border-indigo-600 bg-indigo-600 text-white' : 'border-slate-400'
+                              }`}
+                            >
+                              {isSelected && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                            </div>
+                            <FileText className={`w-4 h-4 shrink-0 ${isSelected ? 'text-indigo-600' : 'text-slate-400'}`} />
+                            <div className="min-w-0 flex-1">
+                              <p className="text-xs font-bold text-slate-900 truncate">
+                                {a.fileName || 'Uploaded Resume'}
+                              </p>
+                              <p className="text-[11px] text-slate-500 truncate">
+                                Role: <span className="font-semibold text-slate-700">{a.targetRole || 'General'}</span>
+                              </p>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              ) : tailorSourceType === 'upload' ? (
                 <div>
                   <input
                     ref={tailorFileInputRef}
@@ -546,7 +959,7 @@ export const ResumeGeneratorPage = () => {
                 <div>
                   {allResumes.length === 0 ? (
                     <div className="p-3 rounded-xl border border-slate-200 bg-slate-50 text-slate-500 text-xs text-center">
-                      No existing tailored resumes yet. Please choose "Upload Resume File".
+                      No existing tailored resumes yet. Please choose "Original Doc" or "Upload File".
                     </div>
                   ) : (
                     <div className="space-y-1.5 max-h-40 overflow-y-auto pr-1">
@@ -711,6 +1124,7 @@ export const ResumeGeneratorPage = () => {
                 isLoading={tailoring}
                 disabled={
                   (tailorSourceType === 'upload' && !tailorResumeFile) ||
+                  (tailorSourceType === 'document' && !tailorForm.baseAnalysisId && !tailorForm.customResumeText) ||
                   !tailorForm.targetRole.trim() ||
                   tailoring
                 }
@@ -766,15 +1180,25 @@ export const ResumeGeneratorPage = () => {
             </div>
             <div>
               <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-                Your Tailored ATS Resumes
+                ATS Resumes & Documents
               </h1>
               <p className="text-xs text-slate-500">
-                ATS-optimized resumes customized for specific companies and target roles. Export print-ready PDFs anytime.
+                Manage your original uploaded source resumes, edit their contents, and tailor custom ATS resumes for specific job openings.
               </p>
             </div>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowUploadBox((prev) => !prev)}
+              className="text-slate-700 border-slate-300 hover:bg-slate-100 text-xs font-semibold"
+            >
+              <Upload className="w-3.5 h-3.5 mr-1.5 text-indigo-600" />
+              <span>+ Upload Resume</span>
+            </Button>
+
             <Button
               variant="primary"
               size="sm"
@@ -787,125 +1211,427 @@ export const ResumeGeneratorPage = () => {
           </div>
         </div>
 
-        {/* Tailored ATS Resumes Grid */}
-        <div className="space-y-4">
-          {allResumes.length === 0 ? (
-            <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center space-y-4 shadow-2xs">
-              <div className="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center mx-auto">
-                <Sparkles className="w-6 h-6" />
-              </div>
-              <div>
-                <h3 className="text-base font-bold text-slate-800">No Tailored ATS Resumes Created Yet</h3>
-                <p className="text-xs text-slate-500 max-w-sm mx-auto mt-1">
-                  Tailor an ATS-compliant resume customized for a specific target company and role.
-                </p>
-              </div>
-              <div className="pt-2">
-                <Button
-                  variant="primary"
-                  size="md"
-                  onClick={() => handleOpenTailorModal()}
-                >
-                  <Sparkles className="w-4 h-4 mr-1.5" />
-                  + Tailor Your First Resume
-                </Button>
-              </div>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {allResumes.map((r) => {
-                const isActive = r._id === resume?._id;
-                const displayName =
-                  r.companyName && r.companyName !== 'General Application' && r.companyName !== 'Target Role'
-                    ? r.companyName
-                    : 'ATS Master Resume';
-                const displayRole =
-                  r.targetRole && r.targetRole !== 'Target Role'
-                    ? r.targetRole
-                    : 'Software Professional';
+        {/* Filter Pills (All Items | Original Documents | Tailored ATS Resumes) */}
+        <div className="flex items-center gap-2 border-b border-slate-200 pb-3">
+          <button
+            type="button"
+            onClick={() => setActiveTab('all')}
+            className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
+              activeTab === 'all'
+                ? 'bg-indigo-600 text-white shadow-xs'
+                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+            }`}
+          >
+            All Items ({availableAnalyses.length + allResumes.length})
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('documents')}
+            className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+              activeTab === 'documents'
+                ? 'bg-indigo-600 text-white shadow-xs'
+                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+            }`}
+          >
+            <FileText className="w-3.5 h-3.5" />
+            Original Documents ({availableAnalyses.length})
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('tailored')}
+            className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+              activeTab === 'tailored'
+                ? 'bg-indigo-600 text-white shadow-xs'
+                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+            }`}
+          >
+            <Briefcase className="w-3.5 h-3.5" />
+            Tailored ATS Resumes ({allResumes.length})
+          </button>
+        </div>
 
-                return (
-                  <Card
-                    key={r._id}
-                    className={`p-5 hover:border-indigo-300 transition-all shadow-sm flex flex-col justify-between ${
-                      isActive ? 'ring-2 ring-indigo-300 border-indigo-500 bg-indigo-50/20' : ''
+        {/* SECTION 1: Original Uploaded Resumes */}
+        {(activeTab === 'all' || activeTab === 'documents') && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center">
+                  <FileText className="w-4 h-4" />
+                </div>
+                <div>
+                  <h2 className="text-base font-bold text-slate-900">
+                    Original Resume Documents ({availableAnalyses.length})
+                  </h2>
+                  <p className="text-[11px] text-slate-500">
+                    Your source resume files. View in PDF reader, manually edit content, download, or tailor into an ATS resume.
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setShowUploadBox((prev) => !prev)}
+                className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 rounded-lg transition-colors cursor-pointer"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>{showUploadBox ? 'Close Upload' : 'Upload Resume'}</span>
+              </button>
+            </div>
+
+            {/* Expandable Upload Dropzone */}
+            {showUploadBox && (
+              <div className="bg-slate-50/80 border border-indigo-200 rounded-2xl p-5 shadow-xs space-y-4 animate-fadeIn">
+                <div className="flex items-center justify-between pb-2 border-b border-slate-200">
+                  <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                    <FileUp className="w-4 h-4 text-indigo-600" />
+                    Upload New Resume Document
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setShowUploadBox(false)}
+                    className="text-slate-400 hover:text-slate-600 p-1 rounded-md"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+
+                <form onSubmit={handleUploadResumeSubmit} className="space-y-3.5">
+                  <div
+                    onClick={() => fileInputRef.current?.click()}
+                    className={`border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-colors ${
+                      uploadFile
+                        ? 'border-emerald-400 bg-emerald-50/40'
+                        : 'border-slate-300 hover:border-indigo-400 bg-white hover:bg-indigo-50/30'
                     }`}
                   >
-                    <div>
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                              {new Date(r.createdAt).toLocaleDateString()}
-                            </span>
-                            {isActive && (
-                              <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-indigo-100 text-indigo-700">
-                                Active
-                              </span>
-                            )}
-                            <span className="px-2 py-0.5 text-[10px] font-medium rounded-full bg-slate-100 text-slate-600">
-                              {TEMPLATES.find((t) => t.id === r.template)?.name || 'Modern Tech'}
-                            </span>
-                          </div>
-                          <h3 className="text-base font-bold text-slate-900 mt-1">
-                            {displayName}
-                          </h3>
-                          <p className="text-xs font-medium text-indigo-600 mt-0.5">
-                            {displayRole}
-                          </p>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept=".pdf,.doc,.docx"
+                      onChange={handleFileSelect}
+                      className="hidden"
+                    />
+                    {uploadFile ? (
+                      <div className="flex items-center justify-center gap-2 text-emerald-700">
+                        <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+                        <div className="text-left">
+                          <p className="text-xs font-bold text-slate-900 truncate max-w-xs">{uploadFile.name}</p>
+                          <p className="text-[11px] text-slate-500">{formatFileSize(uploadFile.size)} • Click to change</p>
                         </div>
+                      </div>
+                    ) : (
+                      <div>
+                        <Upload className="w-7 h-7 text-indigo-500 mx-auto mb-2 opacity-80" />
+                        <p className="text-xs font-semibold text-slate-700">
+                          Click or drag resume file here (PDF or DOCX, max 10MB)
+                        </p>
+                        <p className="text-[11px] text-slate-400 mt-0.5">
+                          Clean document upload stored securely to your account
+                        </p>
+                      </div>
+                    )}
+                  </div>
 
-                        <div className="w-8 h-8 rounded-lg bg-indigo-50 border border-indigo-100 text-indigo-600 flex items-center justify-center shrink-0">
-                          <Briefcase className="w-4 h-4" />
-                        </div>
+                  <div>
+                    <label className="text-xs font-bold text-slate-700 block mb-1">
+                      Target Job Role *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={uploadTargetRole}
+                      onChange={(e) => setUploadTargetRole(e.target.value)}
+                      placeholder="e.g. Senior Python Developer, Full Stack Engineer, Data Scientist"
+                      className="w-full text-xs px-3.5 py-2.5 border rounded-xl border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white"
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-end gap-2 pt-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowUploadBox(false);
+                        setUploadFile(null);
+                        setUploadTargetRole('');
+                      }}
+                      className="px-3 py-1.5 text-xs font-semibold text-slate-600 hover:text-slate-800 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors cursor-pointer"
+                    >
+                      Cancel
+                    </button>
+                    <Button
+                      type="submit"
+                      variant="primary"
+                      size="sm"
+                      isLoading={isUploading}
+                      disabled={!uploadFile || !uploadTargetRole.trim() || isUploading}
+                    >
+                      <Upload className="w-3.5 h-3.5 mr-1.5" />
+                      Upload & Save Resume
+                    </Button>
+                  </div>
+                </form>
+              </div>
+            )}
+
+            {/* Original Resumes Grid */}
+            {availableAnalyses.length === 0 ? (
+              <div className="bg-white rounded-2xl border border-slate-200 p-8 text-center space-y-3 shadow-2xs">
+                <div className="w-10 h-10 rounded-xl bg-slate-100 text-slate-500 flex items-center justify-center mx-auto">
+                  <FileText className="w-5 h-5" />
+                </div>
+                <h3 className="text-sm font-bold text-slate-800">No Original Resumes Uploaded Yet</h3>
+                <p className="text-xs text-slate-500 max-w-sm mx-auto">
+                  Upload your resume document (PDF or DOCX) to keep it in your documents vault, edit manually, and tailor custom ATS versions.
+                </p>
+                <div>
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    onClick={() => setShowUploadBox(true)}
+                  >
+                    <Upload className="w-3.5 h-3.5 mr-1.5" />
+                    + Upload Resume Document
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {availableAnalyses.map((a) => (
+                  <div
+                    key={a._id}
+                    className="bg-white rounded-xl border border-slate-200 hover:border-slate-300 p-4 shadow-2xs hover:shadow-sm transition-all flex flex-col justify-between"
+                  >
+                    {/* Document Header info */}
+                    <div className="flex items-start gap-3">
+                      <div className="w-9 h-9 rounded-lg bg-rose-50 border border-rose-100 text-rose-500 flex items-center justify-center shrink-0">
+                        <FileText className="w-5 h-5" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <h4
+                          className="text-sm font-bold text-slate-900 truncate"
+                          title={a.fileName || 'Uploaded Resume'}
+                        >
+                          {a.fileName || 'Uploaded Resume'}
+                        </h4>
+                        <p className="text-xs text-slate-500 truncate mt-0.5">
+                          <span className="font-semibold text-slate-700">{a.targetRole || 'Professional'}</span>
+                          <span className="mx-1.5">•</span>
+                          <span>{formatFileSize(a.fileSize)}</span>
+                          <span className="mx-1.5">•</span>
+                          <span>{new Date(a.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                        </p>
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-between gap-2 mt-5 pt-3 border-t border-slate-100">
+                    {/* Document Actions bar: View, Edit, Download, Delete, + Tailor ATS */}
+                    <div className="mt-4 pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2">
                       <div className="flex items-center gap-1.5">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            setResume(r);
-                            setEditableHtml(r.html);
-                            setSelectedTemplate(r.template || 'modern');
-                            setShowAllResumes(false);
-                            navigate(`/resume/${r._id}`);
-                          }}
-                          className="text-xs"
+                        <button
+                          type="button"
+                          onClick={(e) => handleViewOriginalResume(e, a)}
+                          className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-slate-700 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg transition-colors cursor-pointer"
+                          title="View resume in PDF reader"
                         >
-                          <Eye className="w-3 h-3 mr-1" />
-                          Open & Edit
-                        </Button>
+                          <Eye className="w-3.5 h-3.5 text-indigo-600" />
+                          <span>View</span>
+                        </button>
 
                         <button
                           type="button"
-                          onClick={() => handleDownloadPdf(r._id, r.companyName)}
-                          className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold text-slate-700 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg transition-colors cursor-pointer"
-                          title="Download print-ready PDF"
+                          onClick={(e) => handleOpenEditDoc(e, a)}
+                          className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-lg transition-colors cursor-pointer"
+                          title="Manually edit resume content & convert to tailored resume"
                         >
-                          <Download className="w-3 h-3 text-slate-500" />
-                          <span>PDF</span>
+                          <Edit3 className="w-3.5 h-3.5 text-indigo-600" />
+                          <span>Edit</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={(e) => handleDownloadOriginalFile(e, a._id, a.fileName)}
+                          className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-slate-700 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg transition-colors cursor-pointer"
+                          title="Download original file"
+                        >
+                          <Download className="w-3.5 h-3.5 text-slate-500" />
+                          <span>Download</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={(e) => handleDeleteUploadedResume(e, a._id, a.fileName)}
+                          className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-rose-600 hover:bg-rose-50 border border-rose-200/80 rounded-lg transition-colors cursor-pointer"
+                          title="Delete this resume document"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                          <span>Delete</span>
                         </button>
                       </div>
 
-                      <button
-                        type="button"
-                        onClick={(e) => handleDeleteResumeCard(e, r._id)}
-                        className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold text-rose-600 hover:bg-rose-50 border border-rose-200/80 rounded-lg transition-colors cursor-pointer"
-                        title="Delete this tailored resume"
+                      <Button
+                        variant="primary"
+                        size="sm"
+                        onClick={() => handleOpenTailorModalForDoc(a)}
+                        className="text-xs"
+                        title="Generate or tailor an ATS-optimized resume from this document"
                       >
-                        <Trash2 className="w-3.5 h-3.5" />
-                        <span>Delete</span>
-                      </button>
+                        <Sparkles className="w-3 h-3 mr-1" />
+                        <span>+ Tailor ATS</span>
+                      </Button>
                     </div>
-                  </Card>
-                );
-              })}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* SECTION 2: Your Tailored & Master ATS Resumes */}
+        {(activeTab === 'all' || activeTab === 'tailored') && (
+          <div className="space-y-4 pt-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center">
+                  <Briefcase className="w-4 h-4" />
+                </div>
+                <div>
+                  <h2 className="text-base font-bold text-slate-900">
+                    Your Tailored & Master ATS Resumes ({allResumes.length})
+                  </h2>
+                  <p className="text-[11px] text-slate-500">
+                    ATS-optimized resume versions customized for specific job openings and companies.
+                  </p>
+                </div>
+              </div>
+
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={() => handleOpenTailorModal()}
+              >
+                <Sparkles className="w-3.5 h-3.5 mr-1.5" />
+                + Tailor for Opening
+              </Button>
             </div>
-          )}
-        </div>
+
+            {allResumes.length === 0 ? (
+              <div className="bg-white rounded-2xl border border-slate-200 p-8 text-center space-y-3 shadow-2xs">
+                <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center mx-auto">
+                  <Sparkles className="w-5 h-5" />
+                </div>
+                <h3 className="text-sm font-bold text-slate-800">No Tailored ATS Resumes Created Yet</h3>
+                <p className="text-xs text-slate-500 max-w-sm mx-auto">
+                  Tailor an ATS-compliant resume customized for a specific target company and role.
+                </p>
+                <div>
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    onClick={() => handleOpenTailorModal()}
+                  >
+                    <Sparkles className="w-3.5 h-3.5 mr-1.5" />
+                    + Tailor Your First Resume
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {allResumes.map((r) => {
+                  const isActive = r._id === resume?._id;
+                  const displayName =
+                    r.companyName && r.companyName !== 'General Application' && r.companyName !== 'Target Role'
+                      ? r.companyName
+                      : 'ATS Master Resume';
+                  const displayRole =
+                    r.targetRole && r.targetRole !== 'Target Role'
+                      ? r.targetRole
+                      : 'Software Professional';
+
+                  return (
+                    <Card
+                      key={r._id}
+                      className={`p-5 hover:border-indigo-300 transition-all shadow-sm flex flex-col justify-between ${
+                        isActive ? 'ring-2 ring-indigo-300 border-indigo-500 bg-indigo-50/20' : ''
+                      }`}
+                    >
+                      <div>
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                                {new Date(r.createdAt).toLocaleDateString()}
+                              </span>
+                              {isActive && (
+                                <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-indigo-100 text-indigo-700">
+                                  Active
+                                </span>
+                              )}
+                              <span className="px-2 py-0.5 text-[10px] font-medium rounded-full bg-slate-100 text-slate-600">
+                                {TEMPLATES.find((t) => t.id === r.template)?.name || 'Modern Tech'}
+                              </span>
+                            </div>
+                            <h3 className="text-base font-bold text-slate-900 mt-1">
+                              {displayName}
+                            </h3>
+                            <p className="text-xs font-medium text-indigo-600 mt-0.5">
+                              {displayRole}
+                            </p>
+                          </div>
+
+                          <div className="w-8 h-8 rounded-lg bg-indigo-50 border border-indigo-100 text-indigo-600 flex items-center justify-center shrink-0">
+                            <Briefcase className="w-4 h-4" />
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between gap-2 mt-5 pt-3 border-t border-slate-100">
+                        <div className="flex items-center gap-1.5">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setResume(r);
+                              setEditableHtml(r.html);
+                              setSelectedTemplate(r.template || 'modern');
+                              setShowAllResumes(false);
+                              navigate(`/resume/${r._id}`);
+                            }}
+                            className="text-xs"
+                          >
+                            <Eye className="w-3 h-3 mr-1" />
+                            Open & Edit
+                          </Button>
+
+                          <button
+                            type="button"
+                            onClick={() => handleDownloadPdf(r._id, r.companyName)}
+                            className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold text-slate-700 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg transition-colors cursor-pointer"
+                            title="Download print-ready PDF"
+                          >
+                            <Download className="w-3 h-3 text-slate-500" />
+                            <span>PDF</span>
+                          </button>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={(e) => handleDeleteResumeCard(e, r._id)}
+                          className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold text-rose-600 hover:bg-rose-50 border border-rose-200/80 rounded-lg transition-colors cursor-pointer"
+                          title="Delete this tailored resume"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                          <span>Delete</span>
+                        </button>
+                      </div>
+                    </Card>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Edit Original Document Modal */}
+        {renderEditDocModal()}
 
         {/* Tailor Modal */}
         {renderTailorModal()}

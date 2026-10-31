@@ -215,7 +215,7 @@ export const Navbar = () => {
                       >
                         <span className="flex items-center gap-2.5">
                           <FileText className="w-4 h-4 text-violet-400 shrink-0" />
-                          ATS Resumes
+                          ATS Resumes & Documents
                         </span>
                         <span className="text-[10px] font-medium text-slate-400">Resumes</span>
                       </Link>

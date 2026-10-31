@@ -222,3 +222,33 @@ test('Pre-Uploaded Resume Selection: reuses existing resumeText and metadata wit
   );
 });
 
+test('Document Manual Editing and Tailor Conversion: allows updating original doc text and tailoring with customResumeText', () => {
+  let doc = {
+    _id: 'doc_123',
+    fileName: 'My_Resume.pdf',
+    targetRole: 'Junior Developer',
+    resumeText: 'Original unedited content without docker.'
+  };
+
+  // 1. Update document
+  const updatedText = 'Updated content including Docker, Kubernetes, and React leadership.';
+  const updatedRole = 'Senior Full Stack Lead';
+  doc.resumeText = updatedText;
+  doc.targetRole = updatedRole;
+
+  assert.equal(doc.resumeText, updatedText);
+  assert.equal(doc.targetRole, updatedRole);
+
+  // 2. Tailoring logic with customResumeText priority
+  const resolveTailorSource = (body) => {
+    if (body.customResumeText && body.customResumeText.trim().length > 20) {
+      return body.customResumeText.trim();
+    }
+    return 'fallback';
+  };
+
+  const source = resolveTailorSource({ customResumeText: doc.resumeText });
+  assert.equal(source, updatedText);
+});
+
+

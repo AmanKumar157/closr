@@ -437,5 +437,49 @@ export const deleteAnalysis = asyncHandler(async (req, res) => {
   ).send(res);
 });
 
+/**
+ * @desc    Update an original resume document (resumeText, targetRole, fileName)
+ * @route   PUT /api/analysis/:id
+ * @access  Protected
+ */
+export const updateAnalysis = asyncHandler(async (req, res) => {
+  if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+    throw new ApiError(400, 'Invalid document ID format.');
+  }
+
+  const analysis = await Analysis.findOne({
+    _id: req.params.id,
+    userId: req.user._id
+  });
+
+  if (!analysis) {
+    throw new ApiError(404, 'Original resume document not found.');
+  }
+
+  const { targetRole, fileName, resumeText } = req.body;
+
+  if (targetRole && targetRole.trim()) {
+    analysis.targetRole = targetRole.trim();
+  }
+  if (fileName && fileName.trim()) {
+    analysis.fileName = fileName.trim();
+  }
+  if (resumeText && resumeText.trim()) {
+    analysis.resumeText = resumeText.trim();
+    analysis.resumeTextHash = crypto
+      .createHash('sha256')
+      .update(analysis.resumeText)
+      .digest('hex');
+  }
+
+  await analysis.save();
+
+  return new ApiResponse(
+    200,
+    { analysis },
+    'Original resume document updated successfully'
+  ).send(res);
+});
+
 
 
