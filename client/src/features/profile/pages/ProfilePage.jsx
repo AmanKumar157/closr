@@ -1,6 +1,5 @@
 import React from 'react';
 import ProfileForm from '../components/ProfileForm.jsx';
-import UploadedResumesSection from '../components/UploadedResumesSection.jsx';
 import Card from '../../../components/common/Card.jsx';
 import { UserCog, Sparkles } from 'lucide-react';
 
@@ -27,9 +26,6 @@ export const ProfilePage = () => {
       <Card className="shadow-sm">
         <ProfileForm />
       </Card>
-
-      {/* Original Uploaded Resumes Section (User's Point 3: Inside Profile Section) */}
-      <UploadedResumesSection />
 
       {/* Helpful Hint Card */}
       <div className="bg-gradient-to-r from-indigo-50 to-violet-50 rounded-xl p-5 border border-indigo-100/80">
