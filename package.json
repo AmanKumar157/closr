@@ -4,6 +4,8 @@
   "description": "CareerPilot - Bridge the Skill Gap & Land Your Dream Job",
   "private": true,
   "scripts": {
+    "dev": "npm run dev --prefix server",
+    "start": "npm start --prefix server",
     "server": "npm run dev --prefix server",
     "client": "npm run dev --prefix client",
     "build": "npm run build --prefix client",
