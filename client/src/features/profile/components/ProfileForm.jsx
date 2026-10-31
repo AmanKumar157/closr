@@ -17,6 +17,7 @@ import {
   CheckCircle2,
   X,
   FileUp,
+  Crop,
   AlertCircle
 } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -28,6 +29,7 @@ import Input from '../../../components/common/Input.jsx';
 import SkillChip from '../../../components/common/SkillChip.jsx';
 import Loader from '../../../components/common/Loader.jsx';
 import PdfViewerModal from '../../../components/common/PdfViewerModal.jsx';
+import ImageCropModal from '../../../components/common/ImageCropModal.jsx';
 
 const POPULAR_SKILL_SUGGESTIONS = [
   'React',
@@ -51,6 +53,8 @@ export const ProfileForm = () => {
   const [skills, setSkills] = useState([]);
   const [newSkillInput, setNewSkillInput] = useState('');
   const [avatar, setAvatar] = useState('');
+  const [cropModalOpen, setCropModalOpen] = useState(false);
+  const [rawImageToCrop, setRawImageToCrop] = useState('');
   const [lastUploadedResume, setLastUploadedResume] = useState(null);
   const [uploadedResumes, setUploadedResumes] = useState([]);
   const [deletingResumeId, setDeletingResumeId] = useState(null);
@@ -59,7 +63,6 @@ export const ProfileForm = () => {
   // Direct resume upload state in Profile
   const [showUploader, setShowUploader] = useState(false);
   const [uploadFile, setUploadFile] = useState(null);
-  const [uploadRole, setUploadRole] = useState('');
   const [isUploading, setIsUploading] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
 
@@ -135,12 +138,9 @@ export const ProfileForm = () => {
       return;
     }
     setUploadFile(file);
-    if (!uploadRole) {
-      setUploadRole(getValues('targetRole') || '');
-    }
   };
 
-  // Direct upload and analyze handler from Profile only
+  // Direct upload handler from Profile only
   const handleDirectResumeUpload = async (e) => {
     e?.preventDefault();
     e?.stopPropagation();
@@ -149,26 +149,18 @@ export const ProfileForm = () => {
       return;
     }
 
-    const roleToUse = (uploadRole || getValues('targetRole') || '').trim();
-    if (!roleToUse) {
-      toast.error('Please enter a target job role for this resume.');
-      return;
-    }
+    const roleToUse = (getValues('targetRole') || 'Software Professional').trim();
 
     try {
       setIsUploading(true);
       const formData = new FormData();
       formData.append('resume', uploadFile);
       formData.append('targetRole', roleToUse);
-      const jd = getValues('jobDescription');
-      if (jd && jd.trim()) {
-        formData.append('jobDescription', jd.trim());
-      }
 
       const res = await analysisService.createAnalysis(formData);
       if (res.success && res.data?.analysis) {
         const newAnalysis = res.data.analysis;
-        toast.success(`Resume "${uploadFile.name}" analyzed & saved!`);
+        toast.success(`Resume "${uploadFile.name}" uploaded successfully!`);
 
         // Prepend to uploaded resumes list
         setUploadedResumes((prev) => [newAnalysis, ...prev]);
@@ -194,7 +186,6 @@ export const ProfileForm = () => {
 
         // Reset upload form
         setUploadFile(null);
-        setUploadRole('');
         setShowUploader(false);
         if (resumeFileInputRef.current) resumeFileInputRef.current.value = '';
       }
@@ -241,8 +232,8 @@ export const ProfileForm = () => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 2 * 1024 * 1024) {
-      toast.error('Profile photo must be under 2MB.');
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Profile photo must be under 5MB.');
       return;
     }
 
@@ -253,10 +244,16 @@ export const ProfileForm = () => {
 
     const reader = new FileReader();
     reader.onload = () => {
-      setAvatar(reader.result);
-      toast.success('Photo selected! Click "Save Preferences" to apply.');
+      setRawImageToCrop(reader.result);
+      setCropModalOpen(true);
     };
     reader.readAsDataURL(file);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const handleCropComplete = (croppedBase64) => {
+    setAvatar(croppedBase64);
+    toast.success('Photo cropped! Click "Save Preferences" to apply.');
   };
 
   const handleRemoveAvatar = () => {
@@ -322,36 +319,41 @@ export const ProfileForm = () => {
   return (
     <>
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
-      {/* Profile Photo Upload */}
-      <div className="flex flex-col sm:flex-row sm:items-center gap-5 p-4 rounded-xl border border-slate-200 bg-slate-50/50">
+      {/* Profile Photo Upload Section */}
+      <div id="photo" className="flex flex-col sm:flex-row sm:items-center gap-5 p-5 rounded-2xl border border-slate-200 bg-slate-50/60 shadow-2xs scroll-mt-20">
         <div className="relative group shrink-0">
           {avatar ? (
             <img
               src={avatar}
               alt="Profile"
-              className="w-20 h-20 rounded-full object-cover ring-4 ring-indigo-500/20 border border-slate-200 shadow-sm"
+              className="w-22 h-22 rounded-full object-cover ring-4 ring-indigo-500/30 border-2 border-white shadow-md"
             />
           ) : (
-            <div className="w-20 h-20 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-2xl ring-4 ring-indigo-500/10 border border-indigo-200 shadow-inner">
-              {user?.name ? user.name.charAt(0).toUpperCase() : <UserIcon className="w-8 h-8 text-indigo-500" />}
+            <div className="w-22 h-22 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-2xl ring-4 ring-indigo-500/20 border-2 border-white shadow-inner">
+              {user?.name ? user.name.charAt(0).toUpperCase() : <UserIcon className="w-9 h-9 text-indigo-500" />}
             </div>
           )}
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="absolute bottom-0 right-0 p-1.5 rounded-full bg-indigo-600 text-white shadow-md hover:bg-indigo-700 transition-colors"
-            title="Upload photo"
+            className="absolute bottom-0 right-0 p-2 rounded-full bg-indigo-600 text-white shadow-md hover:bg-indigo-700 transition-colors cursor-pointer"
+            title="Upload and crop new photo"
           >
             <Camera className="w-3.5 h-3.5" />
           </button>
         </div>
 
         <div className="space-y-1.5 flex-1 min-w-0">
-          <h4 className="text-sm font-semibold text-slate-800">Profile Photo</h4>
+          <div className="flex items-center gap-2">
+            <h4 className="text-sm font-bold text-slate-800">Profile Photo</h4>
+            <span className="text-[10px] font-semibold text-indigo-600 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded-full">
+              Circular Avatar
+            </span>
+          </div>
           <p className="text-xs text-slate-500">
-            Upload your picture (JPG, PNG, WebP up to 2MB). It will appear across your navigation bar and account profile.
+            Upload your photo (JPG, PNG, WebP up to 5MB). You'll be prompted to frame and crop it to fit your circular avatar perfectly.
           </p>
-          <div className="flex items-center gap-2 pt-1">
+          <div className="flex flex-wrap items-center gap-2 pt-1.5">
             <input
               ref={fileInputRef}
               type="file"
@@ -362,20 +364,34 @@ export const ProfileForm = () => {
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors shadow-sm"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors shadow-xs cursor-pointer"
             >
               <Upload className="w-3.5 h-3.5" />
-              Upload New Photo
+              Upload & Crop Photo
             </button>
             {avatar && (
-              <button
-                type="button"
-                onClick={handleRemoveAvatar}
-                className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-                Remove
-              </button>
+              <>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setRawImageToCrop(avatar);
+                    setCropModalOpen(true);
+                  }}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-indigo-600 bg-white border border-indigo-200 rounded-lg hover:bg-indigo-50/50 transition-colors shadow-xs cursor-pointer"
+                  title="Re-frame and crop current photo"
+                >
+                  <Crop className="w-3.5 h-3.5" />
+                  Re-Crop Current
+                </button>
+                <button
+                  type="button"
+                  onClick={handleRemoveAvatar}
+                  className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  Remove
+                </button>
+              </>
             )}
           </div>
         </div>
@@ -506,20 +522,20 @@ export const ProfileForm = () => {
         </p>
       </div>
 
-      {/* Uploaded Resumes & Records Section */}
-      <div className="space-y-4 pt-4 border-t border-slate-200">
+      {/* Uploaded Resumes Section - Real Uploaded Documents Only */}
+      <div id="resumes" className="space-y-4 pt-6 border-t border-slate-200 scroll-mt-20">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
             <div className="flex items-center gap-2">
               <h3 className="text-base font-bold text-slate-900">
-                Your Uploaded Resumes & Records
+                Your Uploaded Resumes
               </h3>
               <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-indigo-100 text-indigo-700">
                 {uploadedResumes.length}
               </span>
             </div>
             <p className="text-xs text-slate-500 mt-0.5">
-              Review all uploaded resume records, preview original PDFs, delete outdated versions, or add new resumes directly here.
+              List of your original uploaded resume documents. View original files, delete old versions, or upload new resumes directly.
             </p>
           </div>
 
@@ -527,9 +543,7 @@ export const ProfileForm = () => {
             type="button"
             onClick={() => {
               setShowUploader((prev) => !prev);
-              if (!showUploader && !uploadRole) {
-                setUploadRole(getValues('targetRole') || '');
-              }
+              setUploadFile(null);
             }}
             className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-bold transition-all shadow-xs shrink-0 cursor-pointer ${
               showUploader
@@ -557,7 +571,7 @@ export const ProfileForm = () => {
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold text-indigo-950 uppercase tracking-wider flex items-center gap-1.5">
                 <FileUp className="w-4 h-4 text-indigo-600" />
-                Direct Resume Upload & Analysis
+                Upload Resume Document
               </span>
               <span className="text-[11px] text-indigo-700 font-medium">Supports PDF & DOCX (Max 5MB)</span>
             </div>
@@ -604,7 +618,7 @@ export const ProfileForm = () => {
                     <div className="text-left min-w-0">
                       <p className="text-xs font-bold text-slate-900 truncate">{uploadFile.name}</p>
                       <p className="text-[11px] text-emerald-700">
-                        {(uploadFile.size / 1024).toFixed(1)} KB • Ready for analysis
+                        {(uploadFile.size / 1024).toFixed(1)} KB • Ready to upload
                       </p>
                     </div>
                   </div>
@@ -632,162 +646,94 @@ export const ProfileForm = () => {
               )}
             </div>
 
-            {/* Target Role for Analysis */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-end">
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Target Job Title for This Analysis *
-                </label>
-                <input
-                  type="text"
-                  value={uploadRole}
-                  onChange={(e) => setUploadRole(e.target.value)}
-                  placeholder="e.g. Senior Frontend Engineer"
-                  className="w-full text-xs rounded-lg border border-slate-300 py-2 px-3 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                />
-              </div>
-
-              <div className="flex items-center gap-2">
-                <Button
-                  type="button"
-                  variant="primary"
-                  size="sm"
-                  onClick={handleDirectResumeUpload}
-                  disabled={!uploadFile || isUploading}
-                  isLoading={isUploading}
-                  className="flex-1"
-                >
-                  <Sparkles className="w-3.5 h-3.5 mr-1.5" />
-                  Upload & Analyze Now
-                </Button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowUploader(false);
-                    setUploadFile(null);
-                  }}
-                  className="px-3 py-2 rounded-lg border border-slate-300 text-xs font-medium text-slate-600 hover:bg-slate-100"
-                >
-                  Cancel
-                </button>
-              </div>
+            <div className="flex items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowUploader(false);
+                  setUploadFile(null);
+                }}
+                className="px-3.5 py-2 rounded-lg border border-slate-300 text-xs font-medium text-slate-600 hover:bg-slate-100 cursor-pointer"
+              >
+                Cancel
+              </button>
+              <Button
+                type="button"
+                variant="primary"
+                size="sm"
+                onClick={handleDirectResumeUpload}
+                disabled={!uploadFile || isUploading}
+                isLoading={isUploading}
+              >
+                <Upload className="w-3.5 h-3.5 mr-1.5" />
+                Upload Resume
+              </Button>
             </div>
           </div>
         )}
 
-        {/* Uploaded Resumes List */}
+        {/* Uploaded Resumes List - Clean Real Documents Only */}
         {uploadedResumes.length === 0 ? (
-          <div className="p-6 rounded-xl border border-dashed border-slate-300 bg-slate-50/70 text-center">
-            <FileText className="w-8 h-8 text-slate-400 mx-auto" />
+          <div className="p-8 rounded-xl border border-dashed border-slate-300 bg-slate-50/70 text-center">
+            <FileText className="w-9 h-9 text-slate-400 mx-auto" />
             <h4 className="text-sm font-bold text-slate-800 mt-2">No uploaded resumes on file</h4>
             <p className="text-xs text-slate-500 max-w-sm mx-auto mt-1">
-              Upload your resume directly using the button above to discover ATS scores, skill gaps, and custom roadmaps.
+              Upload your resume document using the button above to store and manage your resumes in CareerPilot.
             </p>
           </div>
         ) : (
-          <div className="space-y-3">
-            {uploadedResumes.map((r, index) => {
-              const isActive =
-                lastUploadedResume?.analysisId === r._id ||
-                (!lastUploadedResume?.analysisId && index === 0);
-
-              return (
-                <div
-                  key={r._id}
-                  className="p-4 rounded-xl border border-slate-200 bg-white hover:border-indigo-300 transition-all shadow-xs flex flex-col gap-3"
-                >
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                    <div className="flex items-start gap-3 min-w-0">
-                      <div className="w-9 h-9 rounded-lg bg-indigo-50 border border-indigo-100 text-indigo-600 flex items-center justify-center shrink-0 mt-0.5">
-                        <FileText className="w-5 h-5" />
-                      </div>
-                      <div className="min-w-0">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <h4 className="text-sm font-bold text-slate-900 truncate max-w-xs sm:max-w-md">
-                            {r.fileName || 'Resume Document'}
-                          </h4>
-                          {isActive && (
-                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-100 text-indigo-700 border border-indigo-200 uppercase tracking-wide">
-                              Active Tracked
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-xs text-slate-500 mt-0.5 flex flex-wrap items-center gap-1.5">
-                          <span className="font-semibold text-slate-700">{r.targetRole}</span>
-                          <span>•</span>
-                          <span>
-                            {new Date(r.createdAt).toLocaleDateString(undefined, { dateStyle: 'medium' })}
-                          </span>
-                          {r.fileSize > 0 && (
-                            <>
-                              <span>•</span>
-                              <span>{(r.fileSize / 1024).toFixed(1)} KB</span>
-                            </>
-                          )}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-2 self-start sm:self-auto shrink-0">
-                      <div className="px-2.5 py-1 rounded-full bg-slate-100 border border-slate-200 text-slate-800 text-xs font-bold">
-                        ATS Score: {r.matchScore}%
-                      </div>
-                    </div>
+          <div className="space-y-2.5">
+            {uploadedResumes.map((r) => (
+              <div
+                key={r._id}
+                className="p-3.5 rounded-xl border border-slate-200 bg-white hover:border-slate-300 transition-all shadow-xs flex items-center justify-between gap-3"
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-9 h-9 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
+                    <FileText className="w-5 h-5" />
                   </div>
-
-                  <div className="flex flex-wrap items-center justify-between gap-2 pt-2.5 border-t border-slate-100 text-xs">
-                    <div className="flex items-center gap-2 text-slate-500">
-                      <span className="font-semibold text-emerald-600">
-                        {r.matchedSkills?.length || 0} matched
-                      </span>
-                      <span>•</span>
-                      <span className="font-semibold text-rose-600">
-                        {r.missingSkills?.length || 0} missing
-                      </span>
-                    </div>
-
-                    <div className="flex items-center gap-3">
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setPdfModalData({
-                            title: r.fileName || `${r.targetRole} Resume`,
-                            targetRole: r.targetRole,
-                            score: r.matchScore,
-                            analysisId: r._id,
-                            hasOriginalPdf: r.hasOriginalPdf,
-                            rawResumeText: r.resumeText || ''
-                          })
-                        }
-                        className="text-xs text-indigo-600 hover:text-indigo-800 font-semibold inline-flex items-center gap-1 hover:underline cursor-pointer"
-                        title="Preview uploaded resume PDF"
-                      >
-                        <Eye className="w-3.5 h-3.5 text-indigo-500" />
-                        Preview PDF
-                      </button>
-
-                      <Link
-                        to={`/analysis/${r._id}`}
-                        className="text-xs text-slate-600 hover:text-indigo-600 font-medium inline-flex items-center"
-                      >
-                        View Analysis →
-                      </Link>
-
-                      <button
-                        type="button"
-                        onClick={() => handleDeleteResume(r._id, r.fileName || r.targetRole)}
-                        disabled={deletingResumeId === r._id}
-                        className="text-xs text-rose-600 hover:text-rose-800 font-medium inline-flex items-center gap-1 hover:underline cursor-pointer"
-                        title="Permanently remove this resume from database"
-                      >
-                        <Trash2 className="w-3.5 h-3.5 text-rose-500" />
-                        {deletingResumeId === r._id ? 'Deleting...' : 'Delete'}
-                      </button>
-                    </div>
+                  <div className="min-w-0">
+                    <h4 className="text-sm font-bold text-slate-900 truncate">
+                      {r.fileName || 'Resume Document'}
+                    </h4>
+                    <p className="text-[11px] text-slate-500 mt-0.5">
+                      Uploaded {new Date(r.createdAt).toLocaleDateString(undefined, { dateStyle: 'medium' })}
+                      {r.fileSize > 0 && ` • ${(r.fileSize / 1024).toFixed(1)} KB`}
+                    </p>
                   </div>
                 </div>
-              );
-            })}
+
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setPdfModalData({
+                        title: r.fileName || 'Uploaded Resume',
+                        analysisId: r._id,
+                        hasOriginalPdf: r.hasOriginalPdf,
+                        rawResumeText: r.resumeText || ''
+                      })
+                    }
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 hover:border-indigo-300 bg-white hover:bg-indigo-50/50 text-xs font-semibold text-indigo-600 transition-colors cursor-pointer"
+                    title="Preview uploaded resume file"
+                  >
+                    <Eye className="w-3.5 h-3.5" />
+                    Preview PDF
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteResume(r._id, r.fileName)}
+                    disabled={deletingResumeId === r._id}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 hover:border-rose-300 bg-white hover:bg-rose-50 text-xs font-medium text-rose-600 transition-colors cursor-pointer"
+                    title="Permanently remove this resume file from database"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    {deletingResumeId === r._id ? 'Deleting...' : 'Delete'}
+                  </button>
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </div>
@@ -806,6 +752,14 @@ export const ProfileForm = () => {
         </Button>
       </div>
     </form>
+
+    {/* Interactive Image Crop Modal */}
+    <ImageCropModal
+      isOpen={cropModalOpen}
+      imageSrc={rawImageToCrop}
+      onClose={() => setCropModalOpen(false)}
+      onCropComplete={handleCropComplete}
+    />
 
     {/* Full in-app PDF Viewer Modal */}
     {pdfModalData && (

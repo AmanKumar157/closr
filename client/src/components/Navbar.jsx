@@ -1,13 +1,26 @@
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth.js';
-import { Compass, LogOut, User, LayoutDashboard, FileText, Map, History, TrendingUp } from 'lucide-react';
+import {
+  Compass,
+  LogOut,
+  User,
+  LayoutDashboard,
+  FileText,
+  Map,
+  History,
+  Camera,
+  X,
+  ChevronDown
+} from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export const Navbar = () => {
   const { user, isAuthenticated, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const [accountMenuOpen, setAccountMenuOpen] = useState(false);
+  const accountMenuRef = useRef(null);
 
   const handleLogout = async () => {
     try {
@@ -19,13 +32,28 @@ export const Navbar = () => {
     }
   };
 
+  // Close account menu on click outside
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (accountMenuRef.current && !accountMenuRef.current.contains(e.target)) {
+        setAccountMenuOpen(false);
+      }
+    };
+    if (accountMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [accountMenuOpen]);
+
+  // Main navigation items (Profile moved inside account dropdown)
   const navItems = [
     { label: 'Dashboard', path: '/dashboard', to: '/dashboard', icon: LayoutDashboard },
     { label: 'Analyze', path: '/analysis', to: '/analysis/new', icon: FileText },
     { label: 'Roadmap', path: '/roadmap', to: '/roadmap', icon: Map },
     { label: 'ATS Resume', path: '/resume', to: '/resume', icon: FileText },
-    { label: 'History & Diff', path: '/history', to: '/history', icon: History },
-    { label: 'Profile', path: '/profile', to: '/profile', icon: User }
+    { label: 'History & Diff', path: '/history', to: '/history', icon: History }
   ];
 
   const isItemActive = (item) => {
@@ -79,39 +107,135 @@ export const Navbar = () => {
             </nav>
           )}
 
-          {/* User profile / Auth buttons */}
+          {/* User Profile / Unified Account Menu */}
           <div className="flex items-center gap-3">
             {isAuthenticated ? (
-              <div className="flex items-center gap-3">
-                <Link to="/profile" className="flex items-center gap-2 group">
+              <div className="relative" ref={accountMenuRef}>
+                {/* Unified Account Trigger Button */}
+                <button
+                  type="button"
+                  onClick={() => setAccountMenuOpen((prev) => !prev)}
+                  className="flex items-center gap-2 p-1 pl-1.5 pr-2.5 rounded-full border border-slate-200 hover:border-indigo-300 hover:bg-slate-50 transition-all cursor-pointer focus:outline-none"
+                  title="Account menu"
+                >
                   {user?.avatar ? (
                     <img
                       src={user.avatar}
                       alt={user.name || 'User'}
-                      className="w-8 h-8 rounded-full object-cover ring-2 ring-indigo-500/30 group-hover:ring-indigo-600 transition-all"
+                      className="w-8 h-8 rounded-full object-cover ring-2 ring-indigo-500/40"
                     />
                   ) : (
-                    <div className="w-8 h-8 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-xs ring-2 ring-indigo-500/20 group-hover:ring-indigo-600 transition-all">
+                    <div className="w-8 h-8 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-xs ring-2 ring-indigo-500/30">
                       {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
                     </div>
                   )}
                   <div className="hidden sm:flex flex-col text-left">
-                    <span className="text-xs font-semibold text-slate-800 leading-tight group-hover:text-indigo-600 transition-colors">
-                      {user?.name || 'User'}
-                    </span>
-                    <span className="text-[10px] text-slate-400 leading-tight truncate max-w-[120px]">
-                      {user?.email}
+                    <span className="text-xs font-semibold text-slate-800 leading-tight">
+                      {user?.name || 'Account'}
                     </span>
                   </div>
-                </Link>
-                <button
-                  onClick={handleLogout}
-                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-600 hover:text-red-600 hover:bg-red-50 border border-slate-200 hover:border-red-200 rounded-lg transition-colors ml-1"
-                  title="Log out"
-                >
-                  <LogOut className="w-3.5 h-3.5" />
-                  <span className="hidden sm:inline">Logout</span>
+                  <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform ${accountMenuOpen ? 'rotate-180' : ''}`} />
                 </button>
+
+                {/* Google-styled Account Popover Dropdown (Matches User Reference Image) */}
+                {accountMenuOpen && (
+                  <div className="absolute right-0 mt-2.5 w-80 bg-slate-900 text-white rounded-3xl shadow-2xl border border-slate-800 p-5 z-50 animate-fadeIn select-none">
+                    {/* Header: Title & Close Button */}
+                    <div className="flex items-center justify-between pb-3">
+                      <span className="text-[11px] font-bold tracking-wider text-slate-400 uppercase">
+                        CareerPilot Account
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setAccountMenuOpen(false)}
+                        className="p-1 rounded-full text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
+                        title="Close"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+
+                    {/* User Identity Card: Large Circular Avatar + Name + Email + PRO Badge */}
+                    <div className="flex items-center gap-3.5 pb-4 border-b border-slate-800">
+                      <div className="relative shrink-0">
+                        {user?.avatar ? (
+                          <img
+                            src={user.avatar}
+                            alt={user.name || 'User'}
+                            className="w-13 h-13 rounded-full object-cover ring-2 ring-indigo-500 shadow-md"
+                          />
+                        ) : (
+                          <div className="w-13 h-13 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-xl ring-2 ring-indigo-500 shadow-md">
+                            {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
+                          </div>
+                        )}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-1.5">
+                          <h4 className="text-sm font-bold text-white truncate">{user?.name || 'User'}</h4>
+                          <span className="px-1.5 py-0.2 rounded text-[10px] font-extrabold bg-indigo-950 text-indigo-300 border border-indigo-700">
+                            PRO
+                          </span>
+                        </div>
+                        <p className="text-xs text-slate-400 truncate mt-0.5">{user?.email}</p>
+                      </div>
+                    </div>
+
+                    {/* Menu Options (Pill Buttons like Google in Image 2) */}
+                    <div className="space-y-2 py-4 border-b border-slate-800">
+                      <Link
+                        to="/profile"
+                        onClick={() => setAccountMenuOpen(false)}
+                        className="flex items-center justify-between px-4 py-2.5 rounded-full bg-slate-800/80 hover:bg-slate-800 text-xs font-semibold text-slate-200 hover:text-white border border-slate-700/60 transition-colors"
+                      >
+                        <span className="flex items-center gap-2.5">
+                          <User className="w-4 h-4 text-indigo-400" />
+                          Profile & Career Settings
+                        </span>
+                        <span className="text-[10px] text-slate-400">Open</span>
+                      </Link>
+
+                      <Link
+                        to="/profile#photo"
+                        onClick={() => setAccountMenuOpen(false)}
+                        className="flex items-center justify-between px-4 py-2.5 rounded-full bg-slate-800/80 hover:bg-slate-800 text-xs font-semibold text-slate-200 hover:text-white border border-slate-700/60 transition-colors"
+                      >
+                        <span className="flex items-center gap-2.5">
+                          <Camera className="w-4 h-4 text-emerald-400" />
+                          Crop & Update Photo
+                        </span>
+                        <span className="text-[10px] text-slate-400">Crop</span>
+                      </Link>
+
+                      <Link
+                        to="/profile#resumes"
+                        onClick={() => setAccountMenuOpen(false)}
+                        className="flex items-center justify-between px-4 py-2.5 rounded-full bg-slate-800/80 hover:bg-slate-800 text-xs font-semibold text-slate-200 hover:text-white border border-slate-700/60 transition-colors"
+                      >
+                        <span className="flex items-center gap-2.5">
+                          <FileText className="w-4 h-4 text-violet-400" />
+                          Uploaded Resumes
+                        </span>
+                        <span className="text-[10px] text-slate-400">Manage</span>
+                      </Link>
+                    </div>
+
+                    {/* Sign Out Button (Pill button like Google in Image 2) */}
+                    <div className="pt-3">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setAccountMenuOpen(false);
+                          handleLogout();
+                        }}
+                        className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-full bg-slate-800/80 hover:bg-rose-950/40 text-xs font-semibold text-slate-300 hover:text-rose-300 border border-slate-700/60 hover:border-rose-800/50 transition-colors cursor-pointer"
+                      >
+                        <LogOut className="w-3.5 h-3.5 text-rose-400" />
+                        Sign out
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="flex items-center gap-2">
