@@ -162,3 +162,63 @@ test('Cascade Deletion Simulation: deleting resume with cascade=true removes par
   assert.equal(profile.lastUploadedResume, null);
 });
 
+test('Pre-Uploaded Resume Selection: reuses existing resumeText and metadata without needing file upload', () => {
+  const mockBaseAnalysis = {
+    _id: 'analysis_existing_789',
+    userId: 'user_123',
+    fileName: 'Aman_Kumar_Original_Resume.pdf',
+    fileSize: 45678,
+    fileContentType: 'application/pdf',
+    resumeText: 'Aman Kumar, Full Stack Engineer skilled in Node.js, React, MongoDB.',
+    hasOriginalPdf: true
+  };
+
+  // Simulation of createAnalysis resolution logic
+  const resolveResumeData = (req) => {
+    let resumeText = '';
+    let fileName = '';
+    let fileSize = 0;
+
+    if (req.file) {
+      resumeText = 'Extracted text from buffer';
+      fileName = req.file.originalname;
+      fileSize = req.file.size;
+    } else if (req.body.existingAnalysisId) {
+      if (req.body.existingAnalysisId === mockBaseAnalysis._id) {
+        resumeText = mockBaseAnalysis.resumeText;
+        fileName = mockBaseAnalysis.fileName;
+        fileSize = mockBaseAnalysis.fileSize;
+      } else {
+        throw new ApiError(404, 'Selected pre-uploaded resume not found.');
+      }
+    } else {
+      throw new ApiError(400, 'Please upload a resume file (PDF or DOCX) or select a pre-uploaded resume.');
+    }
+
+    return { resumeText, fileName, fileSize };
+  };
+
+  // Case 1: Pre-uploaded resume selection
+  const resultSaved = resolveResumeData({
+    file: null,
+    body: { existingAnalysisId: 'analysis_existing_789' }
+  });
+  assert.equal(resultSaved.fileName, 'Aman_Kumar_Original_Resume.pdf');
+  assert.equal(resultSaved.resumeText, mockBaseAnalysis.resumeText);
+  assert.equal(resultSaved.fileSize, 45678);
+
+  // Case 2: Fresh file upload
+  const resultUpload = resolveResumeData({
+    file: { originalname: 'New_Resume.pdf', size: 12345 },
+    body: {}
+  });
+  assert.equal(resultUpload.fileName, 'New_Resume.pdf');
+  assert.equal(resultUpload.fileSize, 12345);
+
+  // Case 3: Neither provided throws 400
+  assert.throws(
+    () => resolveResumeData({ file: null, body: {} }),
+    /Please upload a resume file/
+  );
+});
+

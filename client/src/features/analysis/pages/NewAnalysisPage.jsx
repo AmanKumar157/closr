@@ -10,7 +10,10 @@ import {
   ArrowRight,
   Loader2,
   CheckCircle2,
-  Code2
+  Code2,
+  FolderOpen,
+  UploadCloud,
+  Eye
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import analysisService from '../../../services/analysisService.js';
@@ -19,9 +22,10 @@ import ResumeDropzone from '../components/ResumeDropzone.jsx';
 import Button from '../../../components/common/Button.jsx';
 import Card from '../../../components/common/Card.jsx';
 import Input from '../../../components/common/Input.jsx';
+import PdfViewerModal from '../../../components/common/PdfViewerModal.jsx';
 
 const STAGED_MESSAGES = [
-  'Extracting text from your resume file...',
+  'Extracting text from resume...',
   'Connecting to Gemini AI recruiter engine...',
   'Evaluating technical skills against company & role requirements...',
   'Pinpointing high-importance missing skills and gaps...',
@@ -35,6 +39,13 @@ export const NewAnalysisPage = () => {
   const [analyzing, setAnalyzing] = useState(false);
   const [stageIndex, setStageIndex] = useState(0);
   const [duplicateConflict, setDuplicateConflict] = useState(null);
+
+  // Resume source state: 'saved' (pre-uploaded) or 'upload' (new file)
+  const [resumeSource, setResumeSource] = useState('saved');
+  const [savedResumes, setSavedResumes] = useState([]);
+  const [loadingSaved, setLoadingSaved] = useState(true);
+  const [selectedResumeId, setSelectedResumeId] = useState('');
+  const [pdfModalData, setPdfModalData] = useState(null);
 
   const {
     register,
@@ -54,6 +65,44 @@ export const NewAnalysisPage = () => {
   });
 
   const autoGenerateRoadmap = watch('autoGenerateRoadmap');
+
+  // Load pre-uploaded resumes from user account
+  useEffect(() => {
+    const fetchSavedResumes = async () => {
+      try {
+        setLoadingSaved(true);
+        const res = await analysisService.getAnalyses();
+        if (res.success && res.data?.analyses) {
+          const analyses = res.data.analyses;
+          // Deduplicate by resumeTextHash or fileName to present unique original resume documents
+          const uniqueResumes = [];
+          const seenKeys = new Set();
+          for (const a of analyses) {
+            const key = a.resumeTextHash || a.fileName;
+            if (key && !seenKeys.has(key)) {
+              seenKeys.add(key);
+              uniqueResumes.push(a);
+            }
+          }
+
+          setSavedResumes(uniqueResumes);
+          if (uniqueResumes.length > 0) {
+            setSelectedResumeId(uniqueResumes[0]._id);
+            setResumeSource('saved');
+          } else {
+            setResumeSource('upload');
+          }
+        }
+      } catch (err) {
+        // Soft fail to upload mode
+        setResumeSource('upload');
+      } finally {
+        setLoadingSaved(false);
+      }
+    };
+
+    fetchSavedResumes();
+  }, []);
 
   // Prefill target role and JD from user profile if available
   useEffect(() => {
@@ -87,17 +136,32 @@ export const NewAnalysisPage = () => {
   }, [analyzing]);
 
   const runAnalysis = async (data, forceOverwrite = false) => {
-    if (!file) {
-      setFileError('Please select or drop your resume (PDF or DOCX).');
-      return;
+    // Validate resume selection based on active tab
+    if (resumeSource === 'saved') {
+      if (!selectedResumeId) {
+        setFileError('Please select a pre-uploaded resume or switch to upload a new one.');
+        return;
+      }
+    } else {
+      if (!file) {
+        setFileError('Please select or drop your resume (PDF or DOCX).');
+        return;
+      }
     }
+
     setFileError('');
     setDuplicateConflict(null);
 
     try {
       setAnalyzing(true);
       const formData = new FormData();
-      formData.append('resume', file);
+
+      if (resumeSource === 'saved') {
+        formData.append('existingAnalysisId', selectedResumeId);
+      } else {
+        formData.append('resume', file);
+      }
+
       formData.append('targetRole', data.targetRole.trim());
       if (data.companyName?.trim()) {
         formData.append('companyName', data.companyName.trim());
@@ -154,7 +218,7 @@ export const NewAnalysisPage = () => {
           Target Role Gap Analysis & Roadmap
         </h1>
         <p className="text-sm text-slate-500 mt-1">
-          Enter target company and job details, upload your resume, and let AI evaluate skill gaps and generate your personalized 12-week learning roadmap.
+          Enter target company and job details, choose a saved resume or upload a new one, and let AI evaluate skill gaps and generate your personalized 12-week roadmap.
         </p>
       </div>
 
@@ -259,20 +323,182 @@ export const NewAnalysisPage = () => {
             </div>
           </Card>
 
-          {/* STEP 2: Upload Resume */}
+          {/* STEP 2: Choose Pre-Uploaded Resume OR Upload New */}
           <Card
-            title="2. Upload Resume"
-            subtitle="Upload your current resume in PDF or DOCX format (Max 5MB)"
+            title="2. Select Resume"
+            subtitle="Choose a previously uploaded resume from your account or upload a new PDF/DOCX file"
           >
-            <ResumeDropzone
-              file={file}
-              onFileSelect={(selectedFile) => {
-                setFile(selectedFile);
-                setFileError('');
-              }}
-              onFileRemove={() => setFile(null)}
-              error={fileError}
-            />
+            {/* Source Toggle Tabs */}
+            <div className="flex rounded-xl bg-slate-100 p-1 mb-5 border border-slate-200">
+              <button
+                type="button"
+                onClick={() => {
+                  setResumeSource('saved');
+                  setFileError('');
+                }}
+                className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-3 text-xs sm:text-sm font-bold rounded-lg transition-all cursor-pointer ${
+                  resumeSource === 'saved'
+                    ? 'bg-white text-indigo-700 shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <FolderOpen className="w-4 h-4 text-indigo-500" />
+                <span>Choose Pre-Uploaded Resume</span>
+                {savedResumes.length > 0 && (
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-indigo-50 text-indigo-700 border border-indigo-200">
+                    {savedResumes.length}
+                  </span>
+                )}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setResumeSource('upload');
+                  setFileError('');
+                }}
+                className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-3 text-xs sm:text-sm font-bold rounded-lg transition-all cursor-pointer ${
+                  resumeSource === 'upload'
+                    ? 'bg-white text-indigo-700 shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <UploadCloud className="w-4 h-4 text-indigo-500" />
+                <span>Upload New Resume</span>
+              </button>
+            </div>
+
+            {/* View: Choose Pre-Uploaded Resume */}
+            {resumeSource === 'saved' ? (
+              <div className="space-y-3">
+                {loadingSaved ? (
+                  <div className="py-8 text-center text-xs text-slate-400">
+                    <Loader2 className="w-5 h-5 animate-spin mx-auto text-indigo-600 mb-2" />
+                    Loading your pre-uploaded resumes...
+                  </div>
+                ) : savedResumes.length === 0 ? (
+                  <div className="p-6 text-center border-2 border-dashed border-slate-200 rounded-xl bg-slate-50/50 space-y-2">
+                    <FileText className="w-8 h-8 text-slate-400 mx-auto" />
+                    <p className="text-sm font-semibold text-slate-700">No Pre-Uploaded Resumes Found</p>
+                    <p className="text-xs text-slate-500">
+                      You haven't uploaded any resumes yet. Upload a new resume to evaluate your skills.
+                    </p>
+                    <div className="pt-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setResumeSource('upload')}
+                      >
+                        <UploadCloud className="w-3.5 h-3.5 mr-1.5" />
+                        Upload a Resume Now
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-2.5 max-h-72 overflow-y-auto pr-1">
+                    {savedResumes.map((r) => {
+                      const isSelected = selectedResumeId === r._id;
+                      return (
+                        <div
+                          key={r._id}
+                          onClick={() => {
+                            setSelectedResumeId(r._id);
+                            setFileError('');
+                          }}
+                          className={`flex items-center justify-between p-3.5 rounded-xl border transition-all cursor-pointer ${
+                            isSelected
+                              ? 'border-indigo-600 bg-indigo-50/60 ring-2 ring-indigo-500/20 shadow-xs'
+                              : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50/60'
+                          }`}
+                        >
+                          <div className="flex items-center gap-3 min-w-0">
+                            {/* Radio indicator */}
+                            <div
+                              className={`w-5 h-5 rounded-full border flex items-center justify-center shrink-0 ${
+                                isSelected
+                                  ? 'border-indigo-600 bg-indigo-600 text-white'
+                                  : 'border-slate-300 bg-white'
+                              }`}
+                            >
+                              {isSelected && <div className="w-2 h-2 rounded-full bg-white" />}
+                            </div>
+
+                            {/* Resume icon */}
+                            <div className="w-9 h-9 rounded-lg bg-rose-50 text-rose-500 border border-rose-100 flex items-center justify-center shrink-0">
+                              <FileText className="w-5 h-5" />
+                            </div>
+
+                            {/* Details */}
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center gap-2">
+                                <h4 className="text-xs sm:text-sm font-bold text-slate-900 truncate">
+                                  {r.fileName || 'Uploaded_Resume.pdf'}
+                                </h4>
+                                {isSelected && (
+                                  <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-indigo-100 text-indigo-700 border border-indigo-200 uppercase tracking-wide shrink-0">
+                                    Selected
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-[11px] text-slate-500 truncate flex items-center gap-1.5 mt-0.5">
+                                <span className="font-semibold text-slate-700">{r.targetRole || 'Resume Document'}</span>
+                                <span>•</span>
+                                <span>{new Date(r.createdAt).toLocaleDateString(undefined, { dateStyle: 'medium' })}</span>
+                                {r.fileSize > 0 && (
+                                  <>
+                                    <span>•</span>
+                                    <span>{(r.fileSize / 1024).toFixed(1)} KB</span>
+                                  </>
+                                )}
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* Quick Preview Button */}
+                          <div className="flex items-center gap-2 shrink-0 ml-2">
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setPdfModalData({
+                                  title: r.fileName || 'Resume Document',
+                                  targetRole: r.targetRole,
+                                  score: r.matchScore,
+                                  analysisId: r._id,
+                                  hasOriginalPdf: r.hasOriginalPdf
+                                });
+                              }}
+                              className="text-xs text-indigo-600 hover:text-indigo-800 font-semibold inline-flex items-center gap-1 hover:underline cursor-pointer p-1.5 rounded-lg hover:bg-indigo-50/70"
+                              title="Preview PDF"
+                            >
+                              <Eye className="w-3.5 h-3.5 text-indigo-500" />
+                              <span className="hidden sm:inline">Preview PDF</span>
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {fileError && resumeSource === 'saved' && (
+                  <p className="text-xs text-rose-600 font-medium pt-1">{fileError}</p>
+                )}
+              </div>
+            ) : (
+              /* View: Upload New Resume */
+              <div>
+                <ResumeDropzone
+                  file={file}
+                  onFileSelect={(selectedFile) => {
+                    setFile(selectedFile);
+                    setFileError('');
+                  }}
+                  onFileRemove={() => setFile(null)}
+                  error={fileError}
+                />
+              </div>
+            )}
           </Card>
 
           {/* STEP 3: Options & Submission */}
@@ -368,6 +594,19 @@ export const NewAnalysisPage = () => {
             </Button>
           </div>
         </form>
+      )}
+
+      {/* PDF Viewer Modal for previewing saved resume */}
+      {pdfModalData && (
+        <PdfViewerModal
+          isOpen={!!pdfModalData}
+          onClose={() => setPdfModalData(null)}
+          title={pdfModalData.title}
+          targetRole={pdfModalData.targetRole}
+          score={pdfModalData.score}
+          analysisId={pdfModalData.analysisId}
+          hasOriginalPdf={pdfModalData.hasOriginalPdf}
+        />
       )}
     </div>
   );

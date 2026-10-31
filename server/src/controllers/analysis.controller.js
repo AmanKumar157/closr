@@ -17,16 +17,46 @@ import { asyncHandler } from '../utils/asyncHandler.js';
  * @access  Protected
  */
 export const createAnalysis = asyncHandler(async (req, res) => {
-  if (!req.file) {
-    throw new ApiError(400, 'Please upload a resume file (PDF or DOCX).');
-  }
+  let resumeText = '';
+  let fileName = 'Uploaded_Resume.pdf';
+  let fileSize = 0;
+  let fileBuffer = null;
+  let fileContentType = 'application/pdf';
 
-  // 1. Extract and clean resume text
-  const resumeText = await extractResumeText(
-    req.file.buffer,
-    req.file.originalname,
-    req.file.mimetype
-  );
+  if (req.file) {
+    // 1. Extract and clean resume text from uploaded file
+    resumeText = await extractResumeText(
+      req.file.buffer,
+      req.file.originalname,
+      req.file.mimetype
+    );
+    fileName = req.file.originalname || 'Uploaded_Resume.pdf';
+    fileSize = req.file.size || 0;
+    fileBuffer = req.file.buffer;
+    fileContentType = req.file.mimetype || 'application/pdf';
+  } else if (req.body.existingAnalysisId) {
+    // 1. Retrieve pre-uploaded resume from database
+    if (!mongoose.Types.ObjectId.isValid(req.body.existingAnalysisId)) {
+      throw new ApiError(400, 'Invalid pre-uploaded resume ID format.');
+    }
+
+    const baseAnalysis = await Analysis.findOne({
+      _id: req.body.existingAnalysisId,
+      userId: req.user._id
+    }).select('+fileBuffer');
+
+    if (!baseAnalysis || !baseAnalysis.resumeText) {
+      throw new ApiError(404, 'Selected pre-uploaded resume not found.');
+    }
+
+    resumeText = baseAnalysis.resumeText;
+    fileName = baseAnalysis.fileName || 'Uploaded_Resume.pdf';
+    fileSize = baseAnalysis.fileSize || 0;
+    fileBuffer = baseAnalysis.fileBuffer || null;
+    fileContentType = baseAnalysis.fileContentType || 'application/pdf';
+  } else {
+    throw new ApiError(400, 'Please upload a resume file (PDF or DOCX) or select a pre-uploaded resume.');
+  }
 
   // 2. Resolve target role, company, required skills, and job description
   let {
@@ -67,11 +97,6 @@ export const createAnalysis = asyncHandler(async (req, res) => {
     companyName?.trim() || '',
     parsedRequiredSkills
   );
-
-  const fileName = req.file.originalname || 'Uploaded_Resume.pdf';
-  const fileSize = req.file.size || 0;
-  const fileBuffer = req.file.buffer;
-  const fileContentType = req.file.mimetype || 'application/pdf';
 
   // Compute resume text hash to detect duplicate uploads
   const resumeTextHash = crypto.createHash('sha256').update(resumeText.trim()).digest('hex');
