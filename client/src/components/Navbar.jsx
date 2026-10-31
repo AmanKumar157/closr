@@ -196,31 +196,19 @@ export const Navbar = () => {
                           <User className="w-4 h-4 text-indigo-400" />
                           Profile & Career Settings
                         </span>
-                        <span className="text-[10px] text-slate-400">Open</span>
+                        <span className="text-[10px] text-slate-400">Settings</span>
                       </Link>
 
                       <Link
-                        to="/profile#photo"
-                        onClick={() => setAccountMenuOpen(false)}
-                        className="flex items-center justify-between px-4 py-2.5 rounded-full bg-slate-800/80 hover:bg-slate-800 text-xs font-semibold text-slate-200 hover:text-white border border-slate-700/60 transition-colors"
-                      >
-                        <span className="flex items-center gap-2.5">
-                          <Camera className="w-4 h-4 text-emerald-400" />
-                          Crop & Update Photo
-                        </span>
-                        <span className="text-[10px] text-slate-400">Crop</span>
-                      </Link>
-
-                      <Link
-                        to="/profile#resumes"
+                        to="/resume"
                         onClick={() => setAccountMenuOpen(false)}
                         className="flex items-center justify-between px-4 py-2.5 rounded-full bg-slate-800/80 hover:bg-slate-800 text-xs font-semibold text-slate-200 hover:text-white border border-slate-700/60 transition-colors"
                       >
                         <span className="flex items-center gap-2.5">
                           <FileText className="w-4 h-4 text-violet-400" />
-                          Uploaded Resumes
+                          ATS Resumes & Documents
                         </span>
-                        <span className="text-[10px] text-slate-400">Manage</span>
+                        <span className="text-[10px] text-slate-400">Resumes</span>
                       </Link>
                     </div>
 
