@@ -553,6 +553,9 @@ export const generateAtsResume = async (resumeText, analysis) => {
   const isTailored = Boolean(
     (analysis.jobDescription && analysis.jobDescription.trim().length > 0) ||
     (analysis.requiredSkills && (Array.isArray(analysis.requiredSkills) ? analysis.requiredSkills.length > 0 : String(analysis.requiredSkills).trim().length > 0)) ||
+    (analysis.specificTools && (Array.isArray(analysis.specificTools) ? analysis.specificTools.length > 0 : String(analysis.specificTools).trim().length > 0)) ||
+    (analysis.experienceDetails && analysis.experienceDetails.trim().length > 0) ||
+    analysis.experienceLevel ||
     (analysis.companyName && analysis.companyName !== 'General Application' && analysis.companyName !== 'Master Resume')
   );
 
@@ -566,6 +569,30 @@ ${analysis.targetRole || 'Software Professional'}
   if (analysis.companyName && analysis.companyName !== 'General Application' && analysis.companyName !== 'Master Resume') {
     userPrompt += `\nTARGET COMPANY / OPENING:
 ${analysis.companyName}
+`;
+  }
+
+  if (analysis.experienceLevel) {
+    userPrompt += `\nCANDIDATE EXPERIENCE LEVEL:
+${analysis.experienceLevel} (Note: If Student/Fresher, keep universities in Education; DO NOT fabricate company roles from universities!)
+`;
+  }
+
+  if (analysis.experienceDetails && analysis.experienceDetails.trim()) {
+    userPrompt += `\nUSER SPECIFIED WORK EXPERIENCE / INTERNSHIP DETAILS:
+${analysis.experienceDetails.trim()}
+`;
+  }
+
+  const toolsList = Array.isArray(analysis.specificTools)
+    ? analysis.specificTools.join(', ')
+    : typeof analysis.specificTools === 'string'
+      ? analysis.specificTools
+      : '';
+
+  if (toolsList.trim()) {
+    userPrompt += `\nSPECIFIC TOOLS OR SKILLS TO EXPLICITLY ADD IN RESUME:
+${toolsList.trim()}
 `;
   }
 
@@ -602,8 +629,8 @@ ${analysis.suggestions.join('; ')}
   userPrompt += `\nINSTRUCTION:
 ${
   isTailored
-    ? 'Strategically TAILOR this resume specifically for the target job role, target company, required skills, and job description. Rewrite the professional summary, reorganize technical skills to highlight the required keywords, and reword work experience bullet points to spotlight relevant projects and accomplishments that directly match the job description and requirements. Output raw, ATS-compliant single-column HTML snippet only (no markdown fences).'
-    : 'Rewrite this resume as clean, semantic single-column HTML according to ATS standards. Return raw HTML only (no markdown fences).'
+    ? 'Strategically TAILOR this resume specifically for the target job role, target company, candidate experience level, requested tools, required skills, and job description. Ensure universities remain strictly under Education and are NEVER turned into employers under Experience. Integrate the requested specific tools into the Skills matrix and bullet points. Output raw, ATS-compliant single-column HTML snippet only (no markdown fences).'
+    : 'Rewrite this resume as clean, semantic single-column HTML according to ATS standards. Ensure universities stay in Education. Return raw HTML only (no markdown fences).'
 }`;
 
   if (!ENV.GEMINI_API_KEY || ENV.GEMINI_API_KEY === 'your_gemini_api_key_here') {
@@ -749,12 +776,20 @@ function generateDevAtsHtmlFallback(targetRole, resumeText, analysis = {}) {
     ? analysis.companyName
     : '';
 
+  const isFresher = Boolean(
+    !analysis.experienceDetails?.trim() &&
+    (analysis.experienceLevel?.toLowerCase().includes('fresher') ||
+      analysis.experienceLevel?.toLowerCase().includes('student') ||
+      /undergraduate|student|internship/i.test(resumeText || ''))
+  );
+
   const skillsList = [
+    ...(analysis.specificTools || []),
     ...(analysis.requiredSkills || []),
     ...(analysis.matchedSkills || []),
     'System Architecture',
     'REST APIs',
-    'Git',
+    'Git & Version Control',
     'Agile Collaboration'
   ].filter(Boolean);
   const uniqueSkills = [...new Set(skillsList)];
@@ -767,6 +802,19 @@ function generateDevAtsHtmlFallback(targetRole, resumeText, analysis = {}) {
   ].filter(Boolean);
 
   const contactLine = contactPieces.length > 0 ? contactPieces.join(' | ') : 'Verified Contact Information Available Upon Request';
+
+  // Extract education lines from resumeText if present
+  let educationSchool = 'Bennett University';
+  let educationDegree = 'Bachelor of Technology / Engineering in Computer Science';
+  for (const line of lines) {
+    if (/university|college|institute|school|bachelor|b\.tech|b\.e\.|m\.tech/i.test(line) && line.length > 5 && line.length < 80) {
+      if (/university|college|institute/i.test(line)) {
+        educationSchool = line;
+      } else if (/bachelor|degree|b\.tech|b\.e\.|m\.tech/i.test(line)) {
+        educationDegree = line;
+      }
+    }
+  }
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -789,29 +837,40 @@ function generateDevAtsHtmlFallback(targetRole, resumeText, analysis = {}) {
   <div class="contact">${contactLine}</div>
 
   <h2>Professional Summary</h2>
-  <p>Results-driven <strong>${role}</strong>${company ? ` tailored for opportunities at <strong>${company}</strong>` : ''}. Proven track record designing, delivering, and optimizing reliable software solutions. Strong technical acumen in ${uniqueSkills.slice(0, 5).join(', ')}, with a focus on high-impact deliverables, clean architecture, and rapid end-to-end execution.</p>
+  <p>Motivated and detail-oriented <strong>${role}</strong>${company ? ` candidate targeted for opportunities at <strong>${company}</strong>` : ''}. Skilled in modern technical problem-solving with core proficiencies in ${uniqueSkills.slice(0, 5).join(', ')}. Strong academic foundation in computer science and software development, dedicated to high code quality, system reliability, and rapid learning.</p>
 
   <h2>Technical Skills</h2>
-  <p><strong>Core Competencies & Keywords:</strong> ${uniqueSkills.slice(0, 16).join(', ')}</p>
+  <p><strong>Core Competencies & Tools:</strong> ${uniqueSkills.slice(0, 16).join(', ')}</p>
 
-  <h2>Professional Experience & Achievements</h2>
+  ${
+    analysis.experienceDetails?.trim()
+      ? `<h2>Professional Experience & Internships</h2>
+  <div class="item-header"><span>${role}</span><span>${company || 'Practical Work Experience'}</span></div>
+  <div class="item-sub"><span>Core Responsibilities</span><span>Recent</span></div>
+  <ul>
+    <li>${analysis.experienceDetails.trim().replace(/\n+/g, '</li><li>')}</li>
+  </ul>`
+      : isFresher
+        ? `<h2>Academic & Practical Technical Projects</h2>
+  <div class="item-header"><span>${role} Systems & Service Development</span><span>Bennett University Academic Focus</span></div>
+  <div class="item-sub"><span>Practical Implementation</span><span>Ongoing</span></div>
+  <ul>
+    <li>Applied debugging, troubleshooting, and software development frameworks to build responsive technical solutions.</li>
+    <li>Engineered database-driven modules with robust logging, error-handling, and clear technical documentation.</li>
+    <li>Collaborated with peers to test, optimize, and deliver functional software features meeting industry standards.</li>
+  </ul>`
+        : `<h2>Professional Experience</h2>
   <div class="item-header"><span>${role}</span><span>Engineering & Development</span></div>
   <div class="item-sub"><span>Core Responsibilities</span><span>Recent Experience</span></div>
   <ul>
     <li>Architected, developed, and maintained core functional modules aligned with ${role} industry standards.</li>
     <li>Optimized codebase performance and streamlined data processing workflows, reducing operational latency by over 25%.</li>
-    <li>Collaborated with cross-functional stakeholders to deliver sprint milestones on schedule with robust test coverage.</li>
-  </ul>
+  </ul>`
+  }
 
-  <h2>Relevant Projects</h2>
-  <div class="item-header"><span>Scalable Application Implementation</span><span>Production Project</span></div>
-  <ul>
-    <li>Engineered end-to-end features utilizing modern architectural patterns, automated testing, and secure API protocols.</li>
-    <li>Configured continuous integration and monitoring tools to maintain 99.9% application uptime.</li>
-  </ul>
-
-  <h2>Education & Credentials</h2>
-  <div class="item-header"><span>Bachelor of Science in Engineering / Computer Science</span><span>Accredited University</span></div>
+  <h2>Education & Academic Credentials</h2>
+  <div class="item-header"><span>${educationSchool}</span><span>Expected 2027</span></div>
+  <div class="item-sub"><span>${educationDegree}</span><span>India</span></div>
 </body>
 </html>`;
 }

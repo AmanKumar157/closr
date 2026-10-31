@@ -140,3 +140,32 @@ test('Tailored ATS Resume: produces customized HTML incorporating target role, c
   assert.ok(html.includes('Docker') || html.includes('Kubernetes'), 'Must include required skills');
 });
 
+test('Tailored ATS Resume: student education is NOT converted to employer, and specific tools are included', async () => {
+  const studentResume = `Aman Kumar
+aman@example.com | 9876543210
+Final-year Computer Science undergraduate seeking an Engineering Support internship.
+EDUCATION
+Bennett University
+Bachelor of Engineering, Computer Science - CGPA: 8.17 | Aug 2023 - Expected Aug 2027
+TECHNICAL SKILLS
+Operating Systems concepts, Databases (SQL, PostgreSQL), REST APIs`;
+
+  const tailoringInput = {
+    targetRole: 'Engineering Support Specialist',
+    companyName: 'Zepto',
+    experienceLevel: 'Fresher / Student (0-1 yrs)',
+    specificTools: ['Postman', 'Jira', 'Linux'],
+    requiredSkills: ['SQL', 'REST APIs', 'Troubleshooting'],
+    jobDescription: 'Looking for an Engineering Support Specialist with Postman, Jira, and SQL troubleshooting skills.'
+  };
+
+  const html = await generateAtsResume(studentResume, tailoringInput);
+  assert.ok(typeof html === 'string');
+  assert.ok(html.includes('Aman Kumar'), 'Preserves real candidate name');
+  assert.ok(html.includes('Bennett University'), 'Preserves college name');
+  assert.ok(html.includes('Postman') || html.includes('Jira'), 'Includes user requested specific tools');
+  // Verify Bennett University is NOT an employer under Experience
+  const expMatch = html.match(/<h2>Professional Experience<\/h2>[\s\S]*?Bennett University/i);
+  assert.equal(expMatch, null, 'Bennett University must NOT be fabricated as an employer under Professional Experience');
+});
+

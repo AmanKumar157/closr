@@ -107,6 +107,9 @@ export const ResumeGeneratorPage = () => {
   const [tailorForm, setTailorForm] = useState({
     companyName: '',
     targetRole: '',
+    experienceLevel: 'Fresher / Student (0-1 yrs)',
+    experienceDetails: '',
+    specificTools: '',
     requiredSkills: '',
     jobDescription: '',
     baseAnalysisId: ''
@@ -468,6 +471,9 @@ export const ResumeGeneratorPage = () => {
       baseAnalysisId: defaultId,
       targetRole: defaultAnalysis?.targetRole || '',
       companyName: '',
+      experienceLevel: 'Fresher / Student (0-1 yrs)',
+      experienceDetails: '',
+      specificTools: '',
       requiredSkills: defaultAnalysis?.matchedSkills?.slice(0, 8).join(', ') || '',
       jobDescription: defaultAnalysis?.jobDescription || ''
     });
@@ -494,6 +500,9 @@ export const ResumeGeneratorPage = () => {
         baseAnalysisId: tailorForm.baseAnalysisId,
         companyName: companyToUse,
         targetRole: tailorForm.targetRole.trim(),
+        experienceLevel: tailorForm.experienceLevel || 'Fresher / Student (0-1 yrs)',
+        experienceDetails: tailorForm.experienceDetails?.trim() || '',
+        specificTools: tailorForm.specificTools?.trim() || '',
         requiredSkills: tailorForm.requiredSkills?.trim() || '',
         jobDescription: tailorForm.jobDescription?.trim() || ''
       });
@@ -504,6 +513,9 @@ export const ResumeGeneratorPage = () => {
         setTailorForm({
           companyName: '',
           targetRole: '',
+          experienceLevel: 'Fresher / Student (0-1 yrs)',
+          experienceDetails: '',
+          specificTools: '',
           requiredSkills: '',
           jobDescription: '',
           baseAnalysisId: ''
@@ -1049,27 +1061,81 @@ export const ResumeGeneratorPage = () => {
                   />
                 </div>
 
-                {/* STEP 4: Key Required Skills & Keywords (Optional) */}
+                {/* STEP 4: Experience Level & Work/Internship Details */}
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-slate-700 block">
+                    4. Experience Level & Career History
+                  </label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {[
+                      { id: 'Fresher / Student (0-1 yrs)', label: 'Student / Fresher', desc: '0-1 yrs' },
+                      { id: 'Junior / Mid-Level (1-3 yrs)', label: 'Junior / Mid', desc: '1-3 yrs' },
+                      { id: 'Experienced / Senior (3-5+ yrs)', label: 'Senior Lead', desc: '3-5+ yrs' }
+                    ].map((lvl) => {
+                      const isLvlSelected = tailorForm.experienceLevel === lvl.id;
+                      return (
+                        <div
+                          key={lvl.id}
+                          onClick={() => setTailorForm({ ...tailorForm, experienceLevel: lvl.id })}
+                          className={`p-2.5 rounded-xl border text-center cursor-pointer transition-all ${
+                            isLvlSelected
+                              ? 'border-indigo-600 bg-indigo-50/70 text-indigo-900 ring-2 ring-indigo-500/20 font-bold'
+                              : 'border-slate-200 hover:border-slate-300 text-slate-700 bg-white'
+                          }`}
+                        >
+                          <div className="text-xs">{lvl.label}</div>
+                          <div className="text-[10px] text-slate-400 mt-0.5">{lvl.desc}</div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <input
+                    type="text"
+                    value={tailorForm.experienceDetails}
+                    onChange={(e) => setTailorForm({ ...tailorForm, experienceDetails: e.target.value })}
+                    placeholder="Specific work/internship to include (e.g. Intern at XYZ or leave blank for college projects)"
+                    className="w-full text-xs px-3.5 py-2 border rounded-xl border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white"
+                  />
+                  <p className="text-[11px] text-slate-400">
+                    College/Universities will stay strictly under Education. Specify any company or internship roles above.
+                  </p>
+                </div>
+
+                {/* STEP 5: Specific Tools or Skills to Add in Resume */}
                 <div>
                   <label className="text-xs font-bold text-slate-700 block mb-1">
-                    4. Key Required Skills & Keywords <span className="text-slate-400 font-normal">(optional)</span>
+                    5. Any Specific Tool or Skill You Want to Add? <span className="text-slate-400 font-normal">(optional)</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={tailorForm.specificTools}
+                    onChange={(e) => setTailorForm({ ...tailorForm, specificTools: e.target.value })}
+                    placeholder="e.g. Postman, Jira, Linux, Docker, Git, Selenium, REST APIs"
+                    className="w-full text-xs px-3.5 py-2.5 border rounded-xl border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white"
+                  />
+                  <p className="text-[11px] text-slate-400 mt-0.5">
+                    The AI will weave these specific tools directly into your Skills matrix and project descriptions.
+                  </p>
+                </div>
+
+                {/* STEP 6: Required Skills from the Job */}
+                <div>
+                  <label className="text-xs font-bold text-slate-700 block mb-1">
+                    6. Required Skills from Job Post <span className="text-slate-400 font-normal">(optional)</span>
                   </label>
                   <input
                     type="text"
                     value={tailorForm.requiredSkills}
                     onChange={(e) => setTailorForm({ ...tailorForm, requiredSkills: e.target.value })}
-                    placeholder="e.g. Python, FastAPI, Docker, PostgreSQL, AWS, Redis, Kubernetes"
+                    placeholder="e.g. Python, SQL, REST APIs, CI/CD, Problem Solving"
                     className="w-full text-xs px-3.5 py-2.5 border rounded-xl border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white"
                   />
-                  <p className="text-[11px] text-slate-400 mt-0.5">
-                    Specify comma-separated must-have skills from the job posting to ensure optimal ATS keyword tailoring.
-                  </p>
                 </div>
 
-                {/* STEP 5: Target Job Description */}
+                {/* STEP 7: Target Job Description */}
                 <div>
                   <label className="text-xs font-bold text-slate-700 block mb-1">
-                    5. Paste Job Description <span className="text-slate-400 font-normal">(optional)</span>
+                    7. Paste Job Description <span className="text-slate-400 font-normal">(optional)</span>
                   </label>
                   <textarea
                     rows={3}
@@ -1461,11 +1527,6 @@ export const ResumeGeneratorPage = () => {
                 <FileText className="w-3.5 h-3.5 text-slate-500" />
                 Original Uploaded Resume ({currentAnalysis?.fileName || 'Uploaded_Resume.pdf'})
               </span>
-              {currentAnalysis && (
-                <span className="text-xs font-semibold text-slate-500">
-                  Match Score: {currentAnalysis.matchScore}%
-                </span>
-              )}
             </div>
 
             <Card className="p-0 overflow-hidden border-slate-300 shadow-md h-[900px] flex flex-col bg-slate-100">
@@ -1803,27 +1864,81 @@ export const ResumeGeneratorPage = () => {
                 />
               </div>
 
-              {/* STEP 4: Key Required Skills & Keywords (Optional) */}
+              {/* STEP 4: Experience Level & Work/Internship Details */}
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-slate-700 block">
+                  4. Experience Level & Career History
+                </label>
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    { id: 'Fresher / Student (0-1 yrs)', label: 'Student / Fresher', desc: '0-1 yrs' },
+                    { id: 'Junior / Mid-Level (1-3 yrs)', label: 'Junior / Mid', desc: '1-3 yrs' },
+                    { id: 'Experienced / Senior (3-5+ yrs)', label: 'Senior Lead', desc: '3-5+ yrs' }
+                  ].map((lvl) => {
+                    const isLvlSelected = tailorForm.experienceLevel === lvl.id;
+                    return (
+                      <div
+                        key={lvl.id}
+                        onClick={() => setTailorForm({ ...tailorForm, experienceLevel: lvl.id })}
+                        className={`p-2.5 rounded-xl border text-center cursor-pointer transition-all ${
+                          isLvlSelected
+                            ? 'border-indigo-600 bg-indigo-50/70 text-indigo-900 ring-2 ring-indigo-500/20 font-bold'
+                            : 'border-slate-200 hover:border-slate-300 text-slate-700 bg-white'
+                        }`}
+                      >
+                        <div className="text-xs">{lvl.label}</div>
+                        <div className="text-[10px] text-slate-400 mt-0.5">{lvl.desc}</div>
+                      </div>
+                    );
+                  })}
+                </div>
+                <input
+                  type="text"
+                  value={tailorForm.experienceDetails}
+                  onChange={(e) => setTailorForm({ ...tailorForm, experienceDetails: e.target.value })}
+                  placeholder="Specific work/internship to include (e.g. Intern at XYZ or leave blank for college projects)"
+                  className="w-full text-xs px-3.5 py-2 border rounded-xl border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white"
+                />
+                <p className="text-[11px] text-slate-400">
+                  College/Universities will stay strictly under Education. Specify any company or internship roles above.
+                </p>
+              </div>
+
+              {/* STEP 5: Specific Tools or Skills to Add in Resume */}
               <div>
                 <label className="text-xs font-bold text-slate-700 block mb-1">
-                  4. Key Required Skills & Keywords <span className="text-slate-400 font-normal">(optional)</span>
+                  5. Any Specific Tool or Skill You Want to Add? <span className="text-slate-400 font-normal">(optional)</span>
+                </label>
+                <input
+                  type="text"
+                  value={tailorForm.specificTools}
+                  onChange={(e) => setTailorForm({ ...tailorForm, specificTools: e.target.value })}
+                  placeholder="e.g. Postman, Jira, Linux, Docker, Git, Selenium, REST APIs"
+                  className="w-full text-xs px-3.5 py-2.5 border rounded-xl border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white"
+                />
+                <p className="text-[11px] text-slate-400 mt-0.5">
+                  The AI will weave these specific tools directly into your Skills matrix and project descriptions.
+                </p>
+              </div>
+
+              {/* STEP 6: Required Skills from the Job */}
+              <div>
+                <label className="text-xs font-bold text-slate-700 block mb-1">
+                  6. Required Skills from Job Post <span className="text-slate-400 font-normal">(optional)</span>
                 </label>
                 <input
                   type="text"
                   value={tailorForm.requiredSkills}
                   onChange={(e) => setTailorForm({ ...tailorForm, requiredSkills: e.target.value })}
-                  placeholder="e.g. Python, FastAPI, Docker, PostgreSQL, AWS, Redis, Kubernetes"
+                  placeholder="e.g. Python, SQL, REST APIs, CI/CD, Problem Solving"
                   className="w-full text-xs px-3.5 py-2.5 border rounded-xl border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white"
                 />
-                <p className="text-[11px] text-slate-400 mt-0.5">
-                  Specify comma-separated must-have skills from the job posting to ensure optimal ATS keyword tailoring.
-                </p>
               </div>
 
-              {/* STEP 5: Target Job Description */}
+              {/* STEP 7: Target Job Description */}
               <div>
                 <label className="text-xs font-bold text-slate-700 block mb-1">
-                  5. Paste Job Description <span className="text-slate-400 font-normal">(optional)</span>
+                  7. Paste Job Description <span className="text-slate-400 font-normal">(optional)</span>
                 </label>
                 <textarea
                   rows={3}
