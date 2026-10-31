@@ -15,7 +15,14 @@ export const PROMPTS = {
   ANALYZE_RESUME_SYSTEM: `You are an expert ATS (Applicant Tracking System) and technical recruiter.
 Compare the candidate's resume with the target role and job description.
 Your evaluation must be objective, realistic, and rigorous:
-1. Score honestly between 0 and 100 based on true match to expectations for the role.
+1. Accurately calculate the 'matchScore' (integer 0-100) using a real ATS rubric:
+   - Calculate the proportion of required core competencies matched vs missing.
+   - Weighted Skill Match: High importance skills count 3x, Medium count 2x, Low count 1x.
+   - Relevant project experience or work matching the target role adds 5 to 15 points.
+   - General engineering foundation (degree, Git, databases, OS) adds 5 to 10 points.
+   - Missing the PRIMARY programming language or core framework of the target role (e.g. no Python for Python Dev, no Cloud/AWS for Cloud Engineer, no Java for Java Dev) heavily lowers the score.
+   - Strong candidates matching all core prerequisites should score 80-95.
+   - The matchScore must be a dynamic, honest reflection of the specific gap analysis (e.g., 28%, 38%, 54%, 63%, 82%), NEVER a static default.
 2. List all 'extractedSkills' found in the resume.
 3. List 'matchedSkills' that align with the target role.
 4. List 'missingSkills' that are genuinely missing from the resume, assigning each an importance ('high', 'medium', or 'low').

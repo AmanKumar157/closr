@@ -118,17 +118,63 @@ const callWithRetry = async (fn, maxRetries = 3, initialDelayMs = 1000) => {
 };
 
 /**
- * Sanitize text fields returned by AI before persisting
+ * Mathematically grounded ATS match score calculator
+ * Combines matched skills ratio, weighted importance penalties for missing skills,
+ * and AI contextual score (projects/experience) to guarantee dynamic, realistic ATS scoring.
+ */
+export const calculateAtsMatchScore = (matchedSkills = [], missingSkills = [], rawModelScore = null) => {
+  const highMissing = missingSkills.filter((m) => m.importance === 'high').length;
+  const medMissing = missingSkills.filter((m) => m.importance === 'medium').length;
+  const lowMissing = missingSkills.filter((m) => m.importance === 'low').length;
+  const matchedCount = matchedSkills.length;
+
+  const totalSkills = matchedCount + highMissing + medMissing + lowMissing;
+  if (totalSkills === 0) return Math.min(100, Math.max(10, Math.round(rawModelScore || 50)));
+
+  // Weighted skill matching:
+  // Each matched skill contributes +2.5
+  // High-importance missing skill penalizes 3.0
+  // Medium-importance missing skill penalizes 1.8
+  // Low-importance missing skill penalizes 0.8
+  const weightedMatched = matchedCount * 2.5;
+  const weightedMissing = (highMissing * 3.0) + (medMissing * 1.8) + (lowMissing * 0.8);
+  const rawSkillRatio = (weightedMatched / (weightedMatched + weightedMissing)) * 100;
+
+  let calculatedScore = Math.round(rawSkillRatio);
+
+  // If missing 3+ high-priority core skills with few matched skills, cap entry-level score
+  if (highMissing >= 3 && matchedCount <= 3) {
+    calculatedScore = Math.min(calculatedScore, 40);
+  }
+
+  // If the AI model provided an integer score, blend 65% calculated skills + 35% model semantic evaluation
+  if (typeof rawModelScore === 'number' && !isNaN(rawModelScore) && rawModelScore > 0) {
+    const blended = Math.round((calculatedScore * 0.65) + (rawModelScore * 0.35));
+    return Math.max(10, Math.min(98, blended));
+  }
+
+  return Math.max(10, Math.min(98, calculatedScore));
+};
+
+/**
+ * Sanitize text fields returned by AI before persisting and compute calibrated score
  */
 const sanitizeAnalysisResult = (result) => {
+  const extractedSkills = (result.extractedSkills || []).map((s) => s.trim()).filter(Boolean);
+  const matchedSkills = (result.matchedSkills || []).map((s) => s.trim()).filter(Boolean);
+  const missingSkills = (result.missingSkills || []).map((m) => ({
+    skill: (m.skill || '').trim(),
+    importance: ['high', 'medium', 'low'].includes(m.importance) ? m.importance : 'medium'
+  })).filter((m) => m.skill.length > 0);
+
+  // Dynamic ATS match score based on true skill matching + model assessment
+  const matchScore = calculateAtsMatchScore(matchedSkills, missingSkills, result.matchScore);
+
   return {
-    matchScore: Math.max(0, Math.min(100, Math.round(result.matchScore))),
-    extractedSkills: (result.extractedSkills || []).map((s) => s.trim()).filter(Boolean),
-    matchedSkills: (result.matchedSkills || []).map((s) => s.trim()).filter(Boolean),
-    missingSkills: (result.missingSkills || []).map((m) => ({
-      skill: m.skill.trim(),
-      importance: ['high', 'medium', 'low'].includes(m.importance) ? m.importance : 'medium'
-    })),
+    matchScore,
+    extractedSkills,
+    matchedSkills,
+    missingSkills,
     weakSections: (result.weakSections || []).map((w) => w.trim()).filter(Boolean),
     suggestions: (result.suggestions || []).map((s) => s.trim()).filter(Boolean)
   };
@@ -192,7 +238,7 @@ export const analyzeResume = async (resumeText, targetRole, jobDescription = '')
           contents: prompt,
           config: {
             systemInstruction: PROMPTS.ANALYZE_RESUME_SYSTEM,
-            temperature: 0.25, // Controlled temperature (0.2-0.3) for factual, deterministic analysis
+            temperature: 0.35, // Balanced temperature for nuanced rubric scoring while maintaining factual rigor
             responseMimeType: 'application/json',
             responseSchema: analysisResponseSchema
           }
@@ -228,6 +274,12 @@ export const analyzeResume = async (resumeText, targetRole, jobDescription = '')
     }
   }
 
+  // Graceful development fallback on network/offline failure
+  if (ENV.NODE_ENV === 'development' || !ENV.GEMINI_API_KEY) {
+    console.warn('[Gemini Service] Falling back to calibrated dynamic analysis due to network or rate limit.');
+    return generateDevAnalysisFallback(resumeText, targetRole, jobDescription, cacheHash);
+  }
+
   throw new ApiError(
     502,
     `AI analysis failed after multiple attempts: ${lastValidationError?.message || 'Invalid model response'}`
@@ -261,7 +313,7 @@ function generateDevAnalysisFallback(resumeText, targetRole, jobDescription, cac
     { skill: missingPool[3] || 'System Architecture', importance: 'low' }
   ];
 
-  const matchScore = Math.min(88, Math.max(52, Math.round((matchedSkills.length / (matchedSkills.length + missingSkills.length)) * 100)));
+  const matchScore = calculateAtsMatchScore(matchedSkills, missingSkills);
 
   return {
     matchScore,

@@ -3,8 +3,44 @@ import assert from 'node:assert/strict';
 import {
   aiAnalysisOutputSchema,
   computeAnalysisCacheHash,
+  calculateAtsMatchScore,
   analyzeResume
 } from '../src/services/gemini.service.js';
+
+test('ATS Match Score: mathematically calculates dynamic scores instead of static 45', () => {
+  // Scenario A: Candidate with weak match missing 4 high-priority skills (e.g. Cloud Engineer without AWS/Docker)
+  const weakMatchSkills = ['SQL', 'Git', 'OS'];
+  const heavyGaps = [
+    { skill: 'AWS', importance: 'high' },
+    { skill: 'Docker', importance: 'high' },
+    { skill: 'Kubernetes', importance: 'high' },
+    { skill: 'Terraform', importance: 'high' },
+    { skill: 'CI/CD', importance: 'medium' }
+  ];
+  const weakScore = calculateAtsMatchScore(weakMatchSkills, heavyGaps, 30);
+  assert.ok(weakScore >= 25 && weakScore <= 40, `Weak match should score between 25-40%, got ${weakScore}%`);
+
+  // Scenario B: Mid-level candidate with 6 matched skills and only 3 missing (e.g. Python Dev with web skills)
+  const midMatchSkills = ['SQL', 'PostgreSQL', 'REST APIs', 'Node.js', 'Express', 'Git'];
+  const moderateGaps = [
+    { skill: 'Python', importance: 'high' },
+    { skill: 'Django', importance: 'high' },
+    { skill: 'Unit Testing', importance: 'medium' }
+  ];
+  const midScore = calculateAtsMatchScore(midMatchSkills, moderateGaps, 45);
+  assert.ok(midScore >= 52 && midScore <= 68, `Mid-level match should score between 52-68%, got ${midScore}%`);
+
+  // Scenario C: Highly qualified senior candidate matching 10 skills with 1 minor gap
+  const seniorSkills = ['Python', 'Django', 'FastAPI', 'Flask', 'PostgreSQL', 'Redis', 'Docker', 'Kubernetes', 'AWS', 'PyTest'];
+  const minorGaps = [{ skill: 'GraphQL', importance: 'low' }];
+  const seniorScore = calculateAtsMatchScore(seniorSkills, minorGaps, 90);
+  assert.ok(seniorScore >= 85 && seniorScore <= 98, `Senior match should score 85-98%, got ${seniorScore}%`);
+
+  // Assert that each scenario produces a distinct, non-static score
+  assert.notEqual(weakScore, midScore, 'Weak and Mid match scores must not be identical');
+  assert.notEqual(midScore, seniorScore, 'Mid and Senior match scores must not be identical');
+  assert.ok(seniorScore > midScore && midScore > weakScore, 'Scores must strictly scale with qualifications');
+});
 
 test('AI Analysis Validator: accepts valid Gemini analysis JSON', () => {
   const validOutput = {
