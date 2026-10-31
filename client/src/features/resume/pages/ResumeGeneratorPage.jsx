@@ -107,6 +107,7 @@ export const ResumeGeneratorPage = () => {
   const [tailorForm, setTailorForm] = useState({
     companyName: '',
     targetRole: '',
+    requiredSkills: '',
     jobDescription: '',
     baseAnalysisId: ''
   });
@@ -467,7 +468,8 @@ export const ResumeGeneratorPage = () => {
       baseAnalysisId: defaultId,
       targetRole: defaultAnalysis?.targetRole || '',
       companyName: '',
-      jobDescription: ''
+      requiredSkills: defaultAnalysis?.matchedSkills?.slice(0, 8).join(', ') || '',
+      jobDescription: defaultAnalysis?.jobDescription || ''
     });
     setShowTailorModal(true);
   };
@@ -492,13 +494,20 @@ export const ResumeGeneratorPage = () => {
         baseAnalysisId: tailorForm.baseAnalysisId,
         companyName: companyToUse,
         targetRole: tailorForm.targetRole.trim(),
+        requiredSkills: tailorForm.requiredSkills?.trim() || '',
         jobDescription: tailorForm.jobDescription?.trim() || ''
       });
 
       if (res.success && res.data?.resume) {
         toast.success(`Tailored ATS resume created for ${companyToUse} (${tailorForm.targetRole})!`);
         setShowTailorModal(false);
-        setTailorForm({ companyName: '', targetRole: '', jobDescription: '', baseAnalysisId: '' });
+        setTailorForm({
+          companyName: '',
+          targetRole: '',
+          requiredSkills: '',
+          jobDescription: '',
+          baseAnalysisId: ''
+        });
         setResume(res.data.resume);
         setEditableHtml(res.data.resume.html);
         setShowAllResumes(false);
@@ -974,7 +983,9 @@ export const ResumeGeneratorPage = () => {
                               setTailorForm((prev) => ({
                                 ...prev,
                                 baseAnalysisId: a._id,
-                                targetRole: a.targetRole || prev.targetRole || ''
+                                targetRole: a.targetRole || prev.targetRole || '',
+                                requiredSkills: prev.requiredSkills || a.matchedSkills?.slice(0, 8).join(', ') || '',
+                                jobDescription: prev.jobDescription || a.jobDescription || ''
                               }));
                             }}
                             className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${
@@ -1038,16 +1049,33 @@ export const ResumeGeneratorPage = () => {
                   />
                 </div>
 
-                {/* STEP 4: Optional Job Description */}
+                {/* STEP 4: Key Required Skills & Keywords (Optional) */}
                 <div>
                   <label className="text-xs font-bold text-slate-700 block mb-1">
-                    4. Paste Job Description <span className="text-slate-400 font-normal">(optional)</span>
+                    4. Key Required Skills & Keywords <span className="text-slate-400 font-normal">(optional)</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={tailorForm.requiredSkills}
+                    onChange={(e) => setTailorForm({ ...tailorForm, requiredSkills: e.target.value })}
+                    placeholder="e.g. Python, FastAPI, Docker, PostgreSQL, AWS, Redis, Kubernetes"
+                    className="w-full text-xs px-3.5 py-2.5 border rounded-xl border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white"
+                  />
+                  <p className="text-[11px] text-slate-400 mt-0.5">
+                    Specify comma-separated must-have skills from the job posting to ensure optimal ATS keyword tailoring.
+                  </p>
+                </div>
+
+                {/* STEP 5: Target Job Description */}
+                <div>
+                  <label className="text-xs font-bold text-slate-700 block mb-1">
+                    5. Paste Job Description <span className="text-slate-400 font-normal">(optional)</span>
                   </label>
                   <textarea
                     rows={3}
                     value={tailorForm.jobDescription}
                     onChange={(e) => setTailorForm({ ...tailorForm, jobDescription: e.target.value })}
-                    placeholder="Paste LinkedIn/Indeed job post requirements. Gemini AI will match its keywords..."
+                    placeholder="Paste the LinkedIn or company job requirements. Gemini AI will tailor your summary and work experience bullet points to match..."
                     className="w-full text-xs px-3.5 py-2 border rounded-xl border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white"
                   />
                 </div>
@@ -1709,7 +1737,9 @@ export const ResumeGeneratorPage = () => {
                             setTailorForm((prev) => ({
                               ...prev,
                               baseAnalysisId: a._id,
-                              targetRole: prev.targetRole || a.targetRole || ''
+                              targetRole: a.targetRole || prev.targetRole || '',
+                              requiredSkills: prev.requiredSkills || a.matchedSkills?.slice(0, 8).join(', ') || '',
+                              jobDescription: prev.jobDescription || a.jobDescription || ''
                             }));
                           }}
                           className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${
@@ -1773,16 +1803,33 @@ export const ResumeGeneratorPage = () => {
                 />
               </div>
 
-              {/* STEP 4: Optional Job Description */}
+              {/* STEP 4: Key Required Skills & Keywords (Optional) */}
               <div>
                 <label className="text-xs font-bold text-slate-700 block mb-1">
-                  4. Paste Job Description <span className="text-slate-400 font-normal">(optional)</span>
+                  4. Key Required Skills & Keywords <span className="text-slate-400 font-normal">(optional)</span>
+                </label>
+                <input
+                  type="text"
+                  value={tailorForm.requiredSkills}
+                  onChange={(e) => setTailorForm({ ...tailorForm, requiredSkills: e.target.value })}
+                  placeholder="e.g. Python, FastAPI, Docker, PostgreSQL, AWS, Redis, Kubernetes"
+                  className="w-full text-xs px-3.5 py-2.5 border rounded-xl border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white"
+                />
+                <p className="text-[11px] text-slate-400 mt-0.5">
+                  Specify comma-separated must-have skills from the job posting to ensure optimal ATS keyword tailoring.
+                </p>
+              </div>
+
+              {/* STEP 5: Target Job Description */}
+              <div>
+                <label className="text-xs font-bold text-slate-700 block mb-1">
+                  5. Paste Job Description <span className="text-slate-400 font-normal">(optional)</span>
                 </label>
                 <textarea
                   rows={3}
                   value={tailorForm.jobDescription}
                   onChange={(e) => setTailorForm({ ...tailorForm, jobDescription: e.target.value })}
-                  placeholder="Paste LinkedIn/Indeed job post requirements. Gemini AI will match its keywords..."
+                  placeholder="Paste the LinkedIn or company job requirements. Gemini AI will tailor your summary and work experience bullet points to match..."
                   className="w-full text-xs px-3.5 py-2 border rounded-xl border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white"
                 />
               </div>

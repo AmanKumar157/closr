@@ -206,7 +206,7 @@ export const updateResume = asyncHandler(async (req, res) => {
  * @access  Protected
  */
 export const tailorResumeForJob = asyncHandler(async (req, res) => {
-  const { baseAnalysisId, companyName, targetRole, jobDescription } = req.body;
+  const { baseAnalysisId, companyName, targetRole, jobDescription, requiredSkills } = req.body;
 
   if (!baseAnalysisId) {
     throw new ApiError(400, 'Base analysis ID is required.');
@@ -225,11 +225,24 @@ export const tailorResumeForJob = asyncHandler(async (req, res) => {
     throw new ApiError(404, 'Base analysis not found.');
   }
 
+  // Parse required skills from array or comma-separated string
+  let parsedSkills = [];
+  if (Array.isArray(requiredSkills)) {
+    parsedSkills = requiredSkills.map((s) => String(s).trim()).filter(Boolean);
+  } else if (typeof requiredSkills === 'string' && requiredSkills.trim()) {
+    parsedSkills = requiredSkills
+      .split(/[,;\n]+/)
+      .map((s) => s.trim())
+      .filter(Boolean);
+  }
+
   // Create isolated analysis context targeting this specific company opening
   const targetAnalysis = {
     targetRole: targetRole.trim(),
+    companyName: companyName?.trim() || 'Custom Application',
     jobDescription: jobDescription?.trim() || '',
-    matchedSkills: analysis.matchedSkills,
+    requiredSkills: parsedSkills,
+    matchedSkills: analysis.matchedSkills || [],
     suggestions: [
       `Tailored specifically for ${companyName ? `${companyName} - ` : ''}${targetRole.trim()}`,
       ...(analysis.suggestions || [])

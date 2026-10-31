@@ -4,7 +4,8 @@ import {
   aiAnalysisOutputSchema,
   computeAnalysisCacheHash,
   calculateAtsMatchScore,
-  analyzeResume
+  analyzeResume,
+  generateAtsResume
 } from '../src/services/gemini.service.js';
 
 test('ATS Match Score: mathematically calculates dynamic scores instead of static 45', () => {
@@ -120,5 +121,22 @@ test('AI Service: fallback simulation produces valid schema-compliant structure'
 
   const validation = aiAnalysisOutputSchema.safeParse(result);
   assert.equal(validation.success, true);
+});
+
+test('Tailored ATS Resume: produces customized HTML incorporating target role, company, required skills, and candidate details', async () => {
+  const resume = 'Aman Kumar\nEmail: aman@example.com\nPhone: (555) 123-4567\nExperienced developer building backend services in Python and Django.';
+  const analysisContext = {
+    targetRole: 'Senior DevOps Specialist',
+    companyName: 'Zepto Technologies',
+    requiredSkills: ['Docker', 'Kubernetes', 'Terraform', 'CI/CD Pipelines'],
+    jobDescription: 'Seeking a Senior DevOps Specialist to architect Kubernetes clusters and automate Terraform deployments for Zepto Technologies.'
+  };
+
+  const html = await generateAtsResume(resume, analysisContext);
+  assert.ok(typeof html === 'string' && html.length > 50, 'Must return valid HTML string');
+  assert.ok(html.includes('Aman Kumar'), 'Must preserve candidate real name');
+  assert.ok(html.includes('Senior DevOps Specialist') || html.includes('DevOps'), 'Must tailor to target role');
+  assert.ok(html.includes('Zepto'), 'Must tailor to target company');
+  assert.ok(html.includes('Docker') || html.includes('Kubernetes'), 'Must include required skills');
 });
 
