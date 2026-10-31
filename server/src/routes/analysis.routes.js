@@ -4,7 +4,8 @@ import {
   getAnalyses,
   getAnalysisById,
   compareAnalyses,
-  getOriginalResumePdf
+  getOriginalResumePdf,
+  deleteAnalysis
 } from '../controllers/analysis.controller.js';
 import { authMiddleware } from '../middleware/auth.js';
 import { handleUpload } from '../middleware/upload.js';
@@ -29,6 +30,9 @@ router.get('/:id/file', getOriginalResumePdf);
 
 // Get analysis details by ID
 router.get('/:id', getAnalysisById);
+
+// Permanently delete an analysis (and cascade delete all its ATS resumes & roadmaps)
+router.delete('/:id', deleteAnalysis);
 
 export default router;
 

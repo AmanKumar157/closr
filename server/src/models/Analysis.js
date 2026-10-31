@@ -100,6 +100,12 @@ const analysisSchema = new mongoose.Schema(
     cacheHash: {
       type: String,
       index: true
+    },
+    // SHA-256 hash of extracted resume text to block duplicate uploads of the exact same resume
+    resumeTextHash: {
+      type: String,
+      index: true,
+      default: ''
     }
   },
   {

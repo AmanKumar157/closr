@@ -302,20 +302,40 @@ export const ResumeGeneratorPage = () => {
   };
 
   const handleDeleteResumeCard = async (e, resumeId) => {
-    e.stopPropagation();
-    if (!window.confirm('Delete this resume version?')) return;
+    if (e) e.stopPropagation();
+    if (!window.confirm('Permanently remove this resume from your app? This will completely delete this resume, its AI analysis report, and roadmap.')) return;
     try {
-      const res = await resumeService.deleteResume(resumeId);
+      const res = await resumeService.deleteResume(resumeId, true);
       if (res.success) {
-        toast.success('Resume version deleted.');
+        toast.success('Resume and all associated data completely removed from app.');
         const remaining = allResumes.filter((x) => x._id !== resumeId);
         setAllResumes(remaining);
-        if (resume?._id === resumeId && remaining.length > 0) {
-          navigate(`/resume/${remaining[0]._id}`);
+        await loadLists();
+        if (resume?._id === resumeId) {
+          if (remaining.length > 0) {
+            navigate(`/resume/${remaining[0]._id}`);
+          } else {
+            setResume(null);
+            setCurrentAnalysis(null);
+            navigate('/resume', { replace: true });
+          }
         }
       }
     } catch (err) {
       toast.error('Failed to delete resume.');
+    }
+  };
+
+  const handleDeleteAnalysisCard = async (analysisIdToDelete, name) => {
+    if (!window.confirm(`Permanently remove "${name}" from your app? This will completely delete this resume analysis and any roadmaps.`)) return;
+    try {
+      const res = await analysisService.deleteAnalysis(analysisIdToDelete);
+      if (res.success) {
+        toast.success('Resume analysis completely removed from app.');
+        await loadLists();
+      }
+    } catch (err) {
+      toast.error('Failed to delete analysis.');
     }
   };
 
@@ -439,9 +459,19 @@ export const ResumeGeneratorPage = () => {
                   </div>
 
                   <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
-                    <Link to={`/analysis/${a._id}`} className="text-xs text-slate-500 hover:text-indigo-600 font-medium">
-                      View Analysis →
-                    </Link>
+                    <div className="flex items-center gap-3">
+                      <Link to={`/analysis/${a._id}`} className="text-xs text-slate-500 hover:text-indigo-600 font-medium">
+                        View Analysis →
+                      </Link>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteAnalysisCard(a._id, a.fileName || a.targetRole)}
+                        className="text-xs text-rose-500 hover:text-rose-700 font-medium inline-flex items-center gap-1 hover:underline"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                        Delete
+                      </button>
+                    </div>
                     <Button
                       variant="primary"
                       size="sm"
@@ -535,14 +565,14 @@ export const ResumeGeneratorPage = () => {
       </div>
 
       {/* Multiple Resumes Switcher Shelf */}
-      {allResumes.length > 1 && (
+      {allResumes.length > 0 && (
         <div className="bg-slate-50 border border-slate-200 rounded-xl p-3.5">
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs font-bold text-slate-600 uppercase tracking-wider flex items-center gap-1.5">
               <Briefcase className="w-3.5 h-3.5 text-indigo-600" />
               Your Tailored Resumes & Openings ({allResumes.length})
             </span>
-            <span className="text-[11px] text-slate-400">Click any card to switch versions without disrupting others</span>
+            <span className="text-[11px] text-slate-400">Click any card to switch versions • Click trash to delete completely</span>
           </div>
 
           <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-thin">
@@ -661,6 +691,17 @@ export const ResumeGeneratorPage = () => {
           >
             <Download className="w-3.5 h-3.5 mr-1.5" />
             Download PDF
+          </Button>
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handleDeleteResumeCard(null, resume._id)}
+            className="text-rose-600 border-rose-200 hover:bg-rose-50 hover:border-rose-300"
+            title="Permanently remove this resume and its analysis from the app"
+          >
+            <Trash2 className="w-3.5 h-3.5 mr-1 text-rose-500" />
+            Delete
           </Button>
         </div>
       </div>

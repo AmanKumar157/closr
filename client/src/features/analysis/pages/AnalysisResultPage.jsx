@@ -17,7 +17,8 @@ import {
   EyeOff,
   Copy,
   Check,
-  ExternalLink
+  ExternalLink,
+  Trash2
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import analysisService from '../../../services/analysisService.js';
@@ -41,6 +42,22 @@ export const AnalysisResultPage = () => {
     setCopiedText(true);
     toast.success('Extracted resume text copied to clipboard!');
     setTimeout(() => setCopiedText(false), 2000);
+  };
+
+  const handleDeleteAnalysis = async () => {
+    if (!analysis) return;
+    const name = analysis.fileName || analysis.targetRole;
+    if (!window.confirm(`Permanently delete "${name}"? This will completely remove this resume analysis, all its ATS resumes, and 12-week roadmaps from your account.`)) return;
+
+    try {
+      const res = await analysisService.deleteAnalysis(analysis._id);
+      if (res.success) {
+        toast.success('Resume and all associated data completely removed from app.');
+        navigate('/history');
+      }
+    } catch (err) {
+      toast.error('Failed to delete analysis.');
+    }
   };
 
   useEffect(() => {
@@ -138,6 +155,16 @@ export const AnalysisResultPage = () => {
               <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
             </Button>
           </Link>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleDeleteAnalysis}
+            className="text-rose-600 border-rose-200 hover:bg-rose-50 hover:border-rose-300"
+            title="Permanently remove this resume analysis and all associated ATS resumes & roadmaps"
+          >
+            <Trash2 className="w-3.5 h-3.5 mr-1 text-rose-500" />
+            Delete Resume
+          </Button>
         </div>
       </div>
 

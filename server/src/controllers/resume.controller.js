@@ -1,6 +1,8 @@
 import mongoose from 'mongoose';
 import { GeneratedResume } from '../models/GeneratedResume.js';
 import { Analysis } from '../models/Analysis.js';
+import { Roadmap } from '../models/Roadmap.js';
+import { Profile } from '../models/Profile.js';
 import { generateAtsResume } from '../services/gemini.service.js';
 import { generatePdfFromHtml } from '../services/pdf.service.js';
 import { ApiError } from '../utils/ApiError.js';
@@ -34,6 +36,7 @@ export const generateResume = asyncHandler(async (req, res) => {
     analysisId: analysis._id,
     $or: [
       { companyName: 'General Application' },
+      { companyName: 'Master Resume' },
       { companyName: '' },
       { companyName: analysis.fileName }
     ]
@@ -262,13 +265,39 @@ export const deleteResume = asyncHandler(async (req, res) => {
     throw new ApiError(400, 'Invalid resume ID format.');
   }
 
-  const resume = await GeneratedResume.findOneAndDelete({
+  const resume = await GeneratedResume.findOne({
     _id: req.params.id,
     userId: req.user._id
   });
 
   if (!resume) {
     throw new ApiError(404, 'Resume not found.');
+  }
+
+  const analysisId = resume.analysisId;
+  await GeneratedResume.deleteOne({ _id: resume._id });
+
+  // If cascade=true, also completely remove the analysis, roadmaps, and all linked resumes from the app
+  if (req.query.cascade === 'true' && analysisId) {
+    await Analysis.deleteOne({ _id: analysisId, userId: req.user._id });
+    await Roadmap.deleteMany({ analysisId, userId: req.user._id });
+    await GeneratedResume.deleteMany({ analysisId, userId: req.user._id });
+
+    const profile = await Profile.findOne({ userId: req.user._id });
+    if (profile?.lastUploadedResume?.analysisId?.toString() === analysisId.toString()) {
+      const latestRemaining = await Analysis.findOne({ userId: req.user._id }).sort({ createdAt: -1 });
+      if (latestRemaining) {
+        profile.lastUploadedResume = {
+          fileName: latestRemaining.fileName,
+          fileSize: latestRemaining.fileSize,
+          uploadedAt: latestRemaining.createdAt,
+          analysisId: latestRemaining._id
+        };
+      } else {
+        profile.lastUploadedResume = null;
+      }
+      await profile.save();
+    }
   }
 
   return new ApiResponse(200, null, 'Resume deleted successfully').send(res);

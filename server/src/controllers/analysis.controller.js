@@ -1,4 +1,8 @@
+import crypto from 'crypto';
+import mongoose from 'mongoose';
 import { Analysis } from '../models/Analysis.js';
+import { GeneratedResume } from '../models/GeneratedResume.js';
+import { Roadmap } from '../models/Roadmap.js';
 import { Profile } from '../models/Profile.js';
 import { extractResumeText } from '../services/parser.service.js';
 import { analyzeResume } from '../services/gemini.service.js';
@@ -47,38 +51,32 @@ export const createAnalysis = asyncHandler(async (req, res) => {
   const fileBuffer = req.file.buffer;
   const fileContentType = req.file.mimetype || 'application/pdf';
 
-  // Check if an identical analysis already exists for this user (avoid duplicate uploads)
-  const existingAnalysis = await Analysis.findOne({
-    userId: req.user._id,
-    cacheHash: aiResult.cacheHash
-  });
+  // Compute resume text hash to detect duplicate uploads
+  const resumeTextHash = crypto.createHash('sha256').update(resumeText.trim()).digest('hex');
 
-  if (existingAnalysis) {
-    // Refresh with latest file buffer and name without creating a duplicate record
-    existingAnalysis.fileName = fileName;
-    existingAnalysis.fileSize = fileSize;
-    if (fileBuffer) {
-      existingAnalysis.fileBuffer = fileBuffer;
-      existingAnalysis.fileContentType = fileContentType;
-      existingAnalysis.hasOriginalPdf = true;
+  // Prevent duplicate uploads: if not an explicit re-analysis comparison loop, block identical resume uploads or same/similar filenames
+  if (!previousAnalysisId) {
+    const userAnalyses = await Analysis.find({ userId: req.user._id }).select('fileName resumeTextHash cacheHash targetRole');
+    
+    const cleanName = (name) => (name || '').toLowerCase().replace(/\.[^/.]+$/, '').replace(/[^a-z0-9]/g, '');
+    const currentCleanName = cleanName(fileName);
+
+    const existingDuplicate = userAnalyses.find((a) => {
+      // 1. Identical extracted text content (exact same resume file)
+      if (a.resumeTextHash && a.resumeTextHash === resumeTextHash) return true;
+      // 2. Identical AI query cache hash
+      if (a.cacheHash && a.cacheHash === aiResult.cacheHash) return true;
+      // 3. Exact or similar file name (e.g. "Uploaded_Resume.pdf" vs "Uploaded Resume.pdf")
+      if (currentCleanName && cleanName(a.fileName) === currentCleanName) return true;
+      return false;
+    });
+
+    if (existingDuplicate) {
+      throw new ApiError(
+        409,
+        `Duplicate resume detected: "${fileName}" (or a file with similar name "${existingDuplicate.fileName}" / identical content) has already been uploaded for "${existingDuplicate.targetRole}". To analyze a new version, please delete the previous resume first, or upload an updated file.`
+      );
     }
-    await existingAnalysis.save();
-
-    if (profile) {
-      profile.lastUploadedResume = {
-        fileName,
-        fileSize,
-        uploadedAt: new Date(),
-        analysisId: existingAnalysis._id
-      };
-      await profile.save();
-    }
-
-    return new ApiResponse(
-      200,
-      { analysis: existingAnalysis, isCached: true, isDuplicate: true },
-      `Existing analysis found for "${fileName}". Reused to avoid duplicate upload.`
-    ).send(res);
   }
 
   // 4. Save analysis document to MongoDB
@@ -90,6 +88,7 @@ export const createAnalysis = asyncHandler(async (req, res) => {
     fileContentType,
     hasOriginalPdf: Boolean(fileBuffer && fileBuffer.length > 0),
     resumeText,
+    resumeTextHash,
     targetRole: targetRole.trim(),
     jobDescription: jobDescription?.trim() || '',
     matchScore: aiResult.matchScore,
@@ -269,5 +268,64 @@ export const getOriginalResumePdf = asyncHandler(async (req, res) => {
 
   return res.end(analysis.fileBuffer);
 });
+
+/**
+ * @desc    Permanently delete an analysis and CASCADE delete all linked ATS resumes & roadmaps
+ * @route   DELETE /api/analysis/:id
+ * @access  Protected
+ */
+export const deleteAnalysis = asyncHandler(async (req, res) => {
+  if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+    throw new ApiError(400, 'Invalid analysis ID format.');
+  }
+
+  const analysis = await Analysis.findOne({
+    _id: req.params.id,
+    userId: req.user._id
+  });
+
+  if (!analysis) {
+    throw new ApiError(404, 'Analysis report not found.');
+  }
+
+  // 1. Delete all generated ATS resumes linked to this analysis
+  await GeneratedResume.deleteMany({
+    userId: req.user._id,
+    analysisId: analysis._id
+  });
+
+  // 2. Delete any 12-week roadmap linked to this analysis
+  await Roadmap.deleteMany({
+    userId: req.user._id,
+    analysisId: analysis._id
+  });
+
+  // 3. Delete the analysis document itself
+  await Analysis.deleteOne({ _id: analysis._id });
+
+  // 4. Update Profile.lastUploadedResume if it points to this analysis
+  const profile = await Profile.findOne({ userId: req.user._id });
+  if (profile?.lastUploadedResume?.analysisId?.toString() === analysis._id.toString()) {
+    const latestRemaining = await Analysis.findOne({ userId: req.user._id }).sort({ createdAt: -1 });
+    if (latestRemaining) {
+      profile.lastUploadedResume = {
+        fileName: latestRemaining.fileName,
+        fileSize: latestRemaining.fileSize,
+        uploadedAt: latestRemaining.createdAt,
+        analysisId: latestRemaining._id
+      };
+    } else {
+      profile.lastUploadedResume = null;
+    }
+    await profile.save();
+  }
+
+  return new ApiResponse(
+    200,
+    null,
+    `Resume "${analysis.fileName}" and all associated data completely removed from app.`
+  ).send(res);
+});
+
 
 

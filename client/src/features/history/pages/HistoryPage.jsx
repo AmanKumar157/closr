@@ -11,7 +11,8 @@ import {
   AlertCircle,
   ArrowRight,
   Eye,
-  RefreshCw
+  RefreshCw,
+  Trash2
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -112,6 +113,49 @@ export const HistoryPage = () => {
       toast.error('Could not compare selected analyses.');
     } finally {
       setComparing(false);
+    }
+  };
+
+  const handleDeleteAnalysis = async (e, id, name) => {
+    e.stopPropagation();
+    if (!window.confirm(`Permanently delete "${name}"? This will completely remove this resume analysis, all its ATS resumes, and 12-week roadmaps from the app.`)) return;
+
+    try {
+      const res = await analysisService.deleteAnalysis(id);
+      if (res.success) {
+        toast.success('Analysis and all associated data completely removed.');
+        setAnalyses((prev) => prev.filter((a) => a._id !== id));
+        setRoadmaps((prev) => prev.filter((r) => r.analysisId !== id));
+        setResumes((prev) => prev.filter((item) => {
+          const aId = typeof item.analysisId === 'object' ? item.analysisId?._id : item.analysisId;
+          return aId !== id;
+        }));
+        setSelectedForCompare((prev) => prev.filter((itemId) => itemId !== id));
+      }
+    } catch (err) {
+      toast.error('Failed to delete analysis.');
+    }
+  };
+
+  const handleDeleteResume = async (e, id, name) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!window.confirm(`Permanently remove "${name}" from your app? This will completely delete this resume and its analysis report.`)) return;
+
+    try {
+      const res = await resumeService.deleteResume(id, true);
+      if (res.success) {
+        toast.success('Resume completely removed from app.');
+        setResumes((prev) => prev.filter((r) => r._id !== id));
+        const [aRes, rRes] = await Promise.all([
+          analysisService.getAnalyses(),
+          roadmapService.getRoadmaps()
+        ]);
+        if (aRes.success) setAnalyses(aRes.data?.analyses || []);
+        if (rRes.success) setRoadmaps(rRes.data?.roadmaps || []);
+      }
+    } catch (err) {
+      toast.error('Failed to delete resume.');
     }
   };
 
@@ -368,14 +412,25 @@ export const HistoryPage = () => {
                     <span className="text-xs font-semibold text-indigo-600">
                       {isSelected ? '✓ Selected for Compare' : '+ Click to Select'}
                     </span>
-                    <Link
-                      to={`/analysis/${a._id}`}
-                      onClick={(e) => e.stopPropagation()}
-                      className="text-xs text-slate-600 hover:text-slate-900 font-medium inline-flex items-center gap-1"
-                    >
-                      <Eye className="w-3.5 h-3.5" />
-                      View Report
-                    </Link>
+                    <div className="flex items-center gap-2">
+                      <Link
+                        to={`/analysis/${a._id}`}
+                        onClick={(e) => e.stopPropagation()}
+                        className="text-xs text-slate-600 hover:text-slate-900 font-medium inline-flex items-center gap-1"
+                      >
+                        <Eye className="w-3.5 h-3.5" />
+                        View Report
+                      </Link>
+                      <button
+                        type="button"
+                        onClick={(e) => handleDeleteAnalysis(e, a._id, a.fileName || a.targetRole)}
+                        className="text-xs text-rose-500 hover:text-rose-700 font-medium inline-flex items-center gap-1 p-1 hover:bg-rose-50 rounded transition-colors"
+                        title="Delete this analysis and all associated ATS resumes & roadmaps"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        Delete
+                      </button>
+                    </div>
                   </div>
                 </div>
               );
@@ -417,30 +472,67 @@ export const HistoryPage = () => {
       {/* Tab 3: Resumes */}
       {activeTab === 'resumes' && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {resumes.map((res) => (
-            <Link
-              key={res._id}
-              to={`/resume/${res._id}`}
-              className="p-5 rounded-xl border border-slate-200 bg-white hover:border-indigo-300 hover:shadow-sm transition-all block group"
-            >
-              <div className="flex items-start justify-between">
-                <div>
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                    {new Date(res.createdAt).toLocaleDateString()}
-                  </span>
-                  <h4 className="text-base font-bold text-slate-900 group-hover:text-indigo-600 transition-colors mt-0.5">
-                    ATS Resume #{res._id.slice(-6)}
-                  </h4>
-                  <p className="text-xs text-slate-500 mt-1">
-                    Ready for PDF download and submission
-                  </p>
+          {resumes.map((res) => {
+            const displayName =
+              res.companyName && res.companyName !== 'General Application' && res.companyName !== 'Target Role'
+                ? `${res.companyName} Resume`
+                : (res.analysisId?.fileName || 'Master ATS Resume');
+            const displayRole =
+              res.targetRole && res.targetRole !== 'Target Role'
+                ? res.targetRole
+                : (res.analysisId?.targetRole || 'Software Developer');
+
+            return (
+              <div
+                key={res._id}
+                className="p-5 rounded-xl border border-slate-200 bg-white hover:border-indigo-300 hover:shadow-sm transition-all block group relative"
+              >
+                <div className="flex items-start justify-between">
+                  <div className="min-w-0 pr-8">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                        {new Date(res.createdAt).toLocaleDateString()}
+                      </span>
+                      <span className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-600 bg-slate-100 px-2 py-0.5 rounded truncate max-w-[190px]">
+                        <FileText className="w-3 h-3 text-indigo-500 shrink-0" />
+                        <span className="truncate">{res.analysisId?.fileName || 'Uploaded_Resume.pdf'}</span>
+                      </span>
+                    </div>
+                    <h4 className="text-base font-bold text-slate-900 group-hover:text-indigo-600 transition-colors mt-1 truncate">
+                      {displayName}
+                    </h4>
+                    <p className="text-xs text-slate-500 mt-1">
+                      Target Role: <strong className="text-slate-700">{displayRole}</strong>
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <button
+                      type="button"
+                      onClick={(e) => handleDeleteResume(e, res._id, displayName)}
+                      className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
+                      title="Permanently remove this resume from app"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                    <div className="p-2 rounded-lg bg-emerald-50 text-emerald-600 group-hover:scale-105 transition-transform">
+                      <FileText className="w-5 h-5" />
+                    </div>
+                  </div>
                 </div>
-                <div className="p-2 rounded-lg bg-emerald-50 text-emerald-600 group-hover:scale-105 transition-transform">
-                  <FileText className="w-5 h-5" />
+
+                <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
+                  <span className="text-xs text-slate-400">ATS Pass Ready • Single Column</span>
+                  <Link
+                    to={`/resume/${res._id}`}
+                    className="text-xs text-indigo-600 hover:text-indigo-800 font-semibold inline-flex items-center gap-1"
+                  >
+                    <span>Open Resume</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </Link>
                 </div>
               </div>
-            </Link>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
