@@ -616,18 +616,33 @@ export const ResumeGeneratorPage = () => {
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
-      {/* Top Bar: Back Button, Breadcrumb & Action to Tailor for New Opening */}
+      {/* Top Bar: Breadcrumbs & Actions */}
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 text-xs">
+          <Link
+            to="/dashboard"
+            className="text-slate-500 hover:text-indigo-600 font-medium transition-colors"
+          >
+            Dashboard
+          </Link>
+          <span className="text-slate-300">/</span>
           <button
             type="button"
-            onClick={() => navigate(-1)}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:text-slate-900 bg-white border border-slate-200 hover:border-slate-300 rounded-lg shadow-2xs transition-colors"
+            onClick={() => setShowAllResumes(true)}
+            className="text-slate-500 hover:text-indigo-600 font-medium transition-colors cursor-pointer"
+            title="Click to view all resumes"
           >
-            <ArrowLeft className="w-3.5 h-3.5" />
-            <span>← Back</span>
+            ATS Resumes
           </button>
+          <span className="text-slate-300">/</span>
+          <span className="font-semibold text-slate-800 truncate max-w-[200px] sm:max-w-[280px]">
+            {resume.companyName && resume.companyName !== 'General Application' && resume.companyName !== 'Target Role'
+              ? resume.companyName
+              : (currentAnalysis?.fileName || 'Master Resume')}
+          </span>
+        </div>
 
+        <div className="flex flex-wrap items-center gap-2">
           <Button
             variant="outline"
             size="sm"
@@ -635,36 +650,36 @@ export const ResumeGeneratorPage = () => {
             className="text-indigo-600 border-indigo-200 hover:bg-indigo-50 text-xs font-semibold"
           >
             <Layers className="w-3.5 h-3.5 mr-1.5" />
-            <span>Switch / View All Resumes ({allResumes.length})</span>
+            <span>Switch / View All ({allResumes.length})</span>
           </Button>
 
           {targetAnalysisId && (
             <Link
               to={`/analysis/${targetAnalysisId}`}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-indigo-600 hover:text-indigo-700 bg-indigo-50/70 hover:bg-indigo-100/70 border border-indigo-200 rounded-lg transition-colors"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:text-indigo-700 bg-white hover:bg-indigo-50/50 border border-slate-200 hover:border-indigo-200 rounded-lg transition-colors shadow-2xs"
             >
-              <FileText className="w-3.5 h-3.5" />
-              <span>Back to Analysis Report</span>
+              <FileText className="w-3.5 h-3.5 text-indigo-500" />
+              <span>Analysis Report</span>
             </Link>
           )}
-        </div>
 
-        {/* Tailor for Specific Job Opening Button */}
-        <Button
-          variant="secondary"
-          size="sm"
-          onClick={() => {
-            setTailorForm((prev) => ({
-              ...prev,
-              baseAnalysisId: targetAnalysisId || availableAnalyses[0]?._id || ''
-            }));
-            setShowTailorModal(true);
-          }}
-          className="shadow-xs"
-        >
-          <Sparkles className="w-3.5 h-3.5 mr-1.5 text-indigo-600" />
-          <span>+ Tailor for New Job Opening</span>
-        </Button>
+          {/* Tailor for Specific Job Opening Button */}
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => {
+              setTailorForm((prev) => ({
+                ...prev,
+                baseAnalysisId: targetAnalysisId || availableAnalyses[0]?._id || ''
+              }));
+              setShowTailorModal(true);
+            }}
+            className="shadow-xs"
+          >
+            <Sparkles className="w-3.5 h-3.5 mr-1.5 text-indigo-600" />
+            <span>+ Tailor for Opening</span>
+          </Button>
+        </div>
       </div>
 
       {/* Multiple Resumes Switcher Shelf */}

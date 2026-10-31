@@ -97,24 +97,23 @@ export const AnalysisResultPage = () => {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
-      {/* Navigation Breadcrumbs / Back Button */}
-      <div className="flex items-center gap-2">
-        <button
-          type="button"
-          onClick={() => navigate(-1)}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:text-slate-900 bg-white border border-slate-200 hover:border-slate-300 rounded-lg shadow-2xs transition-colors"
-        >
-          <ArrowLeft className="w-3.5 h-3.5" />
-          <span>← Back</span>
-        </button>
+      {/* Navigation Breadcrumbs */}
+      <div className="flex items-center gap-2 text-xs">
         <Link
           to="/dashboard"
-          className="text-xs text-slate-500 hover:text-indigo-600 font-medium"
+          className="text-slate-500 hover:text-indigo-600 font-medium transition-colors"
         >
           Dashboard
         </Link>
         <span className="text-slate-300">/</span>
-        <span className="text-xs text-slate-700 font-semibold truncate max-w-xs">
+        <Link
+          to="/history"
+          className="text-slate-500 hover:text-indigo-600 font-medium transition-colors"
+        >
+          Analyses
+        </Link>
+        <span className="text-slate-300">/</span>
+        <span className="font-semibold text-slate-800 truncate max-w-xs">
           {analysis.targetRole}
         </span>
       </div>
