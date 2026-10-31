@@ -118,17 +118,20 @@ export const Navbar = () => {
                   className="flex items-center gap-2 p-1 pl-1.5 pr-2.5 rounded-full border border-slate-200 hover:border-indigo-300 hover:bg-slate-50 transition-all cursor-pointer focus:outline-none"
                   title="Account menu"
                 >
-                  {user?.avatar ? (
-                    <img
-                      src={user.avatar}
-                      alt={user.name || 'User'}
-                      className="w-8 h-8 rounded-full object-cover ring-2 ring-indigo-500/40"
-                    />
-                  ) : (
-                    <div className="w-8 h-8 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-xs ring-2 ring-indigo-500/30">
-                      {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
-                    </div>
-                  )}
+                  <div className="w-8 h-8 rounded-full overflow-hidden shrink-0 ring-2 ring-indigo-500/40 bg-slate-100">
+                    {user?.avatar ? (
+                      <img
+                        src={user.avatar}
+                        alt={user.name || 'User'}
+                        className="w-full h-full object-cover block"
+                        style={{ width: '32px', height: '32px', objectFit: 'cover' }}
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-indigo-600 text-white flex items-center justify-center font-bold text-xs">
+                        {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
+                      </div>
+                    )}
+                  </div>
                   <div className="hidden sm:flex flex-col text-left">
                     <span className="text-xs font-semibold text-slate-800 leading-tight">
                       {user?.name || 'Account'}
@@ -139,7 +142,7 @@ export const Navbar = () => {
 
                 {/* Google-styled Account Popover Dropdown (Matches User Reference Image) */}
                 {accountMenuOpen && (
-                  <div className="absolute right-0 mt-2.5 w-80 bg-slate-900 text-white rounded-3xl shadow-2xl border border-slate-800 p-5 z-50 animate-fadeIn select-none">
+                  <div className="absolute right-0 mt-2.5 w-72 bg-slate-900 text-white rounded-3xl shadow-2xl border border-slate-800 p-4.5 z-50 animate-fadeIn select-none overflow-hidden">
                     {/* Header: Title & Close Button */}
                     <div className="flex items-center justify-between pb-3">
                       <span className="text-[11px] font-bold tracking-wider text-slate-400 uppercase">
@@ -155,17 +158,18 @@ export const Navbar = () => {
                       </button>
                     </div>
 
-                    {/* User Identity Card: Large Circular Avatar + Name + Email + PRO Badge */}
-                    <div className="flex items-center gap-3.5 pb-4 border-b border-slate-800">
-                      <div className="relative shrink-0">
+                    {/* User Identity Card: Strictly-sized Circular Avatar + Name + Email + PRO Badge */}
+                    <div className="flex items-center gap-3 pb-3.5 border-b border-slate-800">
+                      <div className="w-12 h-12 rounded-full overflow-hidden shrink-0 ring-2 ring-indigo-500 shadow-sm bg-slate-800">
                         {user?.avatar ? (
                           <img
                             src={user.avatar}
                             alt={user.name || 'User'}
-                            className="w-13 h-13 rounded-full object-cover ring-2 ring-indigo-500 shadow-md"
+                            className="w-full h-full object-cover block"
+                            style={{ width: '48px', height: '48px', objectFit: 'cover' }}
                           />
                         ) : (
-                          <div className="w-13 h-13 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-xl ring-2 ring-indigo-500 shadow-md">
+                          <div className="w-full h-full bg-indigo-600 text-white flex items-center justify-center font-bold text-lg">
                             {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
                           </div>
                         )}

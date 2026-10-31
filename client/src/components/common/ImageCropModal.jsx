@@ -320,3 +320,4 @@ export const ImageCropModal = ({
 };
 
 export default ImageCropModal;
+
