@@ -1,10 +1,11 @@
 import { Profile } from '../models/Profile.js';
 import { User } from '../models/User.js';
+import { Analysis } from '../models/Analysis.js';
 import { ApiResponse } from '../utils/apiResponse.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 
 /**
- * @desc    Get current user profile
+ * @desc    Get current user profile along with all uploaded resumes
  * @route   GET /api/profile
  * @access  Protected
  */
@@ -22,7 +23,12 @@ export const getProfile = asyncHandler(async (req, res) => {
     });
   }
 
-  return new ApiResponse(200, { profile }, 'Profile retrieved successfully').send(res);
+  // Fetch all uploaded resumes/analyses belonging to this user
+  const uploadedResumes = await Analysis.find({ userId: req.user._id })
+    .select('fileName fileSize targetRole matchScore matchedSkills missingSkills createdAt hasOriginalPdf resumeText')
+    .sort({ createdAt: -1 });
+
+  return new ApiResponse(200, { profile, uploadedResumes }, 'Profile retrieved successfully').send(res);
 });
 
 /**

@@ -557,11 +557,8 @@ export const ResumeGeneratorPage = () => {
                     </span>
                   </div>
 
-                  <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <Link to={`/analysis/${a._id}`} className="text-xs text-slate-500 hover:text-indigo-600 font-medium">
-                        View Analysis →
-                      </Link>
+                  <div className="mt-4 pt-3 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs">
                       <button
                         type="button"
                         onClick={() =>
@@ -574,31 +571,37 @@ export const ResumeGeneratorPage = () => {
                             rawResumeText: a.resumeText || ''
                           })
                         }
-                        className="text-xs text-indigo-600 hover:text-indigo-800 font-semibold inline-flex items-center gap-1 hover:underline"
+                        className="text-xs text-indigo-600 hover:text-indigo-800 font-semibold inline-flex items-center gap-1 hover:underline cursor-pointer"
                         title="Open this resume in full PDF viewer"
                       >
-                        <Eye className="w-3 h-3" />
+                        <Eye className="w-3.5 h-3.5 text-indigo-500" />
                         Preview PDF
                       </button>
+                      <Link to={`/analysis/${a._id}`} className="text-xs text-slate-600 hover:text-indigo-600 font-medium inline-flex items-center">
+                        View Analysis →
+                      </Link>
                       <button
                         type="button"
                         onClick={() => handleDeleteAnalysisCard(a._id, a.fileName || a.targetRole)}
-                        className="text-xs text-rose-500 hover:text-rose-700 font-medium inline-flex items-center gap-1 hover:underline"
+                        className="text-xs text-rose-600 hover:text-rose-800 font-medium inline-flex items-center gap-1 hover:underline cursor-pointer"
                         title="Delete this analysis and its records from database"
                       >
-                        <Trash2 className="w-3 h-3" />
+                        <Trash2 className="w-3.5 h-3.5 text-rose-500" />
                         Delete
                       </button>
                     </div>
-                    <Button
-                      variant="primary"
-                      size="sm"
-                      onClick={() => handleGenerateResume(a._id)}
-                      isLoading={generating}
-                    >
-                      <Sparkles className="w-3.5 h-3.5 mr-1.5" />
-                      Generate ATS Resume
-                    </Button>
+                    <div className="shrink-0">
+                      <Button
+                        variant="primary"
+                        size="sm"
+                        className="w-full sm:w-auto shadow-xs whitespace-nowrap"
+                        onClick={() => handleGenerateResume(a._id)}
+                        isLoading={generating}
+                      >
+                        <Sparkles className="w-3.5 h-3.5 mr-1.5" />
+                        Generate ATS Resume
+                      </Button>
+                    </div>
                   </div>
                 </Card>
               ))}
