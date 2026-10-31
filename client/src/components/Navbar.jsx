@@ -146,16 +146,21 @@ export const Navbar = () => {
 
                 {/* Google-styled Account Popover Dropdown (Flawless edges, borders, and margins) */}
                 {accountMenuOpen && (
-                  <div className="absolute right-0 mt-2.5 w-80 bg-slate-900 text-white rounded-2xl shadow-2xl border border-slate-700/80 p-5 z-50 animate-fadeIn select-none">
-                    {/* Header: Title & Close Button */}
-                    <div className="flex items-center justify-between pb-3.5 mb-3 border-b border-slate-800/90">
-                      <span className="text-[11px] font-bold tracking-wider text-slate-300 uppercase">
-                        CareerPilot Account
-                      </span>
+                  <div className="absolute right-0 mt-2.5 w-84 bg-[#1f2023] text-white rounded-3xl shadow-2xl border border-slate-700/80 p-6 z-50 animate-fadeIn select-none">
+                    {/* Header: Brand Logo & Close Button with generous breathing room */}
+                    <div className="flex items-center justify-between pb-4 mb-4 border-b border-slate-800">
+                      <div className="flex items-center gap-2">
+                        <div className="w-5 h-5 rounded-md bg-indigo-600 flex items-center justify-center text-white shadow-xs">
+                          <Compass className="w-3.5 h-3.5" />
+                        </div>
+                        <span className="text-xs font-bold tracking-wide text-slate-200">
+                          CareerPilot Account
+                        </span>
+                      </div>
                       <button
                         type="button"
                         onClick={() => setAccountMenuOpen(false)}
-                        className="p-1 rounded-full text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
+                        className="p-1.5 rounded-full text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
                         title="Close"
                       >
                         <X className="w-4 h-4" />
@@ -163,7 +168,7 @@ export const Navbar = () => {
                     </div>
 
                     {/* User Identity Card: Strictly-sized Circular Avatar + Name + Email + PRO Badge */}
-                    <div className="flex items-center gap-3 pb-4 mb-3.5 border-b border-slate-800/90">
+                    <div className="flex items-center gap-3.5 pb-4 mb-4 border-b border-slate-800">
                       <div className="relative w-12 h-12 rounded-full overflow-hidden shrink-0 ring-2 ring-indigo-500/80 shadow-md bg-slate-800">
                         {user?.avatar ? (
                           <img
@@ -179,9 +184,9 @@ export const Navbar = () => {
                         )}
                       </div>
                       <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-1.5">
+                        <div className="flex items-center gap-2">
                           <h4 className="text-sm font-bold text-white truncate">{user?.name || 'User'}</h4>
-                          <span className="px-1.5 py-0.5 rounded text-[10px] font-extrabold bg-indigo-950 text-indigo-300 border border-indigo-700/80">
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-indigo-950 text-indigo-300 border border-indigo-700/80">
                             PRO
                           </span>
                         </div>
@@ -190,11 +195,11 @@ export const Navbar = () => {
                     </div>
 
                     {/* Menu Options (Pill Buttons like Google reference) */}
-                    <div className="space-y-2 pb-3.5 mb-3.5 border-b border-slate-800/90">
+                    <div className="space-y-2.5 pb-4 mb-4 border-b border-slate-800">
                       <Link
                         to="/profile"
                         onClick={() => setAccountMenuOpen(false)}
-                        className="flex items-center justify-between px-4 py-2.5 rounded-full bg-slate-800/70 hover:bg-slate-800 text-xs font-semibold text-slate-200 hover:text-white border border-slate-700/70 transition-colors"
+                        className="flex items-center justify-between px-4 py-2.5 rounded-full bg-slate-800/80 hover:bg-slate-800 text-xs font-semibold text-slate-200 hover:text-white border border-slate-700/80 transition-colors"
                       >
                         <span className="flex items-center gap-2.5">
                           <User className="w-4 h-4 text-indigo-400 shrink-0" />
@@ -206,7 +211,7 @@ export const Navbar = () => {
                       <Link
                         to="/resume"
                         onClick={() => setAccountMenuOpen(false)}
-                        className="flex items-center justify-between px-4 py-2.5 rounded-full bg-slate-800/70 hover:bg-slate-800 text-xs font-semibold text-slate-200 hover:text-white border border-slate-700/70 transition-colors"
+                        className="flex items-center justify-between px-4 py-2.5 rounded-full bg-slate-800/80 hover:bg-slate-800 text-xs font-semibold text-slate-200 hover:text-white border border-slate-700/80 transition-colors"
                       >
                         <span className="flex items-center gap-2.5">
                           <FileText className="w-4 h-4 text-violet-400 shrink-0" />
@@ -224,7 +229,7 @@ export const Navbar = () => {
                           setAccountMenuOpen(false);
                           handleLogout();
                         }}
-                        className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-full bg-slate-800/60 hover:bg-rose-950/40 text-xs font-semibold text-slate-300 hover:text-rose-300 border border-slate-700/70 hover:border-rose-800/60 transition-colors cursor-pointer"
+                        className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-full bg-slate-800/70 hover:bg-rose-950/50 text-xs font-semibold text-slate-300 hover:text-rose-300 border border-slate-700/80 hover:border-rose-800/70 transition-colors cursor-pointer"
                       >
                         <LogOut className="w-3.5 h-3.5 text-rose-400" />
                         Sign out

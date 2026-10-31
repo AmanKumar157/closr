@@ -31,18 +31,26 @@ Your evaluation must be objective, realistic, and rigorous:
 7. NEVER invent or hallucinate experience that the resume does not contain.`,
 
   /**
-   * Formats the user prompt containing candidate resume text and target role/JD
+   * Formats the user prompt containing candidate resume text, target company, role, required skills and JD
    */
-  formatAnalyzeResumePrompt: ({ resumeText, targetRole, jobDescription }) => {
+  formatAnalyzeResumePrompt: ({ resumeText, targetRole, jobDescription, companyName, requiredSkills = [] }) => {
+    const formattedRequiredSkills = Array.isArray(requiredSkills) && requiredSkills.length > 0
+      ? requiredSkills.join(', ')
+      : typeof requiredSkills === 'string'
+      ? requiredSkills
+      : '';
+
     return `TARGET ROLE:
 ${targetRole}
 
+${companyName ? `TARGET COMPANY:\n${companyName}\n` : ''}
+${formattedRequiredSkills ? `REQUIRED SKILLS & PREREQUISITES:\n${formattedRequiredSkills}\n` : ''}
 ${jobDescription ? `TARGET JOB DESCRIPTION:\n${jobDescription}\n` : ''}
 
 CANDIDATE RESUME TEXT:
 ${resumeText}
 
-Analyze this resume against the target role. Return the response strictly following the JSON schema.`;
+Analyze this resume against the target role, target company, required skills, and job description. Evaluate exact match vs missing skills and return the response strictly following the JSON schema.`;
   },
 
   /**

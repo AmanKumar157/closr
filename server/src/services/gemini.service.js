@@ -81,10 +81,22 @@ const analysisResponseSchema = {
 /**
  * Helper to compute a deterministic SHA-256 hash for cache lookups
  */
-export const computeAnalysisCacheHash = (resumeText, targetRole, jobDescription = '') => {
+export const computeAnalysisCacheHash = (
+  resumeText,
+  targetRole,
+  jobDescription = '',
+  companyName = '',
+  requiredSkills = []
+) => {
+  const reqSkillsStr = Array.isArray(requiredSkills)
+    ? requiredSkills.slice().sort().join(',').toLowerCase()
+    : String(requiredSkills || '').toLowerCase();
+
   return crypto
     .createHash('sha256')
-    .update(`${resumeText.trim()}|${targetRole.trim().toLowerCase()}|${(jobDescription || '').trim().toLowerCase()}`)
+    .update(
+      `${resumeText.trim()}|${targetRole.trim().toLowerCase()}|${(jobDescription || '').trim().toLowerCase()}|${(companyName || '').trim().toLowerCase()}|${reqSkillsStr}`
+    )
     .digest('hex');
 };
 
@@ -186,9 +198,17 @@ const sanitizeAnalysisResult = (result) => {
  * @param {string} resumeText - Extracted text of candidate resume
  * @param {string} targetRole - Desired job title
  * @param {string} jobDescription - Optional target job description
+ * @param {string} companyName - Optional target company
+ * @param {Array<string>} requiredSkills - Optional required skills list
  * @returns {Promise<object>} Structured analysis object
  */
-export const analyzeResume = async (resumeText, targetRole, jobDescription = '') => {
+export const analyzeResume = async (
+  resumeText,
+  targetRole,
+  jobDescription = '',
+  companyName = '',
+  requiredSkills = []
+) => {
   if (!resumeText || resumeText.length < 50) {
     throw new ApiError(400, 'Resume text is insufficient for analysis.');
   }
@@ -197,7 +217,7 @@ export const analyzeResume = async (resumeText, targetRole, jobDescription = '')
   }
 
   // 1. Check MongoDB Cache: If an identical resume + role + JD query was analyzed before, return cached result
-  const cacheHash = computeAnalysisCacheHash(resumeText, targetRole, jobDescription);
+  const cacheHash = computeAnalysisCacheHash(resumeText, targetRole, jobDescription, companyName, requiredSkills);
   if (mongoose.connection.readyState === 1) {
     const cachedAnalysis = await Analysis.findOne({ cacheHash }).select('-__v');
     if (cachedAnalysis) {
@@ -218,12 +238,18 @@ export const analyzeResume = async (resumeText, targetRole, jobDescription = '')
   // Fallback heuristic simulation if GEMINI_API_KEY is not yet configured in local development
   if (!ENV.GEMINI_API_KEY || ENV.GEMINI_API_KEY === 'your_gemini_api_key_here') {
     console.warn('[Gemini Service] GEMINI_API_KEY not configured. Generating high-fidelity development analysis.');
-    return generateDevAnalysisFallback(resumeText, targetRole, jobDescription, cacheHash);
+    return generateDevAnalysisFallback(resumeText, targetRole, jobDescription, cacheHash, companyName, requiredSkills);
   }
 
   // 2. Initialize Google GenAI client
   const ai = new GoogleGenAI({ apiKey: ENV.GEMINI_API_KEY });
-  const prompt = PROMPTS.formatAnalyzeResumePrompt({ resumeText, targetRole, jobDescription });
+  const prompt = PROMPTS.formatAnalyzeResumePrompt({
+    resumeText,
+    targetRole,
+    jobDescription,
+    companyName,
+    requiredSkills
+  });
 
   // 3. Retry loop for Schema validation (retries up to 2 times on Zod parse failure)
   const maxSchemaValidationRetries = 2;
@@ -277,7 +303,7 @@ export const analyzeResume = async (resumeText, targetRole, jobDescription = '')
   // Graceful development fallback on network/offline failure
   if (ENV.NODE_ENV === 'development' || !ENV.GEMINI_API_KEY) {
     console.warn('[Gemini Service] Falling back to calibrated dynamic analysis due to network or rate limit.');
-    return generateDevAnalysisFallback(resumeText, targetRole, jobDescription, cacheHash);
+    return generateDevAnalysisFallback(resumeText, targetRole, jobDescription, cacheHash, companyName, requiredSkills);
   }
 
   throw new ApiError(
@@ -289,31 +315,63 @@ export const analyzeResume = async (resumeText, targetRole, jobDescription = '')
 /**
  * Intelligent dev-mode fallback when no Gemini API key is provided
  */
-function generateDevAnalysisFallback(resumeText, targetRole, jobDescription, cacheHash) {
+function generateDevAnalysisFallback(
+  resumeText,
+  targetRole,
+  jobDescription,
+  cacheHash,
+  companyName = '',
+  requiredSkills = []
+) {
   const commonTech = [
     'React', 'Node.js', 'Express', 'MongoDB', 'JavaScript', 'TypeScript',
     'HTML', 'CSS', 'Tailwind CSS', 'Redux', 'Git', 'Docker', 'AWS', 'REST APIs',
     'PostgreSQL', 'Python', 'Next.js', 'GraphQL', 'CI/CD'
   ];
 
-  const lowerResume = resumeText.toLowerCase();
+  const lowerResume = (resumeText || '').toLowerCase();
   const extractedSkills = commonTech.filter((tech) => lowerResume.includes(tech.toLowerCase()));
   if (extractedSkills.length === 0) {
     extractedSkills.push('JavaScript', 'Git', 'Web Development');
   }
 
-  const roleKeywords = targetRole.toLowerCase().split(/\s+/);
-  const matchedSkills = extractedSkills.slice(0, Math.ceil(extractedSkills.length * 0.7));
-  const missingPool = commonTech.filter((tech) => !extractedSkills.includes(tech));
+  // Parse required skills if provided
+  const parsedReqSkills = Array.isArray(requiredSkills)
+    ? requiredSkills
+    : typeof requiredSkills === 'string'
+    ? requiredSkills.split(',').map((s) => s.trim()).filter(Boolean)
+    : [];
 
-  const missingSkills = [
-    { skill: missingPool[0] || 'TypeScript', importance: 'high' },
-    { skill: missingPool[1] || 'Docker', importance: 'high' },
-    { skill: missingPool[2] || 'CI/CD', importance: 'medium' },
-    { skill: missingPool[3] || 'System Architecture', importance: 'low' }
-  ];
+  const matchedSkills = [...new Set(extractedSkills.slice(0, Math.ceil(extractedSkills.length * 0.7)))];
+  const missingSkills = [];
+
+  // Check required skills against resume
+  for (const reqSkill of parsedReqSkills) {
+    if (lowerResume.includes(reqSkill.toLowerCase())) {
+      if (!matchedSkills.some((m) => m.toLowerCase() === reqSkill.toLowerCase())) {
+        matchedSkills.push(reqSkill);
+      }
+    } else {
+      missingSkills.push({ skill: reqSkill, importance: 'high' });
+    }
+  }
+
+  const missingPool = commonTech.filter(
+    (tech) =>
+      !extractedSkills.some((e) => e.toLowerCase() === tech.toLowerCase()) &&
+      !missingSkills.some((m) => m.skill.toLowerCase() === tech.toLowerCase())
+  );
+
+  while (missingSkills.length < 4 && missingPool.length > 0) {
+    const nextSkill = missingPool.shift();
+    missingSkills.push({
+      skill: nextSkill,
+      importance: missingSkills.length < 2 ? 'high' : missingSkills.length === 2 ? 'medium' : 'low'
+    });
+  }
 
   const matchScore = calculateAtsMatchScore(matchedSkills, missingSkills);
+  const companyContext = companyName ? ` at ${companyName}` : '';
 
   return {
     matchScore,
@@ -323,12 +381,12 @@ function generateDevAnalysisFallback(resumeText, targetRole, jobDescription, cac
     weakSections: [
       'Project descriptions lack measurable business impact or performance metrics.',
       'Work experience does not highlight experience with automated testing and continuous integration.',
-      'Professional summary could be more focused on your target role as ' + targetRole + '.'
+      `Professional summary could be more tailored to your target position as ${targetRole}${companyContext}.`
     ],
     suggestions: [
       'Quantify results in previous projects (e.g. "improved load time by 35%", "reduced API latency").',
       'Add a dedicated technical skills section grouped by frontend, backend, database, and devops.',
-      'Bridge key gaps in containerization (Docker) and TypeScript to match modern ATS criteria for ' + targetRole + '.'
+      `Bridge key gaps in ${missingSkills.slice(0, 2).map((m) => m.skill).join(' and ') || 'core frameworks'} to match ATS criteria for ${targetRole}${companyContext}.`
     ],
     isCached: false,
     cacheHash
@@ -804,8 +862,8 @@ function generateDevAtsHtmlFallback(targetRole, resumeText, analysis = {}) {
   const contactLine = contactPieces.length > 0 ? contactPieces.join(' | ') : 'Verified Contact Information Available Upon Request';
 
   // Extract education lines from resumeText if present
-  let educationSchool = 'Bennett University';
-  let educationDegree = 'Bachelor of Technology / Engineering in Computer Science';
+  let educationSchool = 'University / College';
+  let educationDegree = 'Bachelor of Technology / Computer Science';
   for (const line of lines) {
     if (/university|college|institute|school|bachelor|b\.tech|b\.e\.|m\.tech/i.test(line) && line.length > 5 && line.length < 80) {
       if (/university|college|institute/i.test(line)) {
@@ -852,7 +910,7 @@ function generateDevAtsHtmlFallback(targetRole, resumeText, analysis = {}) {
   </ul>`
       : isFresher
         ? `<h2>Academic & Practical Technical Projects</h2>
-  <div class="item-header"><span>${role} Systems & Service Development</span><span>Bennett University Academic Focus</span></div>
+  <div class="item-header"><span>${role} Systems & Service Development</span><span>Technical Academic Focus</span></div>
   <div class="item-sub"><span>Practical Implementation</span><span>Ongoing</span></div>
   <ul>
     <li>Applied debugging, troubleshooting, and software development frameworks to build responsive technical solutions.</li>

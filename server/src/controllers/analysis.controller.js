@@ -5,7 +5,8 @@ import { GeneratedResume } from '../models/GeneratedResume.js';
 import { Roadmap } from '../models/Roadmap.js';
 import { Profile } from '../models/Profile.js';
 import { extractResumeText } from '../services/parser.service.js';
-import { analyzeResume } from '../services/gemini.service.js';
+import { analyzeResume, generateRoadmap } from '../services/gemini.service.js';
+import { resolveResource } from '../services/resource.service.js';
 import { ApiError } from '../utils/ApiError.js';
 import { ApiResponse } from '../utils/apiResponse.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
@@ -27,8 +28,16 @@ export const createAnalysis = asyncHandler(async (req, res) => {
     req.file.mimetype
   );
 
-  // 2. Resolve target role and job description
-  let { targetRole, jobDescription, previousAnalysisId, roadmapId } = req.body;
+  // 2. Resolve target role, company, required skills, and job description
+  let {
+    targetRole,
+    jobDescription,
+    companyName,
+    requiredSkills,
+    previousAnalysisId,
+    roadmapId,
+    autoGenerateRoadmap
+  } = req.body;
 
   // Retrieve user profile to check defaults and prefill condition
   const profile = await Profile.findOne({ userId: req.user._id });
@@ -43,8 +52,21 @@ export const createAnalysis = asyncHandler(async (req, res) => {
     throw new ApiError(400, 'Target role is required to evaluate skill gaps.');
   }
 
+  // Parse requiredSkills (support comma-separated string or array)
+  const parsedRequiredSkills = Array.isArray(requiredSkills)
+    ? requiredSkills.map((s) => String(s).trim()).filter(Boolean)
+    : typeof requiredSkills === 'string'
+    ? requiredSkills.split(',').map((s) => s.trim()).filter(Boolean)
+    : [];
+
   // 3. Run Gemini AI Resume Gap Analysis
-  const aiResult = await analyzeResume(resumeText, targetRole.trim(), jobDescription?.trim() || '');
+  const aiResult = await analyzeResume(
+    resumeText,
+    targetRole.trim(),
+    jobDescription?.trim() || '',
+    companyName?.trim() || '',
+    parsedRequiredSkills
+  );
 
   const fileName = req.file.originalname || 'Uploaded_Resume.pdf';
   const fileSize = req.file.size || 0;
@@ -96,6 +118,8 @@ export const createAnalysis = asyncHandler(async (req, res) => {
     resumeText,
     resumeTextHash,
     targetRole: targetRole.trim(),
+    companyName: companyName?.trim() || '',
+    requiredSkills: parsedRequiredSkills,
     jobDescription: jobDescription?.trim() || '',
     matchScore: aiResult.matchScore,
     extractedSkills: aiResult.extractedSkills,
@@ -129,10 +153,44 @@ export const createAnalysis = asyncHandler(async (req, res) => {
     await profile.save();
   }
 
+  // 6. Automatically generate 12-week roadmap if requested
+  let generatedRoadmap = null;
+  const shouldAutoGenerate = autoGenerateRoadmap === 'true' || autoGenerateRoadmap === true;
+
+  if (shouldAutoGenerate) {
+    try {
+      const preferences = {
+        preferredLanguage: profile?.preferredLanguage || 'en'
+      };
+      const roadmapData = await generateRoadmap(analysis, preferences, false);
+      if (roadmapData.weeks && roadmapData.weeks[0]) {
+        for (const milestone of roadmapData.weeks[0].milestones) {
+          if (milestone.resource) {
+            milestone.resource.resolved = await resolveResource(milestone.resource);
+          }
+        }
+      }
+
+      generatedRoadmap = await Roadmap.create({
+        userId: req.user._id,
+        analysisId: analysis._id,
+        targetRole: analysis.targetRole,
+        weeks: roadmapData.weeks
+      });
+
+      analysis.roadmapId = generatedRoadmap._id;
+      await analysis.save();
+    } catch (roadmapErr) {
+      console.warn('[Auto-Roadmap Warning] Failed to auto-generate roadmap:', roadmapErr.message);
+    }
+  }
+
   return new ApiResponse(
     201,
-    { analysis, isCached: aiResult.isCached },
-    'Resume analysis completed successfully'
+    { analysis, roadmap: generatedRoadmap, isCached: aiResult.isCached },
+    generatedRoadmap
+      ? 'Resume gap analysis and 12-week learning roadmap generated successfully!'
+      : 'Resume analysis completed successfully'
   ).send(res);
 });
 

@@ -60,6 +60,15 @@ const analysisSchema = new mongoose.Schema(
       trim: true,
       default: ''
     },
+    companyName: {
+      type: String,
+      trim: true,
+      default: ''
+    },
+    requiredSkills: {
+      type: [String],
+      default: []
+    },
     matchScore: {
       type: Number,
       required: true,

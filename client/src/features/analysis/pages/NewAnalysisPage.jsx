@@ -1,7 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
-import { Sparkles, Briefcase, FileText, ArrowRight, Loader2, CheckCircle2 } from 'lucide-react';
+import {
+  Sparkles,
+  Briefcase,
+  Building,
+  FileText,
+  Map,
+  ArrowRight,
+  Loader2,
+  CheckCircle2,
+  Code2
+} from 'lucide-react';
 import toast from 'react-hot-toast';
 import analysisService from '../../../services/analysisService.js';
 import profileService from '../../../services/profileService.js';
@@ -13,9 +23,9 @@ import Input from '../../../components/common/Input.jsx';
 const STAGED_MESSAGES = [
   'Extracting text from your resume file...',
   'Connecting to Gemini AI recruiter engine...',
-  'Evaluating technical skills against target role...',
+  'Evaluating technical skills against company & role requirements...',
   'Pinpointing high-importance missing skills and gaps...',
-  'Finalizing ATS scoring and recommendations...'
+  'Finalizing ATS scoring and constructing 12-week roadmap...'
 ];
 
 export const NewAnalysisPage = () => {
@@ -30,15 +40,20 @@ export const NewAnalysisPage = () => {
     register,
     handleSubmit,
     setValue,
-    getValues,
+    watch,
     formState: { errors }
   } = useForm({
     defaultValues: {
+      companyName: '',
       targetRole: '',
+      requiredSkills: '',
       jobDescription: '',
+      autoGenerateRoadmap: true,
       overwrite: false
     }
   });
+
+  const autoGenerateRoadmap = watch('autoGenerateRoadmap');
 
   // Prefill target role and JD from user profile if available
   useEffect(() => {
@@ -83,22 +98,35 @@ export const NewAnalysisPage = () => {
       setAnalyzing(true);
       const formData = new FormData();
       formData.append('resume', file);
-      formData.append('targetRole', data.targetRole);
-      if (data.jobDescription) {
-        formData.append('jobDescription', data.jobDescription);
+      formData.append('targetRole', data.targetRole.trim());
+      if (data.companyName?.trim()) {
+        formData.append('companyName', data.companyName.trim());
       }
+      if (data.requiredSkills?.trim()) {
+        formData.append('requiredSkills', data.requiredSkills.trim());
+      }
+      if (data.jobDescription?.trim()) {
+        formData.append('jobDescription', data.jobDescription.trim());
+      }
+      formData.append('autoGenerateRoadmap', data.autoGenerateRoadmap ? 'true' : 'false');
+
       if (forceOverwrite || data.overwrite) {
         formData.append('overwrite', 'true');
       }
 
       const res = await analysisService.createAnalysis(formData);
       if (res.success && res.data?.analysis) {
-        toast.success(
-          res.data.isCached
-            ? 'Loaded instant analysis from cache!'
-            : 'AI analysis generated successfully!'
-        );
-        navigate(`/analysis/${res.data.analysis._id}`);
+        if (res.data.roadmap?._id) {
+          toast.success('Skill gap analyzed and 12-week roadmap generated successfully!');
+          navigate(`/roadmap/${res.data.roadmap._id}`);
+        } else {
+          toast.success(
+            res.data.isCached
+              ? 'Loaded instant analysis from cache!'
+              : 'AI analysis generated successfully!'
+          );
+          navigate(`/analysis/${res.data.analysis._id}`);
+        }
       }
     } catch (err) {
       if (err.message && err.message.toLowerCase().includes('duplicate resume detected')) {
@@ -120,13 +148,13 @@ export const NewAnalysisPage = () => {
       <div>
         <div className="inline-flex items-center gap-2 text-indigo-600 font-semibold text-sm mb-1">
           <Sparkles className="w-4 h-4" />
-          <span>Step 1 of 4 • Skill-Gap Analysis</span>
+          <span>AI Recruiter Engine • Skill-Gap Analysis & Roadmap</span>
         </div>
         <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-          Analyze Your Resume Against Target Role
+          Target Role Gap Analysis & Roadmap
         </h1>
         <p className="text-sm text-slate-500 mt-1">
-          Upload your resume and specify your desired job. Gemini AI will evaluate your ATS match score, extract your skills, and identify high-priority gaps.
+          Enter target company and job details, upload your resume, and let AI evaluate skill gaps and generate your personalized 12-week learning roadmap.
         </p>
       </div>
 
@@ -142,7 +170,7 @@ export const NewAnalysisPage = () => {
 
             <div>
               <h3 className="text-lg font-bold text-slate-900">
-                AI is Analyzing Your Resume
+                Analyzing Gaps & Building Roadmap
               </h3>
               <p className="text-sm text-indigo-600 font-medium mt-2 min-h-[24px] transition-all">
                 {STAGED_MESSAGES[stageIndex]}
@@ -172,8 +200,70 @@ export const NewAnalysisPage = () => {
         </Card>
       ) : (
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          {/* Resume Upload Section */}
-          <Card title="1. Upload Resume" subtitle="Upload your current resume in PDF or DOCX format (Max 5MB)">
+          {/* STEP 1: Target Company & Job Details */}
+          <Card
+            title="1. Target Company & Job Details"
+            subtitle="Specify the employer, role, required skills, and job description to evaluate real-world skill gaps"
+          >
+            <div className="space-y-5">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Target Company */}
+                <Input
+                  label="Target Company (Optional)"
+                  placeholder="e.g. Google, Microsoft, Zepto, Paytm"
+                  icon={Building}
+                  {...register('companyName')}
+                />
+
+                {/* Target Job Title / Role */}
+                <Input
+                  label="Role Name / Target Job Title *"
+                  placeholder="e.g. Senior Full-Stack Engineer, MERN Developer"
+                  icon={Briefcase}
+                  error={errors.targetRole?.message}
+                  {...register('targetRole', {
+                    required: 'Target role name is required to evaluate skill gaps',
+                    minLength: {
+                      value: 2,
+                      message: 'Role title must be at least 2 characters'
+                    }
+                  })}
+                />
+              </div>
+
+              {/* Required Skills */}
+              <Input
+                label="Required Skills (Optional)"
+                placeholder="e.g. Python, SQL, REST APIs, Docker, CI/CD, React, TypeScript"
+                icon={Code2}
+                helperText="Enter comma-separated core skills required by the job posting."
+                {...register('requiredSkills')}
+              />
+
+              {/* Complete Description of Job */}
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1.5 flex items-center gap-1.5">
+                  <FileText className="w-4 h-4 text-slate-500" />
+                  Complete Description of Job (Optional but recommended)
+                </label>
+                <textarea
+                  rows={5}
+                  placeholder="Paste the complete job description, requirements, responsibilities, or bullet points from the job posting..."
+                  className="block w-full rounded-lg border border-slate-300 text-sm p-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
+                  {...register('jobDescription')}
+                />
+                <p className="mt-1 text-xs text-slate-500">
+                  Providing full JD details enables pinpoint ATS scoring and precision missing-skill identification.
+                </p>
+              </div>
+            </div>
+          </Card>
+
+          {/* STEP 2: Upload Resume */}
+          <Card
+            title="2. Upload Resume"
+            subtitle="Upload your current resume in PDF or DOCX format (Max 5MB)"
+          >
             <ResumeDropzone
               file={file}
               onFileSelect={(selectedFile) => {
@@ -185,45 +275,32 @@ export const NewAnalysisPage = () => {
             />
           </Card>
 
-          {/* Target Role & JD Section */}
-          <Card title="2. Target Position" subtitle="Specify the role you are targeting so the AI can compute honest skill gaps">
-            <div className="space-y-5">
-              <Input
-                label="Target Job Title / Role *"
-                placeholder="e.g. Senior Full-Stack Engineer, MERN Developer, Frontend Lead"
-                icon={Briefcase}
-                error={errors.targetRole?.message}
-                {...register('targetRole', {
-                  required: 'Target role is required to evaluate skill gaps',
-                  minLength: {
-                    value: 2,
-                    message: 'Role title must be at least 2 characters'
-                  }
-                })}
-              />
-
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1.5 flex items-center gap-1.5">
-                  <FileText className="w-4 h-4 text-slate-500" />
-                  Target Job Description (Optional but recommended)
-                </label>
-                <textarea
-                  rows={4}
-                  placeholder="Paste specific requirements, responsibilities, or bullet points from the job posting..."
-                  className="block w-full rounded-lg border border-slate-300 text-sm p-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
-                  {...register('jobDescription')}
+          {/* STEP 3: Options & Submission */}
+          <Card className="p-4 bg-slate-50/70 border border-slate-200">
+            <div className="space-y-3">
+              {/* Auto-generate roadmap checkbox */}
+              <div className="flex items-center gap-2.5">
+                <input
+                  type="checkbox"
+                  id="roadmap-checkbox"
+                  className="w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500 cursor-pointer"
+                  {...register('autoGenerateRoadmap')}
                 />
-                <p className="mt-1 text-xs text-slate-500">
-                  Providing a real JD enables high-precision ATS matching and tailored missing-skill detection.
-                </p>
+                <label
+                  htmlFor="roadmap-checkbox"
+                  className="text-xs sm:text-sm font-semibold text-slate-800 cursor-pointer flex items-center gap-1.5"
+                >
+                  <Map className="w-4 h-4 text-indigo-600" />
+                  Automatically generate 12-week learning roadmap from skill gaps
+                </label>
               </div>
 
               {/* Overwrite Option Checkbox */}
-              <div className="pt-2 border-t border-slate-100 flex items-center gap-2">
+              <div className="flex items-center gap-2.5 pt-2 border-t border-slate-200">
                 <input
                   type="checkbox"
                   id="overwrite-checkbox"
-                  className="w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500"
+                  className="w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500 cursor-pointer"
                   {...register('overwrite')}
                 />
                 <label htmlFor="overwrite-checkbox" className="text-xs text-slate-600 font-medium cursor-pointer">
@@ -269,16 +346,25 @@ export const NewAnalysisPage = () => {
             </div>
           )}
 
-          {/* Action Button */}
+          {/* Primary Action Button */}
           <div className="flex justify-end pt-2">
             <Button
               type="submit"
               variant="primary"
               size="lg"
-              className="min-w-[200px]"
+              className="min-w-[240px] shadow-md shadow-indigo-100"
             >
-              <Sparkles className="w-4 h-4 mr-2" />
-              Start AI Gap Analysis
+              {autoGenerateRoadmap ? (
+                <>
+                  <Map className="w-4 h-4 mr-2" />
+                  Analyze Gap & Generate Roadmap
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-4 h-4 mr-2" />
+                  Start AI Gap Analysis
+                </>
+              )}
             </Button>
           </div>
         </form>
@@ -288,4 +374,3 @@ export const NewAnalysisPage = () => {
 };
 
 export default NewAnalysisPage;
-
