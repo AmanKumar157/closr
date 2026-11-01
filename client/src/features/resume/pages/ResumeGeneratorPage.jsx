@@ -94,6 +94,11 @@ export const ResumeGeneratorPage = () => {
   const [isSavingEdit, setIsSavingEdit] = useState(false);
   const resumeRef = useRef(null);
 
+  // AI Automatic Resume Editor state
+  const [showAiEditBox, setShowAiEditBox] = useState(false);
+  const [aiPrompt, setAiPrompt] = useState('');
+  const [isAiEditing, setIsAiEditing] = useState(false);
+
   // Tailor for specific job opening modal
   const [showTailorModal, setShowTailorModal] = useState(false);
   const [tailorSourceType, setTailorSourceType] = useState('document'); // 'document' | 'upload' | 'existing'
@@ -105,6 +110,7 @@ export const ResumeGeneratorPage = () => {
     experienceLevel: 'Fresher / Student (0-1 yrs)',
     experienceDetails: '',
     specificTools: '',
+    editInstructions: '',
     jobDescription: '',
     baseAnalysisId: '',
     baseResumeId: '',
@@ -316,9 +322,12 @@ export const ResumeGeneratorPage = () => {
     setTimeout(() => setCopied(false), 2500);
   };
 
-  // Live Interactive Editing Handlers
+  // Live Interactive Editing Handlers (Uncontrolled contentEditable to prevent cursor jumping)
   const handleToggleEdit = () => {
     if (!isEditing) {
+      if (resumeRef.current && editableHtml) {
+        resumeRef.current.innerHTML = editableHtml;
+      }
       setIsEditing(true);
       toast('Click directly anywhere on the document to edit text.', { icon: '✏️' });
     } else {
@@ -339,6 +348,9 @@ export const ResumeGeneratorPage = () => {
       if (res.success && res.data?.resume) {
         setResume(res.data.resume);
         setEditableHtml(res.data.resume.html);
+        if (resumeRef.current) {
+          resumeRef.current.innerHTML = res.data.resume.html;
+        }
         setIsEditing(false);
         toast.success('Resume updated! Live PDF export is ready.');
       }
@@ -358,6 +370,34 @@ export const ResumeGeneratorPage = () => {
     }
     setIsEditing(false);
     toast('Changes discarded.');
+  };
+
+  // AI Automatic Edit Handler
+  const handleAiEditSubmit = async (e) => {
+    if (e) e.preventDefault();
+    if (!aiPrompt.trim()) {
+      toast.error('Please specify what changes or instructions you want AI to make.');
+      return;
+    }
+    if (!resume?._id) return;
+    try {
+      setIsAiEditing(true);
+      const res = await resumeService.aiEditResume(resume._id, aiPrompt.trim());
+      if (res.success && res.data?.resume) {
+        setResume(res.data.resume);
+        setEditableHtml(res.data.resume.html);
+        if (resumeRef.current) {
+          resumeRef.current.innerHTML = res.data.resume.html;
+        }
+        toast.success('AI successfully updated your resume according to your instructions!');
+        setAiPrompt('');
+        setShowAiEditBox(false);
+      }
+    } catch (err) {
+      toast.error(err.message || 'Failed to apply AI edits to resume.');
+    } finally {
+      setIsAiEditing(false);
+    }
   };
 
   const handleTemplateChange = async (templateId) => {
@@ -526,14 +566,37 @@ export const ResumeGeneratorPage = () => {
     }
   };
 
-  const handleOpenEditDoc = (e, a) => {
+  const handleOpenEditDoc = async (e, a) => {
     if (e) e.stopPropagation();
     setEditingDoc(a);
-    setEditDocForm({
-      fileName: a.fileName || 'Uploaded Resume',
-      targetRole: a.targetRole || '',
-      resumeText: a.resumeText || ''
-    });
+
+    // If resumeText is already present on a, use it immediately
+    if (a.resumeText && a.resumeText.length > 20) {
+      setEditDocForm({
+        fileName: a.fileName || 'Uploaded Resume',
+        targetRole: a.targetRole || '',
+        resumeText: a.resumeText
+      });
+    } else {
+      setEditDocForm({
+        fileName: a.fileName || 'Uploaded Resume',
+        targetRole: a.targetRole || '',
+        resumeText: 'Loading full resume text from database...'
+      });
+      try {
+        const res = await analysisService.getAnalysisById(a._id);
+        if (res.success && res.data?.analysis?.resumeText) {
+          setEditDocForm((prev) => ({
+            ...prev,
+            fileName: res.data.analysis.fileName || prev.fileName,
+            targetRole: res.data.analysis.targetRole || prev.targetRole,
+            resumeText: res.data.analysis.resumeText
+          }));
+        }
+      } catch (err) {
+        console.error('Failed to load full resume text for editing', err);
+      }
+    }
   };
 
   const handleSaveEditDoc = async (addAfter = false) => {
@@ -580,6 +643,7 @@ export const ResumeGeneratorPage = () => {
       experienceLevel: 'Fresher / Student (0-1 yrs)',
       experienceDetails: '',
       specificTools: '',
+      editInstructions: '',
       jobDescription: ''
     });
     setTailorResumeFile(null);
@@ -599,6 +663,7 @@ export const ResumeGeneratorPage = () => {
         experienceLevel: 'Fresher / Student (0-1 yrs)',
         experienceDetails: '',
         specificTools: '',
+        editInstructions: '',
         jobDescription: ''
       });
     } else {
@@ -614,6 +679,7 @@ export const ResumeGeneratorPage = () => {
         experienceLevel: 'Fresher / Student (0-1 yrs)',
         experienceDetails: '',
         specificTools: '',
+        editInstructions: '',
         jobDescription: ''
       });
     }
@@ -658,6 +724,7 @@ export const ResumeGeneratorPage = () => {
       formData.append('experienceLevel', tailorForm.experienceLevel || 'Fresher / Student (0-1 yrs)');
       formData.append('experienceDetails', tailorForm.experienceDetails?.trim() || '');
       formData.append('specificTools', tailorForm.specificTools?.trim() || '');
+      formData.append('editInstructions', tailorForm.editInstructions?.trim() || '');
       formData.append('jobDescription', tailorForm.jobDescription?.trim() || '');
 
       const res = await resumeService.tailorResume(formData);
@@ -1144,10 +1211,27 @@ export const ResumeGeneratorPage = () => {
               </p>
             </div>
 
-            {/* STEP 6: Target Job Description */}
+            {/* STEP 6: Specific AI Changes / What to Change or Remove */}
             <div>
               <label className="text-xs font-bold text-slate-700 block mb-1">
-                6. Paste Job Description <span className="text-slate-400 font-normal">(optional)</span>
+                6. Specific Changes or AI Instructions <span className="text-slate-400 font-normal">(optional)</span>
+              </label>
+              <input
+                type="text"
+                value={tailorForm.editInstructions || ''}
+                onChange={(e) => setTailorForm({ ...tailorForm, editInstructions: e.target.value })}
+                placeholder="e.g. Remove Postman and all related mentions, emphasize Cyber Security & network tools..."
+                className="w-full text-xs px-3.5 py-2.5 border rounded-xl border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white"
+              />
+              <p className="text-[11px] text-slate-400 mt-0.5">
+                Write what you want the AI to automatically change, remove, or emphasize.
+              </p>
+            </div>
+
+            {/* STEP 7: Target Job Description */}
+            <div>
+              <label className="text-xs font-bold text-slate-700 block mb-1">
+                7. Paste Job Description <span className="text-slate-400 font-normal">(optional)</span>
               </label>
               <textarea
                 rows={3}
@@ -1856,6 +1940,20 @@ export const ResumeGeneratorPage = () => {
 
         {/* Primary Action Controls */}
         <div className="flex flex-wrap items-center gap-2">
+          {/* AI Automatic Edit Button */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowAiEditBox(!showAiEditBox)}
+            className={`border-indigo-300 text-indigo-700 hover:bg-indigo-50 font-semibold cursor-pointer ${
+              showAiEditBox ? 'bg-indigo-50 ring-2 ring-indigo-500/20' : ''
+            }`}
+            title="Automatically edit or modify this resume using Gemini AI prompts"
+          >
+            <Sparkles className="w-3.5 h-3.5 mr-1.5 text-indigo-600" />
+            <span>AI Automatic Edit</span>
+          </Button>
+
           {/* Live Edit Mode Button */}
           {isEditing ? (
             <div className="flex items-center gap-1.5 bg-amber-50 p-1 rounded-lg border border-amber-200">
@@ -1916,6 +2014,77 @@ export const ResumeGeneratorPage = () => {
           </Button>
         </div>
       </div>
+
+      {/* AI Automatic Resume Editor Command Box */}
+      {showAiEditBox && (
+        <div className="bg-gradient-to-r from-indigo-50/90 via-purple-50/70 to-blue-50/90 border border-indigo-200/90 rounded-2xl p-4 sm:p-5 shadow-sm animate-fadeIn space-y-3">
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center shadow-xs shrink-0">
+                <Sparkles className="w-4 h-4" />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-slate-900">AI Automatic Resume Editor</h3>
+                <p className="text-xs text-slate-600">
+                  Write what you need to change, remove, or add. Gemini AI will rewrite and refine your resume while keeping professional ATS formatting.
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowAiEditBox(false)}
+              className="p-1 rounded-lg text-slate-400 hover:text-slate-600 cursor-pointer"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+
+          <form onSubmit={handleAiEditSubmit} className="space-y-2.5">
+            <div className="relative">
+              <textarea
+                rows={2}
+                value={aiPrompt}
+                onChange={(e) => setAiPrompt(e.target.value)}
+                placeholder="e.g. 'Remove Postman and all related mentions from my resume', 'Change role to Cyber Security and emphasize network penetration testing', 'Add Docker, Kubernetes and CI/CD to skills and project descriptions'..."
+                className="w-full text-xs p-3 pr-28 sm:pr-32 border rounded-xl border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 bg-white shadow-2xs leading-relaxed"
+              />
+              <div className="absolute right-2.5 bottom-2.5">
+                <Button
+                  type="submit"
+                  variant="primary"
+                  size="sm"
+                  isLoading={isAiEditing}
+                  disabled={!aiPrompt.trim() || isAiEditing}
+                  className="text-xs bg-indigo-600 hover:bg-indigo-700 shadow-sm"
+                >
+                  <Sparkles className="w-3.5 h-3.5 mr-1" />
+                  Apply AI Edits
+                </Button>
+              </div>
+            </div>
+
+            {/* Quick prompt suggestions */}
+            <div className="flex items-center gap-1.5 flex-wrap text-[11px] text-slate-500">
+              <span className="font-semibold text-slate-600">Quick Suggestions:</span>
+              {[
+                'Remove Postman and all related mentions',
+                'Tailor for Cyber Security Analyst',
+                'Add Docker, Kubernetes & AWS to skills',
+                'Shorten summary and make bullets more impactful'
+              ].map((suggestion) => (
+                <button
+                  key={suggestion}
+                  type="button"
+                  onClick={() => setAiPrompt(suggestion)}
+                  className="px-2 py-0.5 rounded-lg bg-white border border-slate-200 hover:border-indigo-300 hover:bg-indigo-50/50 text-slate-700 hover:text-indigo-700 transition-colors cursor-pointer text-[11px]"
+                >
+                  {suggestion}
+                </button>
+              ))}
+            </div>
+          </form>
+        </div>
+      )}
 
       {/* Editing Banner Notification */}
       {isEditing && (
@@ -2099,10 +2268,9 @@ export const ResumeGeneratorPage = () => {
                     ref={resumeRef}
                     contentEditable={isEditing}
                     suppressContentEditableWarning={true}
-                    onInput={(e) => setEditableHtml(e.currentTarget.innerHTML)}
                     className={`resume-html-preview prose prose-slate max-w-none text-slate-900 ${templateClassMap[selectedTemplate]} ${isEditing ? 'ring-2 ring-indigo-400 ring-offset-2 cursor-text' : ''
                       }`}
-                    dangerouslySetInnerHTML={{ __html: editableHtml }}
+                    dangerouslySetInnerHTML={!isEditing ? { __html: editableHtml } : undefined}
                   />
                 </div>
               </div>
@@ -2268,10 +2436,9 @@ export const ResumeGeneratorPage = () => {
                 ref={resumeRef}
                 contentEditable={isEditing}
                 suppressContentEditableWarning={true}
-                onInput={(e) => setEditableHtml(e.currentTarget.innerHTML)}
                 className={`resume-html-preview prose prose-slate max-w-none text-slate-900 ${templateClassMap[selectedTemplate]} ${isEditing ? 'ring-2 ring-indigo-400 ring-offset-2 cursor-text' : ''
                   }`}
-                dangerouslySetInnerHTML={{ __html: editableHtml }}
+                dangerouslySetInnerHTML={!isEditing ? { __html: editableHtml } : undefined}
               />
             </div>
           </div>

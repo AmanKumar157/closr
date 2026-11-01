@@ -684,10 +684,17 @@ ${analysis.suggestions.join('; ')}
 `;
   }
 
+  if (analysis.editInstructions && analysis.editInstructions.trim()) {
+    userPrompt += `\nUSER SPECIFIC EDIT & MODIFICATION INSTRUCTIONS:
+${analysis.editInstructions.trim()}
+MANDATORY: You must strictly follow these edit instructions (e.g., removing specified tools, changing role orientation, adding requested skills). Do not return an unchanged resume!
+`;
+  }
+
   userPrompt += `\nINSTRUCTION:
 ${
   isTailored
-    ? 'Strategically TAILOR this resume specifically for the target job role, target company, candidate experience level, requested tools, required skills, and job description. Ensure universities remain strictly under Education and are NEVER turned into employers under Experience. Integrate the requested specific tools into the Skills matrix and bullet points. Output raw, ATS-compliant single-column HTML snippet only (no markdown fences).'
+    ? 'Strategically TAILOR this resume specifically for the target job role, target company, candidate experience level, requested tools, required skills, job description, and any user edit instructions. Ensure universities remain strictly under Education and are NEVER turned into employers under Experience. Integrate the requested specific tools into the Skills matrix and bullet points. Output raw, ATS-compliant single-column HTML snippet only (no markdown fences).'
     : 'Rewrite this resume as clean, semantic single-column HTML according to ATS standards. Ensure universities stay in Education. Return raw HTML only (no markdown fences).'
 }`;
 
@@ -723,6 +730,104 @@ ${
     return generateDevAtsHtmlFallback(analysis.targetRole, resumeText, analysis);
   }
 };
+
+/**
+ * AI Automatic Resume Editor
+ * Modifies an existing ATS resume HTML using natural language instructions
+ */
+export const editResumeWithAi = async (currentHtml, editInstructions, targetRole = '') => {
+  if (!editInstructions || !editInstructions.trim()) {
+    return currentHtml;
+  }
+
+  const userPrompt = `CURRENT RESUME HTML:
+${currentHtml}
+
+TARGET ROLE / TITLE:
+${targetRole || 'Software Professional'}
+
+USER EDIT & MODIFICATION INSTRUCTIONS:
+${editInstructions.trim()}
+
+INSTRUCTION:
+Strictly apply the user's edit instructions to modify the resume HTML. If asked to remove a tool, remove every mention of it from skills, summary, and bullet points. If asked to add tools or change domain/role, integrate them across the relevant sections. Output raw, clean, ATS-compliant HTML snippet only (no markdown fences).`;
+
+  if (!ENV.GEMINI_API_KEY || ENV.GEMINI_API_KEY === 'your_gemini_api_key_here') {
+    return applyDevEditFallback(currentHtml, editInstructions, targetRole);
+  }
+
+  try {
+    const ai = new GoogleGenAI({ apiKey: ENV.GEMINI_API_KEY });
+    const response = await callWithRetry(async () => {
+      return await ai.models.generateContent({
+        model: ENV.GEMINI_MODEL,
+        contents: userPrompt,
+        config: {
+          systemInstruction: PROMPTS.ATS_RESUME_AI_EDIT_SYSTEM,
+          temperature: 0.3
+        }
+      });
+    });
+
+    let rawHtml = response.text || '';
+    rawHtml = rawHtml.replace(/^```html\s*/i, '').replace(/```\s*$/i, '').trim();
+    if (rawHtml && rawHtml.includes('<')) {
+      return rawHtml;
+    }
+    return applyDevEditFallback(currentHtml, editInstructions, targetRole);
+  } catch (err) {
+    console.error('[Gemini AI Edit Error] Failed to edit resume with Gemini:', err.message);
+    return applyDevEditFallback(currentHtml, editInstructions, targetRole);
+  }
+};
+
+/**
+ * Intelligent fallback editor for development / offline mode
+ */
+export function applyDevEditFallback(currentHtml, editInstructions = '', targetRole = '') {
+  let html = currentHtml || '';
+
+  // 1. Process "remove [tool/mention]" instructions
+  const removeTerms = [];
+  const removeRegex = /remove\s+([a-zA-Z0-9_\-\s]+?)(?:and|from|,|\.|$)/gi;
+  let match;
+  while ((match = removeRegex.exec(editInstructions)) !== null) {
+    const term = match[1].replace(/remove\s+/i, '').trim();
+    if (term.length > 2 && !['the', 'my', 'all', 'resume', 'things'].includes(term.toLowerCase())) {
+      removeTerms.push(term);
+    }
+  }
+
+  for (const term of removeTerms) {
+    const reg = new RegExp(`[,\\s]*\\b${term}\\b[,\\s]*`, 'gi');
+    html = html.replace(reg, ', ');
+    const liReg = new RegExp(`<li>[^<]*?\\b${term}\\b[^<]*?</li>`, 'gi');
+    html = html.replace(liReg, '');
+  }
+
+  // 2. Process "add [tool/skill]" instructions
+  const addMatch = editInstructions.match(/add\s+([a-zA-Z0-9_\-\s,]+?)(?:\s+(?:to|into|in|for|on)\b|\band\b|\.|$)/i);
+  if (addMatch && addMatch[1]) {
+    const term = addMatch[1].trim();
+    if (term.length > 2 && !['the', 'my', 'all', 'resume'].includes(term.toLowerCase())) {
+      html = html.replace(/(<strong>Core Competencies & Tools:<\/strong>\s*)([^<]+)/i, `$1$2, ${term}`);
+    }
+  }
+
+  // 3. Process role change instructions (e.g. "change role to Cyber Security")
+  const roleMatch = editInstructions.match(/(?:change|update|set)\s+(?:role|title|position)?\s*(?:to|as)?\s*([a-zA-Z0-9_\-\s]+?)(?:and|,|\.|$)/i);
+  if (roleMatch && roleMatch[1]) {
+    const newRole = roleMatch[1].trim();
+    if (newRole.length > 3 && !['the', 'my'].includes(newRole.toLowerCase())) {
+      html = html.replace(/<strong>([^<]+)<\/strong>(\s*candidate targeted)/i, `<strong>${newRole}</strong>$2`);
+    }
+  }
+
+  // Clean up formatting
+  html = html.replace(/,\s*,/g, ',').replace(/,\s*<\/p>/g, '</p>').replace(/,\s*<\/li>/g, '</li>');
+
+  return html;
+}
 
 /**
  * Dev fallback 12-week roadmap generator

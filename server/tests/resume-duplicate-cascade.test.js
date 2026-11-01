@@ -384,4 +384,36 @@ test('Cascade Deletion of Duplicates: deleting an original document purges all d
   assert.equal(generatedResumes[1].analysisId, null);
 });
 
+test('AI Automatic Resume Edit: applyDevEditFallback removes specified tools, adds requested tools, and retargets role', async () => {
+  const { applyDevEditFallback } = await import('../src/services/gemini.service.js');
+
+  const initialHtml = `
+    <h1>Aman Kumar</h1>
+    <p><strong>Senior Software Engineer</strong> candidate targeted for opportunities at TechCorp.</p>
+    <h2>Technical Skills</h2>
+    <p><strong>Core Competencies & Tools:</strong> React, Node.js, Postman, SQL, Git</p>
+    <h2>Projects</h2>
+    <ul>
+      <li>Built a complaint-ticketing system with Postman API tests and Jira tracking.</li>
+      <li>Architected database schemas using PostgreSQL.</li>
+    </ul>
+  `;
+
+  // Case 1: User says "remove postman and its related things from my resume"
+  const edited1 = applyDevEditFallback(initialHtml, 'remove postman and its related things from my resume', 'Software Engineer');
+  assert.ok(!edited1.includes('Postman'), 'Postman must be stripped out completely');
+  assert.ok(!edited1.includes('Postman API tests'), 'Bullet point mentioning Postman must be removed');
+  assert.ok(edited1.includes('React'), 'Other skills like React must be preserved');
+  assert.ok(edited1.includes('PostgreSQL'), 'Other projects must be preserved');
+
+  // Case 2: User says "add Docker, Kubernetes into skills and change role to Cyber Security Analyst"
+  const edited2 = applyDevEditFallback(
+    initialHtml,
+    'add Docker, Kubernetes to skills and change role to Cyber Security Analyst',
+    'Cyber Security Analyst'
+  );
+  assert.ok(edited2.includes('Docker, Kubernetes'), 'Requested tools must be appended into skills');
+  assert.ok(edited2.includes('Cyber Security Analyst'), 'Role must be updated in candidate description');
+});
+
 

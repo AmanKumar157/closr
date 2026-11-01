@@ -39,6 +39,13 @@ export const resumeService = {
   },
 
   /**
+   * Automatically edit and modify resume with AI using natural language instructions
+   */
+  async aiEditResume(id, instructions) {
+    return axiosInstance.post(`/resume/${id}/ai-edit`, { instructions });
+  },
+
+  /**
    * Tailor a new ATS resume for a specific job opening without disrupting others
    */
   async tailorResume(data) {

@@ -4,7 +4,7 @@ import { Analysis } from '../models/Analysis.js';
 import { Roadmap } from '../models/Roadmap.js';
 import { Profile } from '../models/Profile.js';
 import { extractResumeText } from '../services/parser.service.js';
-import { generateAtsResume } from '../services/gemini.service.js';
+import { generateAtsResume, editResumeWithAi } from '../services/gemini.service.js';
 import { generatePdfFromHtml } from '../services/pdf.service.js';
 import { ApiError } from '../utils/ApiError.js';
 import { ApiResponse } from '../utils/apiResponse.js';
@@ -202,6 +202,47 @@ export const updateResume = asyncHandler(async (req, res) => {
 });
 
 /**
+ * @desc    Automatically modify a resume with AI using natural language instructions
+ * @route   POST /api/resume/:id/ai-edit
+ * @access  Protected
+ */
+export const aiEditResume = asyncHandler(async (req, res) => {
+  if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+    throw new ApiError(400, 'Invalid resume ID format.');
+  }
+
+  const { instructions } = req.body;
+  if (!instructions || !instructions.trim()) {
+    throw new ApiError(400, 'Please provide the instructions or changes you want AI to make.');
+  }
+
+  const resume = await GeneratedResume.findOne({
+    _id: req.params.id,
+    userId: req.user._id
+  });
+
+  if (!resume) {
+    throw new ApiError(404, 'Resume not found.');
+  }
+
+  // Run AI resume editor
+  const updatedHtml = await editResumeWithAi(
+    resume.html,
+    instructions.trim(),
+    resume.targetRole
+  );
+
+  resume.html = updatedHtml;
+  await resume.save();
+
+  return new ApiResponse(
+    200,
+    { resume },
+    'Resume modified by AI according to your instructions!'
+  ).send(res);
+});
+
+/**
  * @desc    Tailor a separate ATS resume for a specific job opening without disrupting others
  * @route   POST /api/resume/tailor
  * @access  Protected
@@ -217,7 +258,8 @@ export const tailorResumeForJob = asyncHandler(async (req, res) => {
     experienceDetails,
     specificTools,
     requiredSkills,
-    jobDescription
+    jobDescription,
+    editInstructions
   } = req.body;
 
   if (!targetRole || !targetRole.trim()) {
@@ -296,6 +338,7 @@ export const tailorResumeForJob = asyncHandler(async (req, res) => {
     specificTools: parsedTools,
     requiredSkills: parsedSkills,
     jobDescription: jobDescription?.trim() || '',
+    editInstructions: editInstructions?.trim() || '',
     matchedSkills: parsedSkills.slice(0, 8),
     suggestions: [
       `Tailored specifically for ${companyName ? `${companyName} - ` : ''}${targetRole.trim()}`

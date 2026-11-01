@@ -5,6 +5,7 @@ import {
   getResumes,
   getResumeById,
   updateResume,
+  aiEditResume,
   tailorResumeForJob,
   deleteResume
 } from '../controllers/resume.controller.js';
@@ -22,6 +23,7 @@ router.get('/', getResumes);
 router.get('/:id/pdf', getResumePdf);
 router.get('/:id', getResumeById);
 router.put('/:id', updateResume);
+router.post('/:id/ai-edit', aiLimiter, aiEditResume);
 router.delete('/:id', deleteResume);
 
 export default router;

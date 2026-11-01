@@ -226,7 +226,7 @@ export const createAnalysis = asyncHandler(async (req, res) => {
  */
 export const getAnalyses = asyncHandler(async (req, res) => {
   const analyses = await Analysis.find({ userId: req.user._id })
-    .select('-resumeText -fileBuffer') // Omit large resume text and fileBuffer for summary list
+    .select('-fileBuffer') // Omit large fileBuffer binary, keep resumeText for immediate manual editing & tailoring
     .sort({ createdAt: -1 });
 
   // Optional: Deduplicate analyses by physical resume file identity (SHA hash or clean name + size)
