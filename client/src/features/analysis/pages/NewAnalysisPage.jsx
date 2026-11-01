@@ -71,14 +71,16 @@ export const NewAnalysisPage = () => {
     const fetchSavedResumes = async () => {
       try {
         setLoadingSaved(true);
-        const res = await analysisService.getAnalyses();
+        const res = await analysisService.getAnalyses({ unique: 'true' });
         if (res.success && res.data?.analyses) {
           const analyses = res.data.analyses;
-          // Deduplicate by resumeTextHash or fileName to present unique original resume documents
+          // Deduplicate by resumeTextHash or normalized fileName + fileSize to present unique original resume documents
           const uniqueResumes = [];
           const seenKeys = new Set();
+          const cleanName = (name) => (name || '').toLowerCase().replace(/\.[^/.]+$/, '').replace(/[^a-z0-9]/g, '');
+
           for (const a of analyses) {
-            const key = a.resumeTextHash || a.fileName;
+            const key = a.resumeTextHash || `${cleanName(a.fileName)}_${a.fileSize || 0}`;
             if (key && !seenKeys.has(key)) {
               seenKeys.add(key);
               uniqueResumes.push(a);

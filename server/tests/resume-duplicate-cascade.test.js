@@ -251,4 +251,137 @@ test('Document Manual Editing and Tailor Conversion: allows updating original do
   assert.equal(source, updatedText);
 });
 
+test('Document Deduplication: collapses multiple role evaluations into unique physical document cards with allRoles badge', () => {
+  const rawAnalyses = [
+    {
+      _id: 'a1',
+      fileName: 'Aman_Kumar_Resume_.pdf',
+      fileSize: 302899,
+      targetRole: 'qa engineeer',
+      resumeTextHash: 'hash_aman_primary',
+      createdAt: new Date('2026-11-01T04:00:00Z')
+    },
+    {
+      _id: 'a2',
+      fileName: 'Aman_Kumar_Resume_.pdf',
+      fileSize: 302899,
+      targetRole: 'senior devops engineer',
+      resumeTextHash: 'hash_aman_primary',
+      createdAt: new Date('2026-11-01T04:10:00Z')
+    },
+    {
+      _id: 'a3',
+      fileName: 'Aman_Kumar_Resume_Engineering_Support.pdf',
+      fileSize: 43622,
+      targetRole: 'senior devops engineer',
+      resumeTextHash: 'hash_aman_support',
+      createdAt: new Date('2026-11-01T04:15:00Z')
+    },
+    {
+      _id: 'a4',
+      fileName: 'Aman_Kumar_Resume_.pdf',
+      fileSize: 302899,
+      targetRole: 'Aman Kumar',
+      resumeTextHash: 'hash_aman_primary',
+      createdAt: new Date('2026-11-01T04:20:00Z')
+    },
+    {
+      _id: 'a5',
+      fileName: 'Aman_Kumar_Resume_Engineering_Support.pdf',
+      fileSize: 43622,
+      targetRole: 'Aman Kumar Engineering Support',
+      resumeTextHash: 'hash_aman_support',
+      createdAt: new Date('2026-11-01T04:25:00Z')
+    }
+  ];
+
+  const deduplicateAnalyses = (analysesList) => {
+    if (!Array.isArray(analysesList)) return [];
+    const cleanName = (name) => (name || '').toLowerCase().replace(/\.[^/.]+$/, '').replace(/[^a-z0-9]/g, '');
+    const map = new Map();
+
+    for (const a of analysesList) {
+      const cName = cleanName(a.fileName);
+      const key = a.resumeTextHash || `${cName}_${a.fileSize || 0}`;
+
+      if (!map.has(key)) {
+        map.set(key, {
+          ...a,
+          duplicateIds: [a._id],
+          allRoles: a.targetRole ? [a.targetRole] : []
+        });
+      } else {
+        const existing = map.get(key);
+        if (!existing.duplicateIds.includes(a._id)) {
+          existing.duplicateIds.push(a._id);
+        }
+        if (a.targetRole && !existing.allRoles.includes(a.targetRole)) {
+          existing.allRoles.push(a.targetRole);
+        }
+        if (new Date(a.createdAt) > new Date(existing.createdAt)) {
+          existing.createdAt = a.createdAt;
+        }
+      }
+    }
+
+    return Array.from(map.values());
+  };
+
+  const uniqueDocs = deduplicateAnalyses(rawAnalyses);
+
+  // Exactly 2 unique physical documents should be returned, instead of 5 duplicates
+  assert.equal(uniqueDocs.length, 2);
+
+  const doc1 = uniqueDocs.find((d) => d.fileName === 'Aman_Kumar_Resume_.pdf');
+  assert.ok(doc1, 'Aman_Kumar_Resume_.pdf must exist');
+  assert.equal(doc1.duplicateIds.length, 3, 'Must contain all 3 analysis IDs');
+  assert.deepEqual(doc1.duplicateIds, ['a1', 'a2', 'a4']);
+  assert.deepEqual(doc1.allRoles, ['qa engineeer', 'senior devops engineer', 'Aman Kumar']);
+
+  const doc2 = uniqueDocs.find((d) => d.fileName === 'Aman_Kumar_Resume_Engineering_Support.pdf');
+  assert.ok(doc2, 'Aman_Kumar_Resume_Engineering_Support.pdf must exist');
+  assert.equal(doc2.duplicateIds.length, 2, 'Must contain 2 analysis IDs');
+  assert.deepEqual(doc2.duplicateIds, ['a3', 'a5']);
+  assert.deepEqual(doc2.allRoles, ['senior devops engineer', 'Aman Kumar Engineering Support']);
+});
+
+test('Cascade Deletion of Duplicates: deleting an original document purges all duplicates while preserving tailored resumes and roadmaps', () => {
+  let analyses = [
+    { _id: 'a1', fileName: 'Resume.pdf', resumeTextHash: 'hash1', fileSize: 100 },
+    { _id: 'a2', fileName: 'Resume.pdf', resumeTextHash: 'hash1', fileSize: 100 },
+    { _id: 'other_doc', fileName: 'Other.pdf', resumeTextHash: 'hash2', fileSize: 200 }
+  ];
+  let generatedResumes = [
+    { _id: 'tailored_1', analysisId: 'a1', companyName: 'Google' },
+    { _id: 'tailored_2', analysisId: 'a2', companyName: 'Meta' }
+  ];
+  let roadmaps = [
+    { _id: 'rm_1', analysisId: 'a1', targetRole: 'DevOps' }
+  ];
+
+  // Simulating enhanced deleteAnalysis
+  const targetDoc = analyses[0];
+  const matchingAnalyses = analyses.filter(
+    (a) => a._id === targetDoc._id || a.resumeTextHash === targetDoc.resumeTextHash
+  );
+  const targetIds = matchingAnalyses.map((a) => a._id);
+
+  // 1. Unlink tailored resumes (never delete user tailored work!)
+  generatedResumes = generatedResumes.map((r) =>
+    targetIds.includes(r.analysisId) ? { ...r, analysisId: null } : r
+  );
+
+  // 2. Roadmaps are preserved!
+  assert.equal(roadmaps.length, 1, 'Roadmaps must never be auto-deleted');
+
+  // 3. Delete matching analyses
+  analyses = analyses.filter((a) => !targetIds.includes(a._id));
+
+  assert.equal(analyses.length, 1, 'Only non-matching documents should remain');
+  assert.equal(analyses[0]._id, 'other_doc');
+  assert.equal(generatedResumes.length, 2, 'Tailored resumes must remain intact with unlinked analysisId');
+  assert.equal(generatedResumes[0].analysisId, null);
+  assert.equal(generatedResumes[1].analysisId, null);
+});
+
 

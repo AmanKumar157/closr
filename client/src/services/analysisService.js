@@ -15,9 +15,10 @@ export const analysisService = {
 
   /**
    * Fetch all past analyses for current user
+   * @param {object} params - Optional query params (e.g. { unique: 'true' })
    */
-  async getAnalyses() {
-    return axiosInstance.get('/analysis');
+  async getAnalyses(params = {}) {
+    return axiosInstance.get('/analysis', { params });
   },
 
   /**
@@ -47,11 +48,12 @@ export const analysisService = {
   },
 
   /**
-   * Permanently delete an analysis and cascade delete all its generated ATS resumes & roadmaps
+   * Permanently delete an analysis and clean up duplicate references
    * @param {string} id
+   * @param {object} params - Optional query params (e.g. { allDuplicates: true })
    */
-  async deleteAnalysis(id) {
-    return axiosInstance.delete(`/analysis/${id}`);
+  async deleteAnalysis(id, params = {}) {
+    return axiosInstance.delete(`/analysis/${id}`, { params });
   },
 
   /**

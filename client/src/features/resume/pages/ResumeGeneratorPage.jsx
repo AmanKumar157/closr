@@ -132,15 +132,48 @@ export const ResumeGeneratorPage = () => {
     (typeof resume?.analysisId === 'object' ? resume.analysisId?._id : resume?.analysisId) ||
     '';
 
+  // Deduplicate analyses so multiple evaluations of the same physical resume collapse into a single document card
+  const deduplicateAnalyses = (analysesList) => {
+    if (!Array.isArray(analysesList)) return [];
+    const cleanName = (name) => (name || '').toLowerCase().replace(/\.[^/.]+$/, '').replace(/[^a-z0-9]/g, '');
+    const map = new Map();
+
+    for (const a of analysesList) {
+      const cName = cleanName(a.fileName);
+      const key = a.resumeTextHash || `${cName}_${a.fileSize || 0}`;
+
+      if (!map.has(key)) {
+        map.set(key, {
+          ...a,
+          duplicateIds: [a._id],
+          allRoles: a.targetRole ? [a.targetRole] : []
+        });
+      } else {
+        const existing = map.get(key);
+        if (!existing.duplicateIds.some((id) => id?.toString() === a._id?.toString())) {
+          existing.duplicateIds.push(a._id);
+        }
+        if (a.targetRole && !existing.allRoles.includes(a.targetRole)) {
+          existing.allRoles.push(a.targetRole);
+        }
+        if (new Date(a.createdAt) > new Date(existing.createdAt)) {
+          existing.createdAt = a.createdAt;
+        }
+      }
+    }
+
+    return Array.from(map.values());
+  };
+
   // Load user resumes and analyses list
   const loadLists = async () => {
     try {
       const [rRes, aRes] = await Promise.all([
         resumeService.getResumes(),
-        analysisService.getAnalyses()
+        analysisService.getAnalyses({ unique: 'true' })
       ]);
       if (rRes.success) setAllResumes(rRes.data?.resumes || []);
-      if (aRes.success) setAvailableAnalyses(aRes.data?.analyses || []);
+      if (aRes.success) setAvailableAnalyses(deduplicateAnalyses(aRes.data?.analyses || []));
     } catch (err) {
       console.error('Error fetching resume lists', err);
     }
@@ -209,10 +242,10 @@ export const ResumeGeneratorPage = () => {
           setResume(null);
           const [rRes, aRes] = await Promise.all([
             resumeService.getResumes(),
-            analysisService.getAnalyses()
+            analysisService.getAnalyses({ unique: 'true' })
           ]);
           if (rRes.success) setAllResumes(rRes.data?.resumes || []);
-          if (aRes.success) setAvailableAnalyses(aRes.data?.analyses || []);
+          if (aRes.success) setAvailableAnalyses(deduplicateAnalyses(aRes.data?.analyses || []));
         }
       } catch (err) {
         toast.error(err.message || 'Failed to load resume.');
@@ -464,22 +497,31 @@ export const ResumeGeneratorPage = () => {
     });
   };
 
-  const handleDeleteUploadedResume = async (e, id, fileName) => {
+  const handleDeleteUploadedResume = async (e, id, fileName, duplicateIds = []) => {
     if (e) e.stopPropagation();
     if (
       !window.confirm(
-        `Permanently delete "${fileName || 'this resume'}"?\n\nNote: Your roadmaps will remain intact and will NOT be deleted.`
+        `Permanently delete "${fileName || 'this resume'}"?\n\nNote: Your roadmaps and tailored ATS resumes will remain intact and will NOT be deleted.`
       )
     ) {
       return;
     }
     try {
-      const res = await analysisService.deleteAnalysis(id);
+      const res = await analysisService.deleteAnalysis(id, { allDuplicates: true });
       if (res.success) {
         toast.success(`"${fileName || 'Resume'}" deleted successfully.`);
         await loadLists();
       }
     } catch (err) {
+      // Fallback: if server delete single succeeded or failed, attempt batch deletion for known duplicate IDs
+      try {
+        if (duplicateIds && duplicateIds.length > 0) {
+          await Promise.allSettled(duplicateIds.map((dupId) => analysisService.deleteAnalysis(dupId)));
+          toast.success(`"${fileName || 'Resume'}" deleted successfully.`);
+          await loadLists();
+          return;
+        }
+      } catch (_) {}
       toast.error(err.message || 'Failed to delete resume document.');
     }
   };
@@ -883,9 +925,17 @@ export const ResumeGeneratorPage = () => {
                               <p className="text-xs font-bold text-slate-900 truncate">
                                 {a.fileName || 'Uploaded Resume'}
                               </p>
-                              <p className="text-[11px] text-slate-500 truncate">
-                                Role: <span className="font-semibold text-slate-700">{a.targetRole || 'General'}</span>
-                              </p>
+                              <div className="flex items-center gap-1.5 text-[11px] text-slate-500 truncate mt-0.5">
+                                <span>Role: <span className="font-semibold text-slate-700">{a.targetRole || 'General'}</span></span>
+                                {a.allRoles && a.allRoles.length > 1 && (
+                                  <span
+                                    className="px-1.5 py-0.2 rounded text-[10px] font-medium bg-indigo-50 text-indigo-700 border border-indigo-100"
+                                    title={`Evaluated for: ${a.allRoles.join(', ')}`}
+                                  >
+                                    +{a.allRoles.length - 1} other role{a.allRoles.length > 2 ? 's' : ''}
+                                  </span>
+                                )}
+                              </div>
                             </div>
                           </div>
                         );
@@ -1413,13 +1463,23 @@ export const ResumeGeneratorPage = () => {
                         >
                           {a.fileName || 'Uploaded Resume'}
                         </h4>
-                        <p className="text-xs text-slate-500 truncate mt-0.5">
-                          <span className="font-semibold text-slate-700">{a.targetRole || 'Professional'}</span>
-                          <span className="mx-1.5">•</span>
-                          <span>{formatFileSize(a.fileSize)}</span>
-                          <span className="mx-1.5">•</span>
-                          <span>{new Date(a.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}</span>
-                        </p>
+                        <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
+                          <span className="font-semibold text-xs text-slate-700">{a.targetRole || 'Professional'}</span>
+                          {a.allRoles && a.allRoles.length > 1 && (
+                            <span
+                              className="inline-flex items-center px-1.5 py-0.2 rounded text-[10px] font-medium bg-indigo-50 text-indigo-700 border border-indigo-100"
+                              title={`Evaluated for roles: ${a.allRoles.join(', ')}`}
+                            >
+                              +{a.allRoles.length - 1} role{a.allRoles.length > 2 ? 's' : ''}
+                            </span>
+                          )}
+                          <span className="text-slate-300">•</span>
+                          <span className="text-xs text-slate-500">{formatFileSize(a.fileSize)}</span>
+                          <span className="text-slate-300">•</span>
+                          <span className="text-xs text-slate-500">
+                            {new Date(a.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                          </span>
+                        </div>
                       </div>
                     </div>
 
@@ -1458,7 +1518,7 @@ export const ResumeGeneratorPage = () => {
 
                         <button
                           type="button"
-                          onClick={(e) => handleDeleteUploadedResume(e, a._id, a.fileName)}
+                          onClick={(e) => handleDeleteUploadedResume(e, a._id, a.fileName, a.duplicateIds)}
                           className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-rose-600 hover:bg-rose-50 border border-rose-200/80 rounded-lg transition-colors cursor-pointer"
                           title="Delete this resume document"
                         >

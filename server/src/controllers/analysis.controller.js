@@ -220,7 +220,7 @@ export const createAnalysis = asyncHandler(async (req, res) => {
 });
 
 /**
- * @desc    Get all analyses for current user
+ * @desc    Get all analyses for current user (optionally deduplicated by physical document)
  * @route   GET /api/analysis
  * @access  Protected
  */
@@ -228,6 +228,36 @@ export const getAnalyses = asyncHandler(async (req, res) => {
   const analyses = await Analysis.find({ userId: req.user._id })
     .select('-resumeText -fileBuffer') // Omit large resume text and fileBuffer for summary list
     .sort({ createdAt: -1 });
+
+  // Optional: Deduplicate analyses by physical resume file identity (SHA hash or clean name + size)
+  if (req.query.unique === 'true') {
+    const cleanName = (name) => (name || '').toLowerCase().replace(/\.[^/.]+$/, '').replace(/[^a-z0-9]/g, '');
+    const map = new Map();
+
+    for (const a of analyses) {
+      const cName = cleanName(a.fileName);
+      const key = a.resumeTextHash || `${cName}_${a.fileSize || 0}`;
+      const doc = a.toObject();
+
+      if (!map.has(key)) {
+        map.set(key, {
+          ...doc,
+          duplicateIds: [doc._id],
+          allRoles: doc.targetRole ? [doc.targetRole] : []
+        });
+      } else {
+        const existing = map.get(key);
+        if (!existing.duplicateIds.some((id) => id.toString() === doc._id.toString())) {
+          existing.duplicateIds.push(doc._id);
+        }
+        if (doc.targetRole && !existing.allRoles.includes(doc.targetRole)) {
+          existing.allRoles.push(doc.targetRole);
+        }
+      }
+    }
+
+    return new ApiResponse(200, { analyses: Array.from(map.values()) }, 'Unique resume documents fetched successfully').send(res);
+  }
 
   return new ApiResponse(200, { analyses }, 'Analyses fetched successfully').send(res);
 });
@@ -383,7 +413,7 @@ export const getOriginalResumePdf = asyncHandler(async (req, res) => {
 });
 
 /**
- * @desc    Permanently delete an analysis and CASCADE delete all linked ATS resumes & roadmaps
+ * @desc    Permanently delete an original resume document and clean up duplicate analysis entries for that file
  * @route   DELETE /api/analysis/:id
  * @access  Protected
  */
@@ -401,21 +431,41 @@ export const deleteAnalysis = asyncHandler(async (req, res) => {
     throw new ApiError(404, 'Analysis report not found.');
   }
 
-  // 1. Delete all generated ATS resumes linked to this analysis
-  await GeneratedResume.deleteMany({
+  // Find all duplicate analysis records belonging to this exact physical document file
+  const cleanName = (analysis.fileName || '').toLowerCase().replace(/\.[^/.]+$/, '').replace(/[^a-z0-9]/g, '');
+  const duplicateConditions = [{ _id: analysis._id }];
+  if (analysis.resumeTextHash) {
+    duplicateConditions.push({ resumeTextHash: analysis.resumeTextHash });
+  }
+  if (cleanName && analysis.fileSize) {
+    duplicateConditions.push({ fileName: analysis.fileName, fileSize: analysis.fileSize });
+  }
+
+  const matchingAnalyses = await Analysis.find({
     userId: req.user._id,
-    analysisId: analysis._id
-  });
+    $or: duplicateConditions
+  }).select('_id');
+
+  const targetIds = matchingAnalyses.map((a) => a._id);
+
+  // 1. Unlink (preserve) generated ATS resumes so user never loses tailored resumes when deleting raw uploaded documents
+  await GeneratedResume.updateMany(
+    { userId: req.user._id, analysisId: { $in: targetIds } },
+    { $set: { analysisId: null } }
+  );
 
   // 2. Roadmaps are preserved! User explicitly manages and deletes roadmaps separately.
   // Multiple roadmaps remain stored and accessible in the Roadmap section.
 
-  // 3. Delete the analysis document itself
-  await Analysis.deleteOne({ _id: analysis._id });
+  // 3. Delete all duplicate analysis records for this physical file
+  await Analysis.deleteMany({ _id: { $in: targetIds } });
 
-  // 4. Update Profile.lastUploadedResume if it points to this analysis
+  // 4. Update Profile.lastUploadedResume if it points to any of these analyses
   const profile = await Profile.findOne({ userId: req.user._id });
-  if (profile?.lastUploadedResume?.analysisId?.toString() === analysis._id.toString()) {
+  if (
+    profile?.lastUploadedResume?.analysisId &&
+    targetIds.some((id) => id.toString() === profile.lastUploadedResume.analysisId.toString())
+  ) {
     const latestRemaining = await Analysis.findOne({ userId: req.user._id }).sort({ createdAt: -1 });
     if (latestRemaining) {
       profile.lastUploadedResume = {
@@ -432,8 +482,8 @@ export const deleteAnalysis = asyncHandler(async (req, res) => {
 
   return new ApiResponse(
     200,
-    null,
-    `Resume "${analysis.fileName}" and all associated data completely removed from app.`
+    { deletedCount: targetIds.length },
+    `Resume "${analysis.fileName}" removed successfully.`
   ).send(res);
 });
 
