@@ -322,11 +322,34 @@ export const ResumeGeneratorPage = () => {
     setTimeout(() => setCopied(false), 2500);
   };
 
-  // Live Interactive Editing Handlers (Uncontrolled contentEditable to prevent cursor jumping)
+  // Set resume DOM element and safely manage its innerHTML without React clearing it
+  const attachResumeRef = (el) => {
+    resumeRef.current = el;
+    if (el && (!isEditing || !el.innerHTML.trim())) {
+      const htmlToRender = editableHtml || resume?.html || '';
+      if (htmlToRender && el.innerHTML !== htmlToRender) {
+        el.innerHTML = htmlToRender;
+      }
+    }
+  };
+
+  useEffect(() => {
+    if (resumeRef.current && !isEditing) {
+      const htmlToRender = editableHtml || resume?.html || '';
+      if (htmlToRender && resumeRef.current.innerHTML !== htmlToRender) {
+        resumeRef.current.innerHTML = htmlToRender;
+      }
+    }
+  }, [editableHtml, isEditing, selectedTemplate, viewMode, resume?._id]);
+
+  // Live Interactive Editing Handlers (Uncontrolled contentEditable to prevent cursor jumping and blank page)
   const handleToggleEdit = () => {
     if (!isEditing) {
-      if (resumeRef.current && editableHtml) {
-        resumeRef.current.innerHTML = editableHtml;
+      const htmlToRender = editableHtml || resume?.html || '';
+      if (resumeRef.current && htmlToRender) {
+        if (!resumeRef.current.innerHTML || !resumeRef.current.innerHTML.trim()) {
+          resumeRef.current.innerHTML = htmlToRender;
+        }
       }
       setIsEditing(true);
       toast('Click directly anywhere on the document to edit text.', { icon: '✏️' });
@@ -339,7 +362,9 @@ export const ResumeGeneratorPage = () => {
     if (!resume) return;
     try {
       setIsSavingEdit(true);
-      const finalHtml = resumeRef.current ? resumeRef.current.innerHTML : editableHtml;
+      const finalHtml = (resumeRef.current && resumeRef.current.innerHTML.trim())
+        ? resumeRef.current.innerHTML
+        : editableHtml;
       const res = await resumeService.updateResume(resume._id, {
         html: finalHtml,
         template: selectedTemplate
@@ -362,12 +387,11 @@ export const ResumeGeneratorPage = () => {
   };
 
   const handleCancelEdits = () => {
-    if (resume?.html) {
-      setEditableHtml(resume.html);
-      if (resumeRef.current) {
-        resumeRef.current.innerHTML = resume.html;
-      }
+    const originalHtml = resume?.html || editableHtml || '';
+    if (resumeRef.current && originalHtml) {
+      resumeRef.current.innerHTML = originalHtml;
     }
+    setEditableHtml(originalHtml);
     setIsEditing(false);
     toast('Changes discarded.');
   };
@@ -2265,12 +2289,11 @@ export const ResumeGeneratorPage = () => {
               <div className="p-6 bg-slate-100 flex justify-center min-h-full">
                 <div className="w-full bg-white shadow-lg rounded-sm p-6 sm:p-10 border border-slate-200 text-slate-900">
                   <div
-                    ref={resumeRef}
+                    ref={attachResumeRef}
                     contentEditable={isEditing}
                     suppressContentEditableWarning={true}
                     className={`resume-html-preview prose prose-slate max-w-none text-slate-900 ${templateClassMap[selectedTemplate]} ${isEditing ? 'ring-2 ring-indigo-400 ring-offset-2 cursor-text' : ''
                       }`}
-                    dangerouslySetInnerHTML={!isEditing ? { __html: editableHtml } : undefined}
                   />
                 </div>
               </div>
@@ -2433,12 +2456,11 @@ export const ResumeGeneratorPage = () => {
               className="w-full max-w-[794px] min-h-[1123px] bg-white text-slate-900 shadow-2xl rounded-[1px] p-8 sm:p-14 border border-slate-300 relative my-2 print:m-0 print:p-0 print:shadow-none print:border-none"
             >
               <div
-                ref={resumeRef}
+                ref={attachResumeRef}
                 contentEditable={isEditing}
                 suppressContentEditableWarning={true}
                 className={`resume-html-preview prose prose-slate max-w-none text-slate-900 ${templateClassMap[selectedTemplate]} ${isEditing ? 'ring-2 ring-indigo-400 ring-offset-2 cursor-text' : ''
                   }`}
-                dangerouslySetInnerHTML={!isEditing ? { __html: editableHtml } : undefined}
               />
             </div>
           </div>
