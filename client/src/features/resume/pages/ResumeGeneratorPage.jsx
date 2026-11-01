@@ -32,7 +32,9 @@ import {
   Maximize2,
   Upload,
   FileUp,
-  Folder
+  Folder,
+  Edit2,
+  Loader2
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import resumeService from '../../../services/resumeService.js';
@@ -80,7 +82,16 @@ export const ResumeGeneratorPage = () => {
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [downloading, setDownloading] = useState(false);
+  const [downloadingPdfId, setDownloadingPdfId] = useState(null);
   const [copied, setCopied] = useState(false);
+
+  // Resume renaming states (Header inline rename, live edit banner, and card lists)
+  const [isRenamingResume, setIsRenamingResume] = useState(false);
+  const [resumeTitleInput, setResumeTitleInput] = useState('');
+  const [isSavingRename, setIsSavingRename] = useState(false);
+  const [cardRenamingId, setCardRenamingId] = useState(null);
+  const [cardRenameTitle, setCardRenameTitle] = useState('');
+  const [isSavingCardRename, setIsSavingCardRename] = useState(false);
 
   // View modes: 'preview' (A4 PDF layout) | 'native' (Browser PDF stream) | 'split' | 'original' | 'code'
   const [viewMode, setViewMode] = useState('preview');
@@ -289,16 +300,16 @@ export const ResumeGeneratorPage = () => {
 
     try {
       setDownloading(true);
+      setDownloadingPdfId(targetId);
       const res = await resumeService.downloadPdf(targetId);
 
-      const blob = new Blob([res], { type: 'application/pdf' });
+      const blob = res instanceof Blob ? res : new Blob([res], { type: 'application/pdf' });
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      const cName = customCompanyName || resume?.companyName;
-      const downloadName = cName
-        ? `Resume_${cName.replace(/\s+/g, '_')}_${targetId}.pdf`
-        : `CareerPilot_ATS_Resume_${targetId}.pdf`;
+      const cName = customCompanyName || resume?.companyName || 'CareerPilot_ATS_Resume';
+      const cleanName = cName.replace(/[^a-zA-Z0-9_-]/g, '_');
+      const downloadName = `Resume_${cleanName}.pdf`;
       link.setAttribute('download', downloadName);
       document.body.appendChild(link);
       link.click();
@@ -307,9 +318,17 @@ export const ResumeGeneratorPage = () => {
 
       toast.success('PDF downloaded successfully!');
     } catch (err) {
-      toast.error('Failed to generate PDF. Please try again.');
+      console.error('[Download PDF Error]', err);
+      try {
+        const directUrl = `${import.meta.env.VITE_API_URL || '/api'}/resume/${targetId}/pdf`;
+        window.open(directUrl, '_blank');
+        toast.success('Opening PDF download in browser...');
+      } catch (fallbackErr) {
+        toast.error(err.message || 'Failed to download PDF. Please try again.');
+      }
     } finally {
       setDownloading(false);
+      setDownloadingPdfId(null);
     }
   };
 
@@ -351,6 +370,11 @@ export const ResumeGeneratorPage = () => {
           resumeRef.current.innerHTML = htmlToRender;
         }
       }
+      // Prefill resumeTitleInput with current custom name
+      const currentTitle = resume?.companyName && resume?.companyName !== 'General Application' && resume?.companyName !== 'Target Role'
+        ? resume.companyName
+        : (resume?.targetRole ? `${resume.targetRole} Resume` : '');
+      setResumeTitleInput(currentTitle);
       setIsEditing(true);
       toast('Click directly anywhere on the document to edit text.', { icon: '✏️' });
     } else {
@@ -365,10 +389,17 @@ export const ResumeGeneratorPage = () => {
       const finalHtml = (resumeRef.current && resumeRef.current.innerHTML.trim())
         ? resumeRef.current.innerHTML
         : editableHtml;
-      const res = await resumeService.updateResume(resume._id, {
+
+      const payload = {
         html: finalHtml,
         template: selectedTemplate
-      });
+      };
+
+      if (resumeTitleInput && resumeTitleInput.trim() && resumeTitleInput.trim() !== resume.companyName) {
+        payload.companyName = resumeTitleInput.trim();
+      }
+
+      const res = await resumeService.updateResume(resume._id, payload);
 
       if (res.success && res.data?.resume) {
         setResume(res.data.resume);
@@ -377,12 +408,57 @@ export const ResumeGeneratorPage = () => {
           resumeRef.current.innerHTML = res.data.resume.html;
         }
         setIsEditing(false);
+        setAllResumes((prev) =>
+          prev.map((r) => (r._id === resume._id ? { ...r, ...res.data.resume } : r))
+        );
         toast.success('Resume updated! Live PDF export is ready.');
       }
     } catch (err) {
       toast.error('Failed to save edits.');
     } finally {
       setIsSavingEdit(false);
+    }
+  };
+
+  // In-place resume renaming (from header or from card list)
+  const handleSaveRename = async (customId = null, customTitle = null) => {
+    const targetId = customId || resume?._id;
+    if (!targetId) return;
+    const nameToSave = (customTitle !== null ? customTitle : resumeTitleInput).trim();
+    if (!nameToSave) {
+      toast.error('Resume name cannot be empty.');
+      return;
+    }
+
+    try {
+      if (customId) {
+        setIsSavingCardRename(true);
+      } else {
+        setIsSavingRename(true);
+      }
+
+      const res = await resumeService.updateResume(targetId, { companyName: nameToSave });
+      const updatedResume = res.data?.resume || { companyName: nameToSave };
+
+      if (resume && resume._id === targetId) {
+        setResume((prev) => ({ ...prev, companyName: nameToSave }));
+      }
+      setAllResumes((prev) =>
+        prev.map((r) => (r._id === targetId ? { ...r, companyName: nameToSave } : r))
+      );
+
+      if (customId) {
+        setCardRenamingId(null);
+      } else {
+        setIsRenamingResume(false);
+      }
+
+      toast.success(`Resume renamed to "${nameToSave}"`);
+    } catch (err) {
+      toast.error(err.message || 'Failed to rename resume');
+    } finally {
+      setIsSavingRename(false);
+      setIsSavingCardRename(false);
     }
   };
 
@@ -729,7 +805,7 @@ export const ResumeGeneratorPage = () => {
       return;
     }
 
-    const companyToUse = tailorForm.companyName?.trim() || 'Custom Application';
+    const companyToUse = tailorForm.companyName?.trim() || (tailorForm.targetRole ? `${tailorForm.targetRole.trim()} Resume` : 'Tailored Resume');
 
     try {
       setTailoring(true);
@@ -1167,13 +1243,13 @@ export const ResumeGeneratorPage = () => {
             {/* STEP 3: Company / Application Name (Optional) */}
             <div>
               <label className="text-xs font-bold text-slate-700 block mb-1">
-                3. Target Company or Opening Name <span className="text-slate-400 font-normal">(optional)</span>
+                3. Resume Name or Target Company <span className="text-slate-400 font-normal">(optional — name your resume)</span>
               </label>
               <input
                 type="text"
                 value={tailorForm.companyName}
                 onChange={(e) => setTailorForm({ ...tailorForm, companyName: e.target.value })}
-                placeholder="e.g. Zepto, Google, Paytm (leave blank for general)"
+                placeholder="e.g. Google DevOps, Zepto, Cyber Security Analyst (default: <Job Role> Resume)"
                 className="w-full text-xs px-3.5 py-2.5 border rounded-xl border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white"
               />
             </div>
@@ -1737,9 +1813,57 @@ export const ResumeGeneratorPage = () => {
                                 {TEMPLATES.find((t) => t.id === r.template)?.name || 'Modern Tech'}
                               </span>
                             </div>
-                            <h3 className="text-base font-bold text-slate-900 mt-1">
-                              {displayName}
-                            </h3>
+                            {cardRenamingId === r._id ? (
+                              <div className="mt-1 flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+                                <input
+                                  type="text"
+                                  value={cardRenameTitle}
+                                  onChange={(e) => setCardRenameTitle(e.target.value)}
+                                  className="text-xs font-bold text-slate-900 px-2 py-1 border border-indigo-400 rounded-md bg-white focus:outline-none focus:ring-1 focus:ring-indigo-500 w-full"
+                                  autoFocus
+                                  placeholder="Rename resume..."
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter') handleSaveRename(r._id, cardRenameTitle);
+                                    if (e.key === 'Escape') setCardRenamingId(null);
+                                  }}
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => handleSaveRename(r._id, cardRenameTitle)}
+                                  disabled={isSavingCardRename}
+                                  className="p-1 text-white bg-emerald-600 hover:bg-emerald-700 rounded-md cursor-pointer"
+                                  title="Save name"
+                                >
+                                  {isSavingCardRename ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setCardRenamingId(null)}
+                                  className="p-1 text-slate-500 hover:bg-slate-200 rounded-md cursor-pointer"
+                                  title="Cancel"
+                                >
+                                  <X className="w-3 h-3" />
+                                </button>
+                              </div>
+                            ) : (
+                              <div className="flex items-center gap-1.5 mt-1">
+                                <h3 className="text-base font-bold text-slate-900">
+                                  {displayName}
+                                </h3>
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setCardRenamingId(r._id);
+                                    setCardRenameTitle(displayName);
+                                  }}
+                                  className="p-1 text-slate-400 hover:text-indigo-600 hover:bg-slate-100 rounded transition-colors cursor-pointer"
+                                  title="Rename this tailored resume"
+                                >
+                                  <Edit2 className="w-3 h-3" />
+                                </button>
+                              </div>
+                            )}
                             <p className="text-xs font-medium text-indigo-600 mt-0.5">
                               {displayRole}
                             </p>
@@ -1772,11 +1896,21 @@ export const ResumeGeneratorPage = () => {
                           <button
                             type="button"
                             onClick={() => handleDownloadPdf(r._id, r.companyName)}
-                            className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold text-slate-700 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg transition-colors cursor-pointer"
+                            disabled={downloadingPdfId === r._id}
+                            className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold text-slate-700 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg transition-colors cursor-pointer disabled:opacity-60"
                             title="Download print-ready PDF"
                           >
-                            <Download className="w-3 h-3 text-slate-500" />
-                            <span>PDF</span>
+                            {downloadingPdfId === r._id ? (
+                              <>
+                                <Loader2 className="w-3 h-3 animate-spin text-indigo-600" />
+                                <span className="text-indigo-600">PDF...</span>
+                              </>
+                            ) : (
+                              <>
+                                <Download className="w-3 h-3 text-slate-500" />
+                                <span>PDF</span>
+                              </>
+                            )}
                           </button>
                         </div>
 
@@ -1948,11 +2082,63 @@ export const ResumeGeneratorPage = () => {
             <ShieldCheck className="w-3.5 h-3.5" />
             <span>ATS Resume Generator (Feature 8)</span>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-            {resume.companyName && resume.companyName !== 'General Application' && resume.companyName !== 'Target Role'
-              ? `${resume.companyName} Resume`
-              : (currentAnalysis?.fileName || 'ATS-Optimized Resume')}
-          </h1>
+          {isRenamingResume ? (
+            <div className="flex items-center gap-2 mt-1">
+              <input
+                type="text"
+                value={resumeTitleInput}
+                onChange={(e) => setResumeTitleInput(e.target.value)}
+                placeholder="Enter resume name (e.g. Google DevOps, Senior Security)"
+                className="text-lg sm:text-2xl font-extrabold text-slate-900 px-3 py-1 bg-white border-2 border-indigo-500 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 max-w-md"
+                autoFocus
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleSaveRename();
+                  if (e.key === 'Escape') setIsRenamingResume(false);
+                }}
+              />
+              <button
+                type="button"
+                onClick={() => handleSaveRename()}
+                disabled={isSavingRename}
+                className="px-3 py-1.5 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg flex items-center gap-1 shadow-sm transition-colors cursor-pointer"
+                title="Save name"
+              >
+                {isSavingRename ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+                <span>Save</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsRenamingResume(false)}
+                className="p-1.5 text-xs font-medium text-slate-500 hover:text-slate-800 hover:bg-slate-200 rounded-lg transition-colors cursor-pointer"
+                title="Cancel"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2.5 flex-wrap">
+              <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+                {resume.companyName && resume.companyName !== 'General Application' && resume.companyName !== 'Target Role'
+                  ? `${resume.companyName.toLowerCase().endsWith('resume') ? resume.companyName : `${resume.companyName} Resume`}`
+                  : (currentAnalysis?.fileName || 'ATS-Optimized Resume')}
+              </h1>
+              <button
+                type="button"
+                onClick={() => {
+                  const currentTitle = resume.companyName && resume.companyName !== 'General Application' && resume.companyName !== 'Target Role'
+                    ? resume.companyName
+                    : (resume.targetRole ? `${resume.targetRole} Resume` : 'ATS-Optimized Resume');
+                  setResumeTitleInput(currentTitle);
+                  setIsRenamingResume(true);
+                }}
+                className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-slate-600 hover:text-indigo-600 bg-slate-100 hover:bg-indigo-50 border border-slate-200 hover:border-indigo-200 rounded-lg transition-colors cursor-pointer"
+                title="Rename this resume (replace 'Custom Application')"
+              >
+                <Edit2 className="w-3 h-3 text-slate-500 hover:text-indigo-600" />
+                <span>Rename</span>
+              </button>
+            </div>
+          )}
           <p className="text-xs text-slate-500 mt-1 flex flex-wrap items-center gap-2">
             <span>Target Role: <strong className="text-slate-700">{resume.targetRole && resume.targetRole !== 'Target Role' ? resume.targetRole : (currentAnalysis?.targetRole || 'Software Developer')}</strong></span>
             <span>•</span>
@@ -2112,21 +2298,38 @@ export const ResumeGeneratorPage = () => {
 
       {/* Editing Banner Notification */}
       {isEditing && (
-        <div className="bg-amber-50 border border-amber-300 rounded-xl p-3.5 flex items-center justify-between gap-4 text-xs text-amber-900 shadow-xs animate-fadeIn">
-          <div className="flex items-center gap-2.5">
-            <span className="p-1 rounded-md bg-amber-200 text-amber-900">
+        <div className="bg-amber-50 border border-amber-300 rounded-xl p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-xs text-amber-900 shadow-xs animate-fadeIn">
+          <div className="flex items-start sm:items-center gap-2.5">
+            <span className="p-1 rounded-md bg-amber-200 text-amber-900 shrink-0 mt-0.5 sm:mt-0">
               <Edit3 className="w-4 h-4" />
             </span>
-            <div>
-              <strong className="font-bold">Live Interactive Editing Active (Google Docs Style):</strong> Click directly on any text or bullet point inside the resume preview to edit. Click <strong>"Save Changes"</strong> when done to update your PDF.
+            <div className="space-y-1.5">
+              <div>
+                <strong className="font-bold">Live Interactive Editing Active (Google Docs Style):</strong> Click directly on any text or bullet point inside the resume preview to edit. Click <strong>"Save Changes"</strong> when done to update your PDF.
+              </div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="font-bold text-amber-950">Rename Resume:</span>
+                <input
+                  type="text"
+                  value={resumeTitleInput}
+                  onChange={(e) => setResumeTitleInput(e.target.value)}
+                  placeholder="e.g. Google Cyber Security, Netflix DevOps..."
+                  className="px-2.5 py-1 text-xs font-semibold text-slate-900 bg-white border border-amber-300 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500 min-w-[240px]"
+                />
+                <span className="text-[11px] text-amber-700">
+                  (Saved automatically with your edits)
+                </span>
+              </div>
             </div>
           </div>
           <button
             type="button"
             onClick={handleSaveEdits}
-            className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold shrink-0 transition-colors shadow-2xs"
+            disabled={isSavingEdit}
+            className="px-3.5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold shrink-0 transition-colors shadow-2xs cursor-pointer flex items-center gap-1.5"
           >
-            Save Changes
+            {isSavingEdit ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+            <span>Save Changes</span>
           </button>
         </div>
       )}

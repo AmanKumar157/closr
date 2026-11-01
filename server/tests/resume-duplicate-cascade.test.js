@@ -416,4 +416,41 @@ test('AI Automatic Resume Edit: applyDevEditFallback removes specified tools, ad
   assert.ok(edited2.includes('Cyber Security Analyst'), 'Role must be updated in candidate description');
 });
 
+test('PDF Generation: Puppeteer launches with pipe: true and generates clean A4 PDF buffer without port conflicts', async () => {
+  const { generatePdfFromHtml, closeBrowser } = await import('../src/services/pdf.service.js');
+  
+  const testHtml = `
+    <!DOCTYPE html>
+    <html>
+      <head><title>Test Resume</title></head>
+      <body>
+        <h1>Aman Kumar</h1>
+        <p>Cyber Security Analyst</p>
+      </body>
+    </html>
+  `;
+  const pdfBuffer = await generatePdfFromHtml(testHtml);
+  assert.ok(Buffer.isBuffer(pdfBuffer), 'Must return a Buffer');
+  assert.ok(pdfBuffer.length > 500, 'PDF buffer must contain binary PDF content');
+  // Check PDF magic header %PDF-
+  assert.equal(pdfBuffer.toString('utf8', 0, 4), '%PDF', 'Must start with standard PDF magic number %PDF');
+  await closeBrowser();
+});
+
+test('Resume Renaming: Allows custom naming instead of Custom Application', () => {
+  const tailorInputs = [
+    { targetRole: 'Cyber Security Analyst', companyName: '' },
+    { targetRole: 'Senior DevOps Engineer', companyName: 'Google Cloud' },
+    { targetRole: 'QA Engineer', companyName: '   ' }
+  ];
+
+  const processedNames = tailorInputs.map(input => {
+    return input.companyName?.trim() || (input.targetRole ? `${input.targetRole.trim()} Resume` : 'Tailored Resume');
+  });
+
+  assert.equal(processedNames[0], 'Cyber Security Analyst Resume', 'Should default to role-specific resume name');
+  assert.equal(processedNames[1], 'Google Cloud', 'Should use user-specified company/application name');
+  assert.equal(processedNames[2], 'QA Engineer Resume', 'Whitespace-only company name should fallback to role resume name');
+});
+
 

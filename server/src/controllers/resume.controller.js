@@ -103,10 +103,15 @@ export const getResumePdf = asyncHandler(async (req, res) => {
   // Render PDF using Puppeteer
   const pdfBuffer = await generatePdfFromHtml(generatedResume.html);
 
+  const cleanName = (generatedResume.companyName && generatedResume.companyName !== 'General Application' && generatedResume.companyName !== 'Target Role'
+    ? generatedResume.companyName
+    : (generatedResume.targetRole || 'ATS_Resume'))
+    .replace(/[^a-zA-Z0-9_-]/g, '_');
+
   const disposition = req.query.inline === 'true' ? 'inline' : 'attachment';
   res.set({
     'Content-Type': 'application/pdf',
-    'Content-Disposition': `${disposition}; filename="CareerPilot_ATS_Resume_${req.params.id}.pdf"`,
+    'Content-Disposition': `${disposition}; filename="Resume_${cleanName}.pdf"`,
     'Content-Length': pdfBuffer.length
   });
 
@@ -347,10 +352,12 @@ export const tailorResumeForJob = asyncHandler(async (req, res) => {
 
   const html = await generateAtsResume(sourceResumeText, targetAnalysis);
 
+  const defaultName = companyName?.trim() || (targetRole ? `${targetRole.trim()} Resume` : 'Tailored Resume');
+
   const tailoredResume = await GeneratedResume.create({
     userId: req.user._id,
     analysisId: linkedAnalysisId || null,
-    companyName: companyName?.trim() || 'Custom Application',
+    companyName: defaultName,
     targetRole: targetRole.trim(),
     template: 'modern',
     html

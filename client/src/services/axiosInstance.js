@@ -16,9 +16,21 @@ axiosInstance.interceptors.response.use(
     // Return standard backend response { success, data, message }
     return response.data;
   },
-  (error) => {
-    const errorResponse = error.response?.data;
+  async (error) => {
+    let errorResponse = error.response?.data;
     let message = errorResponse?.message;
+
+    // When responseType was 'blob', error responses are also returned as Blobs
+    if (typeof Blob !== 'undefined' && errorResponse instanceof Blob) {
+      try {
+        const text = await errorResponse.text();
+        const json = JSON.parse(text);
+        if (json?.message) {
+          message = json.message;
+          errorResponse = json;
+        }
+      } catch (_) {}
+    }
 
     // Handle proxy 500 when backend server is stopped / connection refused
     if (!message) {
