@@ -22,6 +22,7 @@ import ResumeDropzone from '../components/ResumeDropzone.jsx';
 import Button from '../../../components/common/Button.jsx';
 import Card from '../../../components/common/Card.jsx';
 import Input from '../../../components/common/Input.jsx';
+import Checkbox from '../../../components/common/Checkbox.jsx';
 import PdfViewerModal from '../../../components/common/PdfViewerModal.jsx';
 
 const STAGED_MESSAGES = [
@@ -505,35 +506,28 @@ export const NewAnalysisPage = () => {
 
           {/* STEP 3: Options & Submission */}
           <Card className="p-4 bg-slate-50/70 dark:bg-zinc-900/70 border border-slate-200 dark:border-zinc-800">
-            <div className="space-y-3">
+            <div className="space-y-4">
               {/* Auto-generate roadmap checkbox */}
-              <div className="flex items-center gap-2.5">
-                <input
-                  type="checkbox"
-                  id="roadmap-checkbox"
-                  className="w-4 h-4 text-indigo-600 rounded border-slate-300 dark:border-zinc-700 focus:ring-indigo-500 cursor-pointer"
-                  {...register('autoGenerateRoadmap')}
-                />
-                <label
-                  htmlFor="roadmap-checkbox"
-                  className="text-xs sm:text-sm font-semibold text-slate-800 dark:text-zinc-200 cursor-pointer flex items-center gap-1.5"
-                >
-                  <Map className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+              <Checkbox
+                id="roadmap-checkbox"
+                {...register('autoGenerateRoadmap')}
+              >
+                <span className="flex items-center gap-1.5 font-semibold text-slate-800 dark:text-zinc-200">
+                  <Map className="w-4 h-4 text-primary" />
                   Automatically generate 12-week learning roadmap from skill gaps
-                </label>
-              </div>
+                </span>
+              </Checkbox>
 
               {/* Overwrite Option Checkbox */}
-              <div className="flex items-center gap-2.5 pt-2 border-t border-slate-200 dark:border-zinc-800">
-                <input
-                  type="checkbox"
+              <div className="pt-3 border-t border-slate-200 dark:border-zinc-800">
+                <Checkbox
                   id="overwrite-checkbox"
-                  className="w-4 h-4 text-indigo-600 rounded border-slate-300 dark:border-zinc-700 focus:ring-indigo-500 cursor-pointer"
                   {...register('overwrite')}
-                />
-                <label htmlFor="overwrite-checkbox" className="text-xs text-slate-600 dark:text-zinc-400 font-medium cursor-pointer">
-                  Overwrite / Replace previous analysis if this resume was already evaluated for this target role
-                </label>
+                >
+                  <span className="text-xs text-slate-600 dark:text-zinc-400 font-medium">
+                    Overwrite / Replace previous analysis if this resume was already evaluated for this target role
+                  </span>
+                </Checkbox>
               </div>
             </div>
           </Card>

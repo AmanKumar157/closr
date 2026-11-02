@@ -7,11 +7,9 @@ import { registerSchema, loginSchema } from '../validators/auth.validator.js';
 
 const router = Router();
 
-// Apply auth rate limiting to all auth endpoints
-router.use(authLimiter);
-
-router.post('/register', validate(registerSchema), register);
-router.post('/login', validate(loginSchema), login);
+// Apply auth rate limiting specifically to login & register (brute-force defense), NOT to session check (/me)
+router.post('/register', authLimiter, validate(registerSchema), register);
+router.post('/login', authLimiter, validate(loginSchema), login);
 router.post('/logout', authMiddleware, logout);
 router.get('/me', authMiddleware, getMe);
 

@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, Link } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from './context/AuthContext.jsx';
 import { ThemeProvider } from './context/ThemeContext.jsx';
@@ -21,7 +21,7 @@ export const App = () => {
     <BrowserRouter>
       <ThemeProvider>
         <AuthProvider>
-          <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-zinc-950 text-slate-900 dark:text-zinc-100 transition-colors duration-200">
+          <div className="min-h-screen flex flex-col bg-background text-foreground transition-colors duration-200">
           <Toaster
             position="top-right"
             toastOptions={{
@@ -159,9 +159,11 @@ export const App = () => {
                 path="*"
                 element={
                   <div className="min-h-[calc(100vh-8rem)] flex flex-col items-center justify-center p-6 text-center">
-                    <h2 className="text-4xl font-extrabold text-slate-800">404</h2>
-                    <p className="mt-2 text-slate-600">The page you are looking for does not exist.</p>
-                    <Navigate to="/dashboard" className="mt-4 text-indigo-600 font-semibold" />
+                    <h2 className="text-4xl font-extrabold text-foreground">404</h2>
+                    <p className="mt-2 text-muted-foreground">The page you are looking for does not exist.</p>
+                    <Link to="/dashboard" className="mt-4 inline-block text-primary font-semibold hover:underline">
+                      Return to Dashboard
+                    </Link>
                   </div>
                 }
               />

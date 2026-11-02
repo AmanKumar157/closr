@@ -122,7 +122,7 @@ export const PdfViewerModal = ({
           </div>
 
           {/* Center Tabs: View Switcher */}
-          <div className="flex items-center rounded-lg bg-slate-800/90 p-0.5 border border-slate-700/70 text-xs">
+          <div className="flex items-center rounded-lg bg-slate-800/90 p-0.5 border border-slate-700/70 text-xs overflow-x-auto max-w-full scrollbar-none shrink-0">
             {htmlContent && (
               <button
                 type="button"

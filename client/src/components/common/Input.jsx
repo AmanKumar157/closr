@@ -1,35 +1,105 @@
-import React, { forwardRef } from 'react';
+import React, { forwardRef, useRef, useImperativeHandle } from 'react';
+import { X } from 'lucide-react';
 
+/**
+ * Animated Input Component (inspired by uiverse.io by @satyamchaudharydev)
+ *
+ * Features:
+ * - Dynamic border-radius transition on focus-within (smooth rounded-2xl -> rounded-md)
+ * - Animated expanding center-outward bottom accent border line on focus
+ * - Integrated left icon support
+ * - Interactive reset / clear button displayed automatically when text is present
+ */
 export const Input = forwardRef(
-  ({ label, error, helperText, icon: Icon, className = '', containerClassName = '', type = 'text', ...props }, ref) => {
+  (
+    {
+      label,
+      error,
+      helperText,
+      icon: Icon,
+      className = '',
+      containerClassName = '',
+      type = 'text',
+      placeholder = ' ',
+      allowClear,
+      onClear,
+      ...props
+    },
+    ref
+  ) => {
+    const internalInputRef = useRef(null);
+    useImperativeHandle(ref, () => internalInputRef.current);
+
+    // Default allowClear to true for text/email/search inputs, but false for password fields
+    const isPasswordField = type === 'password';
+    const shouldAllowClear = allowClear !== undefined ? allowClear : !isPasswordField;
+
+    const handleClear = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (internalInputRef.current) {
+        internalInputRef.current.value = '';
+        // Synchronously trigger React Hook Form and synthetic onChange listeners
+        const tracker = internalInputRef.current._valueTracker;
+        if (tracker) tracker.setValue('');
+        const inputEvent = new Event('input', { bubbles: true });
+        internalInputRef.current.dispatchEvent(inputEvent);
+        const changeEvent = new Event('change', { bubbles: true });
+        internalInputRef.current.dispatchEvent(changeEvent);
+        internalInputRef.current.focus();
+      }
+      if (onClear) onClear();
+    };
+
     return (
       <div className={`w-full ${containerClassName}`}>
         {label && (
-          <label className="block text-sm font-medium text-slate-700 dark:text-zinc-300 mb-1.5">
+          <label className="block text-sm font-medium text-foreground mb-1.5">
             {label}
           </label>
         )}
-        <div className="relative rounded-lg shadow-sm">
+        <div
+          className={`uiverse-input-wrapper relative flex items-center w-full transition-all ${
+            error ? 'has-error' : ''
+          }`}
+        >
           {Icon && (
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400 dark:text-zinc-500">
-              <Icon className="h-5 w-5" />
-            </div>
+            <button
+              type="button"
+              tabIndex={-1}
+              onClick={() => internalInputRef.current?.focus()}
+              className="uiverse-icon-btn pl-3.5 pr-1 text-muted-foreground hover:text-foreground transition-colors focus:outline-none shrink-0"
+              aria-hidden="true"
+            >
+              <Icon className="w-4 h-4" />
+            </button>
           )}
+
           <input
-            ref={ref}
+            ref={internalInputRef}
             type={type}
-            className={`block w-full rounded-lg border text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-offset-1 ${
-              Icon ? 'pl-10' : 'pl-3'
-            } pr-3 py-2.5 ${
-              error
-                ? 'border-red-300 dark:border-red-800 text-red-900 dark:text-red-200 placeholder-red-300 dark:placeholder-red-700 focus:border-red-500 focus:ring-red-500 bg-red-50/30 dark:bg-red-950/20'
-                : 'border-slate-300 dark:border-zinc-700 text-slate-900 dark:text-zinc-100 placeholder-slate-400 dark:placeholder-zinc-500 focus:border-indigo-500 focus:ring-indigo-500 bg-white dark:bg-zinc-900'
-            } ${className}`}
+            placeholder={placeholder || ' '}
+            className={`uiverse-input w-full bg-transparent text-sm py-2.5 ${
+              Icon ? 'pl-2' : 'pl-3.5'
+            } ${shouldAllowClear ? 'pr-9' : 'pr-3.5'} text-foreground placeholder:text-muted-foreground focus:outline-none ${className}`}
             {...props}
           />
+
+          {shouldAllowClear && (
+            <button
+              type="button"
+              tabIndex={-1}
+              onClick={handleClear}
+              className="uiverse-reset absolute right-2.5 p-1 text-muted-foreground hover:text-foreground transition-all cursor-pointer focus:outline-none"
+              title="Clear text"
+              aria-label="Clear input"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
         </div>
-        {error && <p className="mt-1.5 text-xs text-red-600 dark:text-red-400 font-medium">{error}</p>}
-        {!error && helperText && <p className="mt-1 text-xs text-slate-500 dark:text-zinc-400">{helperText}</p>}
+        {error && <p className="mt-1.5 text-xs text-destructive font-medium">{error}</p>}
+        {!error && helperText && <p className="mt-1 text-xs text-muted-foreground">{helperText}</p>}
       </div>
     );
   }
@@ -37,4 +107,3 @@ export const Input = forwardRef(
 
 Input.displayName = 'Input';
 export default Input;
-

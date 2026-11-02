@@ -1,5 +1,6 @@
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
+import crypto from 'crypto';
 import { User } from '../models/User.js';
 import { BlacklistedToken } from '../models/BlacklistedToken.js';
 import { ENV } from '../config/env.js';
@@ -69,8 +70,7 @@ export const register = asyncHandler(async (req, res) => {
         email: user.email,
         avatar: user.avatar || '',
         createdAt: user.createdAt
-      },
-      token
+      }
     },
     'Account registered successfully'
   ).send(res);
@@ -107,8 +107,7 @@ export const login = asyncHandler(async (req, res) => {
         email: user.email,
         avatar: user.avatar || '',
         createdAt: user.createdAt
-      },
-      token
+      }
     },
     'Logged in successfully'
   ).send(res);
@@ -127,10 +126,11 @@ export const logout = asyncHandler(async (req, res) => {
       // Decode token to get exact expiration time for TTL index
       const decoded = jwt.decode(token);
       const expiresAt = decoded?.exp ? new Date(decoded.exp * 1000) : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+      const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
 
-      // Save token in blacklist collection
+      // Save SHA-256 hashed token in blacklist collection (prevents exposing raw JWT in DB)
       await BlacklistedToken.create({
-        token,
+        tokenHash,
         expiresAt
       });
     } catch (err) {

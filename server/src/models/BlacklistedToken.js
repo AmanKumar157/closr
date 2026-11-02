@@ -2,10 +2,12 @@ import mongoose from 'mongoose';
 
 const blacklistedTokenSchema = new mongoose.Schema(
   {
+    tokenHash: {
+      type: String,
+      index: true
+    },
     token: {
       type: String,
-      required: true,
-      unique: true,
       index: true
     },
     expiresAt: {

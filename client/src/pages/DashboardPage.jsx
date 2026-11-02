@@ -2,12 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth.js';
 import Card from '../components/common/Card.jsx';
 import Button from '../components/common/Button.jsx';
+import HyperText from '../components/common/HyperText.jsx';
 import analysisService from '../services/analysisService.js';
 import PdfViewerModal from '../components/common/PdfViewerModal.jsx';
 import toast from 'react-hot-toast';
 import {
   User,
-  ShieldCheck,
   Sparkles,
   ArrowRight,
   FileCheck2,
@@ -62,7 +62,7 @@ export const DashboardPage = () => {
       try {
         const res = await analysisService.getAnalyses();
         if (res.success && res.data?.analyses?.length > 0) {
-          setLatestAnalysis(res.data.analyses[0]);
+          setLatestAnalysis(refreshedOrDefault(res.data.analyses));
         }
       } catch (err) {
         // Soft fail
@@ -71,34 +71,36 @@ export const DashboardPage = () => {
       }
     };
 
+    const refreshedOrDefault = (analyses) => analyses?.[0] || null;
+
     fetchLatest();
   }, []);
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
       {/* Welcome Banner */}
-      <div className="bg-gradient-to-r from-slate-900 via-[#1f2d3d] to-[#182330] rounded-2xl p-8 text-white shadow-xl relative overflow-hidden border border-slate-800">
+      <div className="group relative bg-gradient-to-r from-[#172230] via-[#213042] to-[#16202c] rounded-2xl p-8 text-white shadow-xl overflow-hidden border border-border">
         <div className="absolute right-0 top-0 bottom-0 w-1/3 opacity-10 bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:16px_16px] pointer-events-none"></div>
         <div className="relative z-10 max-w-2xl">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 text-slate-200 text-xs font-medium backdrop-blur-sm mb-4 border border-white/10">
-            <ShieldCheck className="w-4 h-4 text-emerald-400" />
-            <span>Session Authenticated (JWT in httpOnly Cookie)</span>
-          </div>
           <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight">
-            Welcome back, {user?.name || 'Explorer'}!
+            Welcome back,{' '}
+            <HyperText as="span" className="text-white hover:text-sky-300">
+              {user?.name || 'Explorer'}
+            </HyperText>
+            !
           </h1>
           <p className="mt-2 text-slate-300 text-base sm:text-lg">
             Ready to discover your skill gaps and unlock your target role? closr analyzes your resume against target JDs and generates a personalized 12-week roadmap.
           </p>
           <div className="mt-6 flex flex-wrap gap-3">
             <Link to="/analysis/new">
-              <Button variant="primary" className="bg-[oklch(0.7040_0.0400_256.7880)] dark:bg-[oklch(0.9010_0.0580_230.9020)] text-white dark:text-slate-900 font-bold shadow-md hover:opacity-90 transition-all">
+              <Button variant="primary" className="shadow-md">
                 <Sparkles className="w-4 h-4 mr-2" />
                 Analyze Your Resume Now
               </Button>
             </Link>
             <Link to="/profile">
-              <Button variant="outline" className="border-slate-600 text-white hover:bg-white/10 bg-transparent">
+              <Button variant="outline" className="border-white/20 text-white hover:bg-white/10 bg-transparent">
                 Update Target Role
               </Button>
             </Link>
@@ -108,76 +110,76 @@ export const DashboardPage = () => {
 
       {/* Active Tracked Resume Section */}
       {latestAnalysis ? (
-        <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-slate-200 dark:border-zinc-800 p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6 transition-colors">
-          <div className="flex items-start sm:items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-100 dark:border-indigo-900/40 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0 shadow-inner">
-              <FileText className="w-6 h-6" />
+        <div className="group relative bg-card text-card-foreground rounded-2xl border border-border p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6 transition-colors overflow-hidden">
+          <div className="flex items-start sm:items-center gap-4 relative z-10">
+            <div className="w-12 h-12 rounded-xl bg-secondary text-secondary-foreground border border-border flex items-center justify-center shrink-0 shadow-inner">
+              <FileText className="w-6 h-6 text-primary" />
             </div>
             <div>
               <div className="flex flex-wrap items-center gap-2">
-                <span className="text-xs font-bold uppercase tracking-wider text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded">
+                <span className="text-xs font-bold uppercase tracking-wider text-secondary-foreground bg-secondary px-2 py-0.5 rounded">
                   Active Resume On File
                 </span>
-                <span className="text-xs text-slate-400">
+                <span className="text-xs text-muted-foreground">
                   Uploaded {new Date(latestAnalysis.createdAt).toLocaleDateString(undefined, { dateStyle: 'medium' })}
                 </span>
               </div>
-              <h3 className="text-lg font-bold text-slate-900 dark:text-zinc-100 mt-1">
+              <h3 className="text-lg font-bold text-card-foreground mt-1">
                 {latestAnalysis.fileName || 'Uploaded_Resume.pdf'}
               </h3>
-              <p className="text-xs text-slate-500 dark:text-zinc-400 mt-0.5">
-                Target Role: <strong className="text-slate-700 dark:text-zinc-300">{latestAnalysis.targetRole}</strong> • ATS Match Score: <strong className="text-indigo-600 dark:text-indigo-400">{latestAnalysis.matchScore}%</strong> • {latestAnalysis.missingSkills?.length || 0} gaps remaining
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Target Role: <strong className="text-foreground">{latestAnalysis.targetRole}</strong> • ATS Match Score: <strong className="text-primary font-bold">{latestAnalysis.matchScore}%</strong> • {latestAnalysis.missingSkills?.length || 0} gaps remaining
               </p>
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2 shrink-0">
+          <div className="grid grid-cols-1 xs:grid-cols-2 sm:flex sm:flex-wrap items-center gap-2.5 w-full sm:w-auto shrink-0 relative z-10">
             <Button
               variant="outline"
               size="sm"
               onClick={() => setShowPdfModal(true)}
-              className="border-indigo-200 text-indigo-700 hover:bg-indigo-50 font-semibold"
+              className="w-full sm:w-auto border-border text-foreground hover:bg-muted font-semibold justify-center"
             >
-              <FileText className="w-3.5 h-3.5 mr-1.5 text-indigo-600" />
+              <FileText className="w-3.5 h-3.5 mr-1.5 text-primary" />
               Open PDF Viewer
             </Button>
-            <Link to={`/analysis/${latestAnalysis._id}`}>
-              <Button variant="outline" size="sm">
+            <Link to={`/analysis/${latestAnalysis._id}`} className="w-full sm:w-auto">
+              <Button variant="outline" size="sm" className="w-full sm:w-auto justify-center">
                 <Eye className="w-3.5 h-3.5 mr-1.5" />
                 Analysis Report
               </Button>
             </Link>
-            <Link to="/analysis/new">
-              <Button variant="primary" size="sm">
+            <Link to="/analysis/new" className="w-full sm:w-auto">
+              <Button variant="primary" size="sm" className="w-full sm:w-auto justify-center">
                 <UploadCloud className="w-3.5 h-3.5 mr-1.5" />
                 Upload New
               </Button>
             </Link>
             <Button
-              variant="outline"
+              variant="danger"
               size="sm"
               onClick={handleDeleteActiveResume}
               isLoading={deleting}
-              className="text-rose-600 border-rose-200 hover:bg-rose-50 hover:border-rose-300"
+              className="w-full sm:w-auto justify-center"
               title="Permanently remove this resume from database"
             >
-              <Trash2 className="w-3.5 h-3.5 mr-1 text-rose-500" />
+              <Trash2 className="w-3.5 h-3.5 mr-1" />
               Delete
             </Button>
           </div>
         </div>
       ) : !loadingAnalysis ? (
-        <div className="bg-slate-50 rounded-2xl border border-dashed border-slate-300 p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-slate-200 text-slate-600 flex items-center justify-center shrink-0">
-              <FileText className="w-5 h-5" />
+        <div className="group relative bg-card text-card-foreground rounded-2xl border border-dashed border-border p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 overflow-hidden">
+          <div className="flex items-center gap-3 relative z-10">
+            <div className="w-10 h-10 rounded-lg bg-secondary text-secondary-foreground flex items-center justify-center shrink-0">
+              <FileText className="w-5 h-5 text-primary" />
             </div>
             <div>
-              <h4 className="text-sm font-bold text-slate-800">No Resume Uploaded Yet</h4>
-              <p className="text-xs text-slate-500">Upload your resume once to get your score and track progress over time.</p>
+              <h4 className="text-sm font-bold text-foreground">No Resume Uploaded Yet</h4>
+              <p className="text-xs text-muted-foreground">Upload your resume once to get your score and track progress over time.</p>
             </div>
           </div>
-          <Link to="/analysis/new">
+          <Link to="/analysis/new" className="relative z-10">
             <Button variant="primary" size="sm">
               <UploadCloud className="w-3.5 h-3.5 mr-1.5" />
               Upload Resume
@@ -190,21 +192,21 @@ export const DashboardPage = () => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card title="Active Profile" subtitle="Your authenticated identity">
           <div className="space-y-3">
-            <div className="flex items-center justify-between text-sm py-1.5 border-b border-slate-100 dark:border-zinc-800">
-              <span className="text-slate-500 dark:text-zinc-400">Name</span>
-              <span className="font-semibold text-slate-800 dark:text-zinc-200">{user?.name}</span>
+            <div className="flex items-center justify-between text-sm py-1.5 border-b border-border">
+              <span className="text-muted-foreground">Name</span>
+              <span className="font-semibold text-foreground">{user?.name}</span>
             </div>
-            <div className="flex items-center justify-between text-sm py-1.5 border-b border-slate-100 dark:border-zinc-800">
-              <span className="text-slate-500 dark:text-zinc-400">Email</span>
-              <span className="font-semibold text-slate-800 dark:text-zinc-200">{user?.email}</span>
+            <div className="flex items-center justify-between text-sm py-1.5 border-b border-border">
+              <span className="text-muted-foreground">Email</span>
+              <span className="font-semibold text-foreground">{user?.email}</span>
             </div>
-            <div className="flex items-center justify-between text-sm py-1.5 border-b border-slate-100 dark:border-zinc-800">
-              <span className="text-slate-500 dark:text-zinc-400">User ID</span>
-              <span className="font-mono text-xs text-slate-600 dark:text-zinc-400 truncate max-w-[150px]">{user?._id}</span>
+            <div className="flex items-center justify-between text-sm py-1.5 border-b border-border">
+              <span className="text-muted-foreground">User ID</span>
+              <span className="font-mono text-xs text-muted-foreground truncate max-w-[150px]">{user?._id}</span>
             </div>
             <div className="flex items-center justify-between text-sm py-1.5">
-              <span className="text-slate-500 dark:text-zinc-400">Status</span>
-              <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+              <span className="text-muted-foreground">Status</span>
+              <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
                 Active
               </span>
@@ -216,72 +218,72 @@ export const DashboardPage = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Link
               to="/profile"
-              className="p-4 rounded-xl border border-indigo-200 dark:border-indigo-900/50 bg-indigo-50/30 dark:bg-zinc-800/40 hover:bg-indigo-50/70 dark:hover:bg-zinc-800/70 transition-all group block"
+              className="group relative p-4 rounded-xl border border-border bg-card hover:bg-muted transition-all block shadow-2xs overflow-hidden"
             >
-              <div className="flex items-center justify-between mb-3">
-                <div className="w-8 h-8 rounded-lg bg-indigo-100 dark:bg-indigo-950/80 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
+              <div className="flex items-center justify-between mb-3 relative z-10">
+                <div className="w-8 h-8 rounded-lg bg-secondary text-primary flex items-center justify-center">
                   <FileCheck2 className="w-5 h-5" />
                 </div>
-                <ArrowRight className="w-4 h-4 text-indigo-500 group-hover:translate-x-1 transition-transform" />
+                <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:translate-x-1 transition-transform" />
               </div>
-              <h4 className="font-semibold text-slate-900 dark:text-zinc-100 text-sm group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+              <h4 className="font-semibold text-foreground text-sm group-hover:text-primary transition-colors relative z-10">
                 1. Profile & Target Role
               </h4>
-              <p className="text-xs text-slate-500 dark:text-zinc-400 mt-1">
+              <p className="text-xs text-muted-foreground mt-1 relative z-10">
                 Configure your target role and current skills to tailor gap analysis.
               </p>
             </Link>
 
             <Link
               to="/analysis/new"
-              className="p-4 rounded-xl border border-violet-200 dark:border-violet-900/50 bg-violet-50/30 dark:bg-zinc-800/40 hover:bg-violet-50/70 dark:hover:bg-zinc-800/70 transition-all group block"
+              className="group relative p-4 rounded-xl border border-border bg-card hover:bg-muted transition-all block shadow-2xs overflow-hidden"
             >
-              <div className="flex items-center justify-between mb-3">
-                <div className="w-8 h-8 rounded-lg bg-violet-100 dark:bg-violet-950/80 text-violet-600 dark:text-violet-400 flex items-center justify-center">
+              <div className="flex items-center justify-between mb-3 relative z-10">
+                <div className="w-8 h-8 rounded-lg bg-secondary text-primary flex items-center justify-center">
                   <Sparkles className="w-5 h-5" />
                 </div>
-                <ArrowRight className="w-4 h-4 text-violet-500 group-hover:translate-x-1 transition-transform" />
+                <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:translate-x-1 transition-transform" />
               </div>
-              <h4 className="font-semibold text-slate-900 dark:text-zinc-100 text-sm group-hover:text-violet-600 dark:group-hover:text-violet-400 transition-colors">
+              <h4 className="font-semibold text-foreground text-sm group-hover:text-primary transition-colors relative z-10">
                 2. AI Skill-Gap Analysis
               </h4>
-              <p className="text-xs text-slate-500 dark:text-zinc-400 mt-1">
+              <p className="text-xs text-muted-foreground mt-1 relative z-10">
                 Upload your resume (PDF/DOCX) to get an ATS match score and pinpoint missing skills.
               </p>
             </Link>
 
             <Link
               to="/roadmap"
-              className="p-4 rounded-xl border border-sky-200 dark:border-sky-900/50 bg-sky-50/30 dark:bg-zinc-800/40 hover:bg-sky-50/70 dark:hover:bg-zinc-800/70 transition-all group block"
+              className="group relative p-4 rounded-xl border border-border bg-card hover:bg-muted transition-all block shadow-2xs overflow-hidden"
             >
-              <div className="flex items-center justify-between mb-3">
-                <div className="w-8 h-8 rounded-lg bg-sky-100 dark:bg-sky-950/80 text-sky-600 dark:text-sky-400 flex items-center justify-center">
+              <div className="flex items-center justify-between mb-3 relative z-10">
+                <div className="w-8 h-8 rounded-lg bg-secondary text-primary flex items-center justify-center">
                   <Map className="w-5 h-5" />
                 </div>
-                <ArrowRight className="w-4 h-4 text-sky-500 group-hover:translate-x-1 transition-transform" />
+                <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:translate-x-1 transition-transform" />
               </div>
-              <h4 className="font-semibold text-slate-900 dark:text-zinc-100 text-sm group-hover:text-sky-600 dark:group-hover:text-sky-400 transition-colors">
+              <h4 className="font-semibold text-foreground text-sm group-hover:text-primary transition-colors relative z-10">
                 3. 12-Week Roadmap & Progress
               </h4>
-              <p className="text-xs text-slate-500 dark:text-zinc-400 mt-1">
+              <p className="text-xs text-muted-foreground mt-1 relative z-10">
                 Follow milestone tasks with 1 curated resource and monitor weekly completion.
               </p>
             </Link>
 
             <Link
               to="/history"
-              className="p-4 rounded-xl border border-emerald-200 dark:border-emerald-900/50 bg-emerald-50/30 dark:bg-zinc-800/40 hover:bg-emerald-50/70 dark:hover:bg-zinc-800/70 transition-all group block"
+              className="group relative p-4 rounded-xl border border-border bg-card hover:bg-muted transition-all block shadow-2xs overflow-hidden"
             >
-              <div className="flex items-center justify-between mb-3">
-                <div className="w-8 h-8 rounded-lg bg-emerald-100 dark:bg-emerald-950/80 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+              <div className="flex items-center justify-between mb-3 relative z-10">
+                <div className="w-8 h-8 rounded-lg bg-secondary text-primary flex items-center justify-center">
                   <TrendingUp className="w-5 h-5" />
                 </div>
-                <ArrowRight className="w-4 h-4 text-emerald-500 group-hover:translate-x-1 transition-transform" />
+                <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:translate-x-1 transition-transform" />
               </div>
-              <h4 className="font-semibold text-slate-900 dark:text-zinc-100 text-sm group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
+              <h4 className="font-semibold text-foreground text-sm group-hover:text-primary transition-colors relative z-10">
                 4. Re-analysis Loop & Compare
               </h4>
-              <p className="text-xs text-slate-500 dark:text-zinc-400 mt-1">
+              <p className="text-xs text-muted-foreground mt-1 relative z-10">
                 Re-upload updated resumes to track score improvement charts and export ATS PDFs.
               </p>
             </Link>
@@ -307,4 +309,3 @@ export const DashboardPage = () => {
 };
 
 export default DashboardPage;
-

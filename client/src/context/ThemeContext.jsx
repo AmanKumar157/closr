@@ -1,6 +1,34 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useLayoutEffect, useState } from 'react';
 
 const ThemeContext = createContext();
+
+export const applyThemeToDOM = (themeMode) => {
+  if (typeof document === 'undefined') return;
+  const root = document.documentElement;
+  const body = document.body;
+  if (themeMode === 'dark') {
+    root.classList.add('dark');
+    root.classList.remove('light');
+    if (body) {
+      body.classList.add('dark');
+      body.classList.remove('light');
+    }
+    root.setAttribute('data-theme', 'dark');
+    root.style.colorScheme = 'dark';
+  } else {
+    root.classList.remove('dark');
+    root.classList.add('light');
+    if (body) {
+      body.classList.remove('dark');
+      body.classList.add('light');
+    }
+    root.setAttribute('data-theme', 'light');
+    root.style.colorScheme = 'light';
+  }
+  try {
+    localStorage.setItem('closr-theme', themeMode);
+  } catch (_) {}
+};
 
 export const ThemeProvider = ({ children }) => {
   const [theme, setTheme] = useState(() => {
@@ -14,31 +42,8 @@ export const ThemeProvider = ({ children }) => {
     return 'light';
   });
 
-  useEffect(() => {
-    const root = document.documentElement;
-    const body = document.body;
-    if (theme === 'dark') {
-      root.classList.add('dark');
-      root.classList.remove('light');
-      if (body) {
-        body.classList.add('dark');
-        body.classList.remove('light');
-      }
-      root.setAttribute('data-theme', 'dark');
-      root.style.colorScheme = 'dark';
-    } else {
-      root.classList.remove('dark');
-      root.classList.add('light');
-      if (body) {
-        body.classList.remove('dark');
-        body.classList.add('light');
-      }
-      root.setAttribute('data-theme', 'light');
-      root.style.colorScheme = 'light';
-    }
-    try {
-      localStorage.setItem('closr-theme', theme);
-    } catch (_) {}
+  useLayoutEffect(() => {
+    applyThemeToDOM(theme);
   }, [theme]);
 
   // Listen to system OS theme changes only if user hasn't explicitly set a preference
@@ -50,7 +55,9 @@ export const ThemeProvider = ({ children }) => {
       try {
         const saved = localStorage.getItem('closr-theme');
         if (!saved) {
-          setTheme(e.matches ? 'dark' : 'light');
+          const nextTheme = e.matches ? 'dark' : 'light';
+          applyThemeToDOM(nextTheme);
+          setTheme(nextTheme);
         }
       } catch (_) {}
     };
@@ -59,8 +66,12 @@ export const ThemeProvider = ({ children }) => {
     return () => mediaQuery.removeEventListener('change', handleChange);
   }, []);
 
-  const toggleTheme = () => {
-    setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'));
+  const toggleTheme = (forcedMode) => {
+    setTheme((prev) => {
+      const next = forcedMode !== undefined ? forcedMode : (prev === 'dark' ? 'light' : 'dark');
+      applyThemeToDOM(next);
+      return next;
+    });
   };
 
   return (

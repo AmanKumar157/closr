@@ -61,6 +61,7 @@ export const LoginForm = () => {
       <div className="relative">
         <Input
           label="Password"
+          allowClear={false}
           type={showPassword ? 'text' : 'password'}
           placeholder="••••••••"
           icon={Lock}
@@ -73,7 +74,7 @@ export const LoginForm = () => {
         <button
           type="button"
           onClick={() => setShowPassword(!showPassword)}
-          className="absolute right-3 top-[34px] text-slate-400 hover:text-slate-600 focus:outline-none"
+          className="absolute right-3 top-[34px] text-muted-foreground hover:text-foreground focus:outline-none transition-colors"
           tabIndex={-1}
         >
           {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -92,9 +93,9 @@ export const LoginForm = () => {
       </Button>
 
       <div className="text-center pt-2">
-        <p className="text-sm text-slate-600 dark:text-zinc-400">
+        <p className="text-sm text-muted-foreground">
           Don't have an account yet?{' '}
-          <Link to="/register" className="font-semibold text-indigo-600 dark:text-indigo-400 hover:text-indigo-500">
+          <Link to="/register" className="font-semibold text-primary hover:underline">
             Create an account
           </Link>
         </p>

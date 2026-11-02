@@ -1,6 +1,16 @@
 import React from 'react';
 import { Loader2 } from 'lucide-react';
 
+/**
+ * Animated Button Component (inspired by uiverse.io)
+ *
+ * Features:
+ * - Smooth letter-spacing expansion on hover (1.2px -> 2.4px)
+ * - Dynamic luminous box-shadow glow matching the theme's colors
+ * - Tactile active press-down feel (translateY with 100ms transition)
+ * - Pill-shaped border-radius (rounded-full)
+ * - Retains original theme colors (primary, secondary, outline, danger)
+ */
 export const Button = ({
   children,
   type = 'button',
@@ -12,20 +22,26 @@ export const Button = ({
   onClick,
   ...props
 }) => {
-  const baseStyles = 'inline-flex items-center justify-center font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed';
+  const baseStyles =
+    'uiverse-btn inline-flex items-center justify-center font-semibold rounded-full transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed select-none';
 
   const variants = {
-    primary: 'bg-indigo-600 hover:bg-indigo-700 text-white focus:ring-indigo-500 shadow-sm',
-    secondary: 'bg-slate-800 hover:bg-slate-900 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-white focus:ring-slate-700 shadow-sm',
-    outline: 'border border-slate-300 dark:border-zinc-700 hover:bg-slate-100 dark:hover:bg-zinc-800 text-slate-700 dark:text-zinc-200 focus:ring-indigo-500 bg-white dark:bg-zinc-900',
-    ghost: 'text-slate-600 dark:text-zinc-400 hover:bg-slate-100 dark:hover:bg-zinc-800 hover:text-slate-900 dark:hover:text-zinc-100 focus:ring-slate-400',
-    danger: 'bg-red-600 hover:bg-red-700 text-white focus:ring-red-500 shadow-sm'
+    primary:
+      'uiverse-btn-primary bg-primary text-primary-foreground focus:ring-ring',
+    secondary:
+      'uiverse-btn-secondary bg-secondary text-secondary-foreground focus:ring-ring',
+    outline:
+      'uiverse-btn-outline border border-border hover:bg-muted text-foreground focus:ring-ring bg-card/60 backdrop-blur-xs',
+    ghost:
+      'text-muted-foreground hover:bg-muted hover:text-foreground focus:ring-ring',
+    danger:
+      'uiverse-btn-danger bg-destructive text-destructive-foreground focus:ring-ring'
   };
 
   const sizes = {
-    sm: 'text-xs px-3 py-1.5 gap-1.5',
-    md: 'text-sm px-4 py-2 gap-2',
-    lg: 'text-base px-6 py-2.5 gap-2.5'
+    sm: 'text-xs px-3.5 py-1.5 gap-1.5',
+    md: 'text-sm px-5 py-2.5 gap-2',
+    lg: 'text-base px-7 py-3 gap-2.5'
   };
 
   return (
@@ -43,4 +59,3 @@ export const Button = ({
 };
 
 export default Button;
-

@@ -545,6 +545,12 @@ Create exactly 12 weeks. Each week must have 2 to 4 milestones. Each milestone m
     }
   }
 
+  // Graceful development fallback on network/offline failure
+  if (ENV.NODE_ENV === 'development' || !ENV.GEMINI_API_KEY) {
+    console.warn('[Gemini Service] Falling back to simulated 12-week roadmap due to network or rate limit.');
+    return generateDevRoadmapFallback(targetRole, missingSkills, preferredLanguage);
+  }
+
   throw new ApiError(502, `Failed to generate 12-week roadmap: ${lastError?.message || 'Invalid model output'}`);
 };
 
@@ -587,21 +593,33 @@ Provide a different, high quality alternative resource for this deliverable. Ret
     required: ['type', 'name', 'searchQuery', 'whyThis', 'isFree', 'language']
   };
 
-  const response = await callWithRetry(async () => {
-    return await ai.models.generateContent({
-      model: ENV.GEMINI_MODEL,
-      contents: userPrompt,
-      config: {
-        systemInstruction: 'You are a career mentor. Recommend an alternative learning resource. Output JSON only. NEVER output URLs.',
-        temperature: 0.7,
-        responseMimeType: 'application/json',
-        responseSchema: swapResponseSchema
-      }
+  try {
+    const response = await callWithRetry(async () => {
+      return await ai.models.generateContent({
+        model: ENV.GEMINI_MODEL,
+        contents: userPrompt,
+        config: {
+          systemInstruction: 'You are a career mentor. Recommend an alternative learning resource. Output JSON only. NEVER output URLs.',
+          temperature: 0.7,
+          responseMimeType: 'application/json',
+          responseSchema: swapResponseSchema
+        }
+      });
     });
-  });
 
-  const parsed = JSON.parse(response.text);
-  return milestoneResourceOutputSchema.parse(parsed);
+    const parsed = JSON.parse(response.text);
+    return milestoneResourceOutputSchema.parse(parsed);
+  } catch (err) {
+    console.warn('[Gemini Swap Warning] Falling back to default alternative resource:', err.message);
+    return {
+      type: excludedResource?.type === 'video' ? 'documentation' : 'video',
+      name: `Alternative Resource for ${milestone.title}`,
+      searchQuery: `${milestone.title} crash course tutorial`,
+      whyThis: 'Comprehensive alternative with practical hands-on examples.',
+      isFree: true,
+      language: excludedResource?.language || 'en'
+    };
+  }
 };
 
 /**

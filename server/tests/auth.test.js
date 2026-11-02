@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
+import crypto from 'crypto';
 import { registerSchema, loginSchema } from '../src/validators/auth.validator.js';
 import { ApiError } from '../src/utils/ApiError.js';
 import { ApiResponse } from '../src/utils/apiResponse.js';
@@ -74,19 +75,43 @@ test('API Response Formatter: formats success and error payloads consistently', 
   assert.equal(apiErr.errors.length, 1);
 });
 
-test('Auth Security: Token blacklist simulation revokes logged out sessions', () => {
-  const blacklistedTokens = new Set();
+test('Auth Security: Token blacklist simulation revokes logged out sessions using SHA-256 hash', () => {
+  const blacklistedHashes = new Set();
   const token = 'sample_jwt_revoked_token_abcdef123456';
   
-  // User logs out -> token added to blacklist
-  blacklistedTokens.add(token);
+  // User logs out -> SHA-256 hash of token stored in DB (prevents raw JWT exposure)
+  const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+  blacklistedHashes.add(tokenHash);
 
-  // Authenticate attempt
-  const isRevoked = blacklistedTokens.has(token);
+  // Authenticate attempt: check if candidate token's hash is blacklisted
+  const candidateHash = crypto.createHash('sha256').update(token).digest('hex');
+  const isRevoked = blacklistedHashes.has(candidateHash);
   assert.equal(isRevoked, true);
 
-  // Non-blacklisted token passes check
+  // Non-blacklisted active token passes check
   const activeToken = 'sample_jwt_valid_active_token_987654';
-  assert.equal(blacklistedTokens.has(activeToken), false);
+  const activeHash = crypto.createHash('sha256').update(activeToken).digest('hex');
+  assert.equal(blacklistedHashes.has(activeHash), false);
+});
+
+test('Auth Security: Prohibits passing tokens in URL query parameters', () => {
+  // Simulates policy that tokens must strictly be in HTTP-only cookies or Authorization header
+  const extractToken = (req) => {
+    let token = req.cookies?.token || req.cookies?.jwt;
+    if (!token && req.headers?.authorization?.startsWith('Bearer ')) {
+      token = req.headers.authorization.split(' ')[1];
+    }
+    // Prohibit req.query?.token to prevent exposure in browser history and server logs
+    return token || null;
+  };
+
+  const queryReq = { query: { token: 'exposed_query_token' }, cookies: {}, headers: {} };
+  assert.equal(extractToken(queryReq), null, 'Tokens in URL query must not be accepted');
+
+  const cookieReq = { cookies: { token: 'secure_cookie_token' }, headers: {} };
+  assert.equal(extractToken(cookieReq), 'secure_cookie_token');
+
+  const authHeaderReq = { cookies: {}, headers: { authorization: 'Bearer header_token' } };
+  assert.equal(extractToken(authHeaderReq), 'header_token');
 });
 

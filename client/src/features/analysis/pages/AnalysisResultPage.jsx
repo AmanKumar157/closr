@@ -136,21 +136,21 @@ export const AnalysisResultPage = () => {
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
-          <Link to="/analysis/new">
-            <Button variant="outline" size="sm">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:flex lg:flex-wrap items-center gap-2.5 w-full md:w-auto">
+          <Link to="/analysis/new" className="w-full sm:w-auto">
+            <Button variant="outline" size="sm" className="w-full justify-center">
               <RefreshCw className="w-3.5 h-3.5 mr-1.5" />
               Analyze Another
             </Button>
           </Link>
-          <Link to={`/resume?analysisId=${analysis._id}`}>
-            <Button variant="outline" size="sm">
+          <Link to={`/resume?analysisId=${analysis._id}`} className="w-full sm:w-auto">
+            <Button variant="outline" size="sm" className="w-full justify-center">
               <FileText className="w-3.5 h-3.5 mr-1.5 text-indigo-600 dark:text-indigo-400" />
               Generate ATS Resume
             </Button>
           </Link>
-          <Link to={`/roadmap?analysisId=${analysis._id}`}>
-            <Button variant="primary" size="sm">
+          <Link to={`/roadmap?analysisId=${analysis._id}`} className="w-full sm:w-auto">
+            <Button variant="primary" size="sm" className="w-full justify-center">
               <Map className="w-3.5 h-3.5 mr-1.5" />
               Generate 12-Week Roadmap
               <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
@@ -160,7 +160,7 @@ export const AnalysisResultPage = () => {
             variant="outline"
             size="sm"
             onClick={handleDeleteAnalysis}
-            className="text-rose-600 dark:text-rose-400 border-rose-200 dark:border-rose-900/60 hover:bg-rose-50 dark:hover:bg-rose-950/40 hover:border-rose-300"
+            className="w-full sm:w-auto justify-center text-rose-600 dark:text-rose-400 border-rose-200 dark:border-rose-900/60 hover:bg-rose-50 dark:hover:bg-rose-950/40 hover:border-rose-300"
             title="Permanently remove this resume analysis and all associated ATS resumes & roadmaps"
           >
             <Trash2 className="w-3.5 h-3.5 mr-1 text-rose-500" />

@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth.js';
 import { useTheme } from '../context/ThemeContext.jsx';
+import { AnimatedThemeToggler } from './common/AnimatedThemeToggler.jsx';
 import {
   Compass,
   LogOut,
@@ -12,6 +13,7 @@ import {
   History,
   Camera,
   X,
+  Menu,
   ChevronDown,
   Sun,
   Moon
@@ -24,7 +26,9 @@ export const Navbar = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const accountMenuRef = useRef(null);
+  const mobileMenuRef = useRef(null);
 
   const handleLogout = async () => {
     try {
@@ -36,22 +40,31 @@ export const Navbar = () => {
     }
   };
 
-  // Close account menu on click outside
+  // Close menus on route navigation
+  useEffect(() => {
+    setMobileMenuOpen(false);
+    setAccountMenuOpen(false);
+  }, [location.pathname]);
+
+  // Close menus on click outside
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (accountMenuRef.current && !accountMenuRef.current.contains(e.target)) {
         setAccountMenuOpen(false);
       }
+      if (mobileMenuRef.current && !mobileMenuRef.current.contains(e.target) && !e.target.closest('[data-mobile-menu-trigger]')) {
+        setMobileMenuOpen(false);
+      }
     };
-    if (accountMenuOpen) {
+    if (accountMenuOpen || mobileMenuOpen) {
       document.addEventListener('mousedown', handleClickOutside);
     }
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [accountMenuOpen]);
+  }, [accountMenuOpen, mobileMenuOpen]);
 
-  // Main navigation items (Profile moved inside account dropdown)
+  // Main navigation items
   const navItems = [
     { label: 'Dashboard', path: '/dashboard', to: '/dashboard', icon: LayoutDashboard },
     { label: 'Analyze', path: '/analysis', to: '/analysis/new', icon: FileText },
@@ -68,19 +81,19 @@ export const Navbar = () => {
   };
 
   return (
-    <header className="sticky top-0 z-40 bg-white/95 dark:bg-zinc-950/95 backdrop-blur border-b border-slate-200 dark:border-zinc-800 transition-colors duration-200">
+    <header className="sticky top-0 z-40 bg-card/90 backdrop-blur-md border-b border-border transition-colors duration-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2.5 group">
-            <div className="w-10 h-10 rounded-xl bg-[oklch(0.7040_0.0400_256.7880)] dark:bg-[oklch(0.9010_0.0580_230.9020)] flex items-center justify-center text-white dark:text-slate-900 shadow-md transition-all group-hover:scale-105">
+            <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-primary-foreground shadow-md transition-all group-hover:scale-105">
               <Compass className="w-6 h-6" />
             </div>
             <div>
-              <span className="text-xl font-black tracking-tight lowercase bg-gradient-to-r from-[oklch(0.5540_0.0460_257.4170)] to-[oklch(0.7040_0.0400_256.7880)] dark:from-[oklch(0.9010_0.0580_230.9020)] dark:to-[oklch(0.8110_0.1110_293.5710)] bg-clip-text text-transparent">
+              <span className="text-xl font-black tracking-tight lowercase text-foreground">
                 closr
               </span>
-              <span className="hidden sm:inline-block ml-2 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-[oklch(0.5540_0.0460_257.4170)] dark:text-[oklch(0.9010_0.0580_230.9020)] bg-[oklch(0.8690_0.0220_252.8940)] dark:bg-[oklch(0.3618_0.0101_106.8928)] rounded">
+              <span className="hidden sm:inline-block ml-2 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-primary-foreground bg-primary rounded">
                 AI Powered
               </span>
             </div>
@@ -99,11 +112,11 @@ export const Navbar = () => {
                     to={item.to}
                     className={`flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg transition-all ${
                       active
-                        ? 'bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 font-bold shadow-xs'
-                        : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-100 hover:bg-slate-100 dark:hover:bg-zinc-900 font-medium'
+                        ? 'bg-secondary text-secondary-foreground font-bold shadow-xs'
+                        : 'text-muted-foreground hover:text-foreground hover:bg-muted font-medium'
                     }`}
                   >
-                    <IconComponent className={`w-3.5 h-3.5 ${active ? 'text-indigo-600' : 'text-slate-400'}`} />
+                    <IconComponent className={`w-3.5 h-3.5 ${active ? 'text-primary' : 'text-muted-foreground'}`} />
                     <span>{item.label}</span>
                   </Link>
                 );
@@ -113,20 +126,8 @@ export const Navbar = () => {
 
           {/* Controls: Theme Toggle & User Account / Login */}
           <div className="flex items-center gap-2 sm:gap-3">
-            {/* Light / Dark Mode Toggle Button */}
-            <button
-              type="button"
-              onClick={toggleTheme}
-              className="p-2 rounded-xl text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-100 hover:bg-slate-100 dark:hover:bg-zinc-900 border border-slate-200/80 dark:border-zinc-800 transition-all cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
-              title={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-              aria-label="Toggle theme"
-            >
-              {isDark ? (
-                <Sun className="w-4 h-4 text-amber-400 transition-transform hover:rotate-45" />
-              ) : (
-                <Moon className="w-4 h-4 text-indigo-600 transition-transform hover:-rotate-12" />
-              )}
-            </button>
+            {/* Animated Light / Dark Mode Toggle with View Transitions API */}
+            <AnimatedThemeToggler />
 
             {isAuthenticated ? (
               <div className="relative" ref={accountMenuRef}>
@@ -136,12 +137,12 @@ export const Navbar = () => {
                   onClick={() => setAccountMenuOpen((prev) => !prev)}
                   className={`flex items-center gap-2 p-1 pl-1.5 pr-2.5 rounded-full border transition-all cursor-pointer focus:outline-none ${
                     accountMenuOpen
-                      ? 'border-indigo-500 bg-indigo-50/60 dark:bg-indigo-950/40 shadow-xs ring-2 ring-indigo-500/20'
-                      : 'border-slate-200 dark:border-zinc-800 hover:border-indigo-300 dark:hover:border-zinc-700 hover:bg-slate-50 dark:hover:bg-zinc-900'
+                      ? 'border-primary bg-secondary shadow-xs ring-2 ring-ring/30'
+                      : 'border-border hover:border-primary/50 hover:bg-muted'
                   }`}
                   title="Account menu"
                 >
-                  <div className="w-8 h-8 rounded-full overflow-hidden shrink-0 ring-2 ring-indigo-500/40 bg-slate-100 dark:bg-zinc-800">
+                  <div className="w-8 h-8 rounded-full overflow-hidden shrink-0 ring-2 ring-ring/40 bg-muted">
                     {user?.avatar ? (
                       <img
                         src={user.avatar}
@@ -150,45 +151,45 @@ export const Navbar = () => {
                         style={{ width: '32px', height: '32px', objectFit: 'cover' }}
                       />
                     ) : (
-                      <div className="w-full h-full bg-indigo-600 text-white flex items-center justify-center font-bold text-xs">
+                      <div className="w-full h-full bg-primary text-primary-foreground flex items-center justify-center font-bold text-xs">
                         {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
                       </div>
                     )}
                   </div>
                   <div className="hidden sm:flex flex-col text-left">
-                    <span className="text-xs font-semibold text-slate-800 dark:text-zinc-200 leading-tight">
+                    <span className="text-xs font-semibold text-foreground leading-tight">
                       {user?.name || 'Account'}
                     </span>
                   </div>
-                  <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform ${accountMenuOpen ? 'rotate-180' : ''}`} />
+                  <ChevronDown className={`w-3.5 h-3.5 text-muted-foreground transition-transform ${accountMenuOpen ? 'rotate-180' : ''}`} />
                 </button>
 
-                {/* Google-styled Account Popover Dropdown (Flawless edges, borders, and margins) */}
+                {/* Account Popover Dropdown */}
                 {accountMenuOpen && (
-                  <div className="absolute right-0 mt-2.5 w-84 bg-[#1f2023] text-white rounded-3xl shadow-2xl border border-slate-700/80 p-6 z-50 animate-fadeIn select-none">
-                    {/* Header: Brand Logo & Close Button with generous breathing room */}
-                    <div className="flex items-center justify-between pb-4 mb-4 border-b border-slate-800">
+                  <div className="account-dropdown-menu absolute right-0 mt-2.5 w-[calc(100vw-2rem)] max-w-sm sm:w-84 max-h-[calc(100vh-5rem)] overflow-y-auto bg-white dark:bg-[#16202c] text-foreground rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-700/80 p-6 z-50 animate-fadeIn select-none">
+                    {/* Header */}
+                    <div className="flex items-center justify-between pb-4 mb-4 border-b border-slate-200 dark:border-slate-700/60">
                       <div className="flex items-center gap-2">
-                        <div className="w-5 h-5 rounded-md bg-indigo-600 flex items-center justify-center text-white shadow-xs">
+                        <div className="w-5 h-5 rounded-md bg-primary flex items-center justify-center text-primary-foreground shadow-xs">
                           <Compass className="w-3.5 h-3.5" />
                         </div>
-                        <span className="text-xs font-bold tracking-wide text-slate-200">
+                        <span className="text-xs font-bold tracking-wide text-foreground">
                           closr Account
                         </span>
                       </div>
                       <button
                         type="button"
                         onClick={() => setAccountMenuOpen(false)}
-                        className="p-1.5 rounded-full text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
+                        className="p-1.5 rounded-full text-muted-foreground hover:text-foreground hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
                         title="Close"
                       >
                         <X className="w-4 h-4" />
                       </button>
                     </div>
 
-                    {/* User Identity Card: Strictly-sized Circular Avatar + Name + Email + PRO Badge */}
-                    <div className="flex items-center gap-3.5 pb-4 mb-4 border-b border-slate-800">
-                      <div className="relative w-12 h-12 rounded-full overflow-hidden shrink-0 ring-2 ring-indigo-500/80 shadow-md bg-slate-800">
+                    {/* User Identity Card */}
+                    <div className="flex items-center gap-3.5 pb-4 mb-4 border-b border-slate-200 dark:border-slate-700/60">
+                      <div className="relative w-12 h-12 rounded-full overflow-hidden shrink-0 ring-2 ring-primary/40 shadow-md bg-slate-100 dark:bg-slate-800">
                         {user?.avatar ? (
                           <img
                             src={user.avatar}
@@ -197,50 +198,50 @@ export const Navbar = () => {
                             style={{ width: '48px', height: '48px', objectFit: 'cover' }}
                           />
                         ) : (
-                          <div className="w-full h-full bg-indigo-600 text-white flex items-center justify-center font-bold text-lg">
+                          <div className="w-full h-full bg-primary text-primary-foreground flex items-center justify-center font-bold text-lg">
                             {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
                           </div>
                         )}
                       </div>
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">
-                          <h4 className="text-sm font-bold text-white truncate">{user?.name || 'User'}</h4>
-                          <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-indigo-950 text-indigo-300 border border-indigo-700/80">
+                          <h4 className="text-sm font-bold text-foreground truncate">{user?.name || 'User'}</h4>
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-secondary text-secondary-foreground border border-slate-200 dark:border-slate-700">
                             PRO
                           </span>
                         </div>
-                        <p className="text-xs text-slate-400 truncate mt-0.5">{user?.email}</p>
+                        <p className="text-xs text-muted-foreground truncate mt-0.5">{user?.email}</p>
                       </div>
                     </div>
 
-                    {/* Menu Options (Pill Buttons like Google reference) */}
-                    <div className="space-y-2.5 pb-4 mb-4 border-b border-slate-800">
+                    {/* Menu Options */}
+                    <div className="space-y-2.5 pb-4 mb-4 border-b border-slate-200 dark:border-slate-700/60">
                       <Link
                         to="/profile"
                         onClick={() => setAccountMenuOpen(false)}
-                        className="flex items-center justify-between px-4 py-2.5 rounded-full bg-slate-800/80 hover:bg-slate-800 text-xs font-semibold text-slate-200 hover:text-white border border-slate-700/80 transition-colors"
+                        className="flex items-center justify-between px-4 py-2.5 rounded-full bg-slate-50 dark:bg-[#202d3f] hover:bg-slate-100 dark:hover:bg-[#27384e] text-xs font-semibold text-foreground border border-slate-200 dark:border-slate-700/60 transition-colors"
                       >
                         <span className="flex items-center gap-2.5">
-                          <User className="w-4 h-4 text-indigo-400 shrink-0" />
+                          <User className="w-4 h-4 text-primary shrink-0" />
                           Profile & Career Settings
                         </span>
-                        <span className="text-[10px] font-medium text-slate-400">Settings</span>
+                        <span className="text-[10px] font-medium text-muted-foreground">Settings</span>
                       </Link>
 
                       <Link
                         to="/resume"
                         onClick={() => setAccountMenuOpen(false)}
-                        className="flex items-center justify-between px-4 py-2.5 rounded-full bg-slate-800/80 hover:bg-slate-800 text-xs font-semibold text-slate-200 hover:text-white border border-slate-700/80 transition-colors"
+                        className="flex items-center justify-between px-4 py-2.5 rounded-full bg-slate-50 dark:bg-[#202d3f] hover:bg-slate-100 dark:hover:bg-[#27384e] text-xs font-semibold text-foreground border border-slate-200 dark:border-slate-700/60 transition-colors"
                       >
                         <span className="flex items-center gap-2.5">
-                          <FileText className="w-4 h-4 text-violet-400 shrink-0" />
+                          <FileText className="w-4 h-4 text-primary shrink-0" />
                           ATS Resumes & Documents
                         </span>
-                        <span className="text-[10px] font-medium text-slate-400">Resumes</span>
+                        <span className="text-[10px] font-medium text-muted-foreground">Resumes</span>
                       </Link>
                     </div>
 
-                    {/* Sign Out Button (Pill button like Google reference) */}
+                    {/* Sign Out Button */}
                     <div>
                       <button
                         type="button"
@@ -248,9 +249,9 @@ export const Navbar = () => {
                           setAccountMenuOpen(false);
                           handleLogout();
                         }}
-                        className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-full bg-slate-800/70 hover:bg-rose-950/50 text-xs font-semibold text-slate-300 hover:text-rose-300 border border-slate-700/80 hover:border-rose-800/70 transition-colors cursor-pointer"
+                        className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-full bg-slate-50 dark:bg-[#202d3f] hover:bg-destructive hover:text-white dark:hover:bg-destructive dark:hover:text-white text-xs font-semibold text-muted-foreground border border-slate-200 dark:border-slate-700/60 transition-colors cursor-pointer"
                       >
-                        <LogOut className="w-3.5 h-3.5 text-rose-400" />
+                        <LogOut className="w-3.5 h-3.5" />
                         Sign out
                       </button>
                     </div>
@@ -261,24 +262,112 @@ export const Navbar = () => {
               <div className="flex items-center gap-2">
                 <Link
                   to="/login"
-                  className="px-3.5 py-1.5 text-xs sm:text-sm font-medium text-slate-700 dark:text-zinc-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+                  className="px-3.5 py-1.5 text-xs sm:text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
                 >
                   Sign In
                 </Link>
                 <Link
                   to="/register"
-                  className="px-3.5 py-1.5 text-xs sm:text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-sm shadow-indigo-100 transition-colors"
+                  className="px-3.5 py-1.5 text-xs sm:text-sm font-medium text-primary-foreground bg-primary hover:opacity-90 rounded-lg shadow-sm transition-opacity"
                 >
                   Get Started
                 </Link>
               </div>
             )}
+            {/* Mobile Menu Toggle Button (< lg screens) */}
+            {isAuthenticated && (
+              <button
+                type="button"
+                data-mobile-menu-trigger="true"
+                onClick={() => {
+                  setMobileMenuOpen(!mobileMenuOpen);
+                  setAccountMenuOpen(false);
+                }}
+                className="lg:hidden p-2 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted border border-border transition-colors focus:outline-none"
+                aria-label="Toggle navigation menu"
+              >
+                {mobileMenuOpen ? <X className="w-5 h-5 text-primary" /> : <Menu className="w-5 h-5" />}
+              </button>
+            )}
           </div>
         </div>
       </div>
+
+      {/* Mobile Navigation Drawer (< lg screens) */}
+      {isAuthenticated && mobileMenuOpen && (
+        <div
+          ref={mobileMenuRef}
+          className="lg:hidden border-t border-border bg-card/95 backdrop-blur-xl px-4 pt-3 pb-6 space-y-2 animate-fadeIn shadow-2xl transition-all"
+        >
+          <div className="grid grid-cols-1 gap-1">
+            {navItems.map((item) => {
+              const IconComponent = item.icon;
+              const active = isItemActive(item);
+
+              return (
+                <Link
+                  key={item.label}
+                  to={item.to}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all ${
+                    active
+                      ? 'bg-secondary text-primary font-bold shadow-xs border border-border'
+                      : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                  }`}
+                >
+                  <div
+                    className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${
+                      active
+                        ? 'bg-primary text-primary-foreground'
+                        : 'bg-muted text-muted-foreground'
+                    }`}
+                  >
+                    <IconComponent className="w-4 h-4" />
+                  </div>
+                  <span>{item.label}</span>
+                </Link>
+              );
+            })}
+          </div>
+
+          {/* Quick User Actions in Mobile Menu */}
+          <div className="pt-3 mt-2 border-t border-border flex items-center justify-between gap-3">
+            <Link
+              to="/profile"
+              onClick={() => setMobileMenuOpen(false)}
+              className="flex items-center gap-2.5 min-w-0 p-1.5 rounded-xl hover:bg-muted transition-colors flex-1"
+            >
+              <div className="w-8 h-8 rounded-full overflow-hidden bg-muted ring-2 ring-primary/40 shrink-0">
+                {user?.avatar ? (
+                  <img src={user.avatar} alt={user.name || 'User'} className="w-full h-full object-cover" />
+                ) : (
+                  <div className="w-full h-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold">
+                    {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
+                  </div>
+                )}
+              </div>
+              <div className="min-w-0">
+                <p className="text-xs font-bold text-foreground truncate">{user?.name || 'My Profile'}</p>
+                <p className="text-[10px] text-muted-foreground truncate">{user?.email}</p>
+              </div>
+            </Link>
+
+            <button
+              type="button"
+              onClick={() => {
+                setMobileMenuOpen(false);
+                handleLogout();
+              }}
+              className="px-3 py-2 rounded-xl text-xs font-semibold text-rose-500 hover:text-white hover:bg-rose-500 transition-colors flex items-center gap-1.5 shrink-0"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              <span>Sign out</span>
+            </button>
+          </div>
+        </div>
+      )}
     </header>
   );
 };
 
 export default Navbar;
-

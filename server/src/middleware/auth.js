@@ -1,4 +1,5 @@
 import jwt from 'jsonwebtoken';
+import crypto from 'crypto';
 import { ENV } from '../config/env.js';
 import { ApiError } from '../utils/ApiError.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
@@ -6,23 +7,23 @@ import { User } from '../models/User.js';
 import { BlacklistedToken } from '../models/BlacklistedToken.js';
 
 export const authMiddleware = asyncHandler(async (req, res, next) => {
-  // Extract token from HTTP-only cookie, Bearer Authorization header, or query param (for embedded PDF iframe streams)
+  // Extract token strictly from HTTP-only cookie or Bearer Authorization header
+  // Note: Query parameter token extraction is prohibited to prevent token leakage in server logs, history, and Referer headers
   let token = req.cookies?.token || req.cookies?.jwt;
 
   if (!token && req.headers.authorization && req.headers.authorization.startsWith('Bearer ')) {
     token = req.headers.authorization.split(' ')[1];
   }
 
-  if (!token && req.query?.token) {
-    token = req.query.token;
-  }
-
   if (!token) {
     throw new ApiError(401, 'Authentication required. No token provided.');
   }
 
-  // Check if token has been blacklisted (user logged out)
-  const isBlacklisted = await BlacklistedToken.findOne({ token });
+  // Check if token has been blacklisted (user logged out) using SHA-256 hash
+  const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+  const isBlacklisted = await BlacklistedToken.findOne({
+    $or: [{ tokenHash }, { token }]
+  });
   if (isBlacklisted) {
     throw new ApiError(401, 'Token has been revoked. Please log in again.');
   }

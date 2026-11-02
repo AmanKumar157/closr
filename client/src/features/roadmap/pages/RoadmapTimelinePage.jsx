@@ -31,6 +31,7 @@ import ProgressBar from '../../../components/common/ProgressBar.jsx';
 import SkillChip from '../../../components/common/SkillChip.jsx';
 import Button from '../../../components/common/Button.jsx';
 import Card from '../../../components/common/Card.jsx';
+import Checkbox from '../../../components/common/Checkbox.jsx';
 import Loader from '../../../components/common/Loader.jsx';
 
 export const RoadmapTimelinePage = () => {
@@ -1095,20 +1096,16 @@ export const RoadmapTimelinePage = () => {
                           {/* Milestone Title + Checkbox + Action Buttons */}
                           <div className="flex items-start justify-between gap-3">
                             <div className="flex items-start gap-3 min-w-0 flex-1">
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  handleToggleMilestone(week.weekNumber, mIdx, milestone.completed)
-                                }
-                                className="mt-0.5 text-slate-400 hover:text-indigo-600 focus:outline-none transition-colors shrink-0"
-                                title={milestone.completed ? 'Mark incomplete' : 'Mark complete'}
-                              >
-                                {milestone.completed ? (
-                                  <CheckCircle2 className="w-5 h-5 text-emerald-600 fill-emerald-50" />
-                                ) : (
-                                  <Circle className="w-5 h-5 text-slate-300" />
-                                )}
-                              </button>
+                              <div className="mt-0.5 shrink-0">
+                                <Checkbox
+                                  id={`milestone-${week.weekNumber}-${mIdx}`}
+                                  checked={Boolean(milestone.completed)}
+                                  onChange={() =>
+                                    handleToggleMilestone(week.weekNumber, mIdx, milestone.completed)
+                                  }
+                                  title={milestone.completed ? 'Mark incomplete' : 'Mark complete'}
+                                />
+                              </div>
                               <div className="min-w-0 flex-1">
                                 <div className="flex items-center gap-2 flex-wrap">
                                   <h4

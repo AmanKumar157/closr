@@ -4,7 +4,7 @@
 
 /* ==========================================================================
    JAPAN BLUES THEME (by Gavri Sharabi / tweakcn)
-   A quiet, low-chroma blue-gray aesthetic with warm washi paper stage
+   Complete OKLCH color token specification with light & dark variations
    ========================================================================== */
 
 :root,
@@ -14,7 +14,7 @@ html:not(.dark) {
   --background: oklch(0.9818 0.0054 95.0986);
   --foreground: oklch(0.1450 0 0);
   --card: oklch(0.9818 0.0054 95.0986);
-  --card-foreground: oklch(0.145 0 0);
+  --card-foreground: oklch(0.1450 0 0);
   --popover: oklch(1.0000 0 0);
   --popover-foreground: oklch(0.2671 0.0196 98.9390);
   --primary: oklch(0.7040 0.0400 256.7880);
@@ -30,7 +30,39 @@ html:not(.dark) {
   --border: oklch(0.8690 0.0050 56.3660);
   --input: oklch(0.9220 0 0);
   --ring: oklch(0.5540 0.0460 257.4170);
+  --chart-1: oklch(0.8090 0.1050 251.8130);
+  --chart-2: oklch(0.8110 0.1110 293.5710);
+  --chart-3: oklch(0.8816 0.0276 93.1280);
+  --chart-4: oklch(0.7040 0.0400 256.7880);
+  --chart-5: oklch(0.5880 0.1580 241.9660);
+  --sidebar: oklch(0.9663 0.0080 98.8792);
+  --sidebar-foreground: oklch(0.2680 0.0070 34.2980);
+  --sidebar-primary: oklch(0.5540 0.0460 257.4170);
+  --sidebar-primary-foreground: oklch(0.9881 0 0);
+  --sidebar-accent: oklch(0.9245 0.0138 92.9892);
+  --sidebar-accent-foreground: oklch(0.3250 0 0);
+  --sidebar-border: oklch(0.8690 0.0220 252.8940);
+  --sidebar-ring: oklch(0.7040 0.0400 256.7880);
+  --font-sans: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+  --font-serif: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
   --radius: 0.5rem;
+  --shadow-x: 0;
+  --shadow-y: 1px;
+  --shadow-blur: 3px;
+  --shadow-spread: 0px;
+  --shadow-opacity: 0.1;
+  --shadow-color: oklch(0 0 0);
+  --shadow-2xs: 0 1px 3px 0px hsl(0 0% 0% / 0.05);
+  --shadow-xs: 0 1px 3px 0px hsl(0 0% 0% / 0.05);
+  --shadow-sm: 0 1px 3px 0px hsl(0 0% 0% / 0.10), 0 1px 2px -1px hsl(0 0% 0% / 0.10);
+  --shadow: 0 1px 3px 0px hsl(0 0% 0% / 0.10), 0 1px 2px -1px hsl(0 0% 0% / 0.10);
+  --shadow-md: 0 1px 3px 0px hsl(0 0% 0% / 0.10), 0 2px 4px -1px hsl(0 0% 0% / 0.10);
+  --shadow-lg: 0 1px 3px 0px hsl(0 0% 0% / 0.10), 0 4px 6px -1px hsl(0 0% 0% / 0.10);
+  --shadow-xl: 0 1px 3px 0px hsl(0 0% 0% / 0.10), 0 8px 10px -1px hsl(0 0% 0% / 0.10);
+  --shadow-2xl: 0 1px 3px 0px hsl(0 0% 0% / 0.25);
+  --tracking-normal: 0em;
+  --spacing: 0.22rem;
 }
 
 .dark,
@@ -56,20 +88,123 @@ body.dark {
   --border: oklch(0.3618 0.0101 106.8928);
   --input: oklch(0.4336 0.0113 100.2195);
   --ring: oklch(0.8690 0.0220 252.8940);
+  --chart-1: oklch(0.7460 0.1600 232.6610);
+  --chart-2: oklch(0.8110 0.1110 293.5710);
+  --chart-3: oklch(0.9230 0.0030 48.7170);
+  --chart-4: oklch(0.5540 0.0460 257.4170);
+  --chart-5: oklch(0.9560 0.0450 203.3880);
+  --sidebar: oklch(0.2357 0.0024 67.7077);
+  --sidebar-foreground: oklch(0.8074 0.0142 93.0137);
+  --sidebar-primary: oklch(0.3250 0 0);
+  --sidebar-primary-foreground: oklch(0.9881 0 0);
+  --sidebar-accent: oklch(0.1680 0.0020 106.6177);
+  --sidebar-accent-foreground: oklch(0.8074 0.0142 93.0137);
+  --sidebar-border: oklch(0.9401 0 0);
+  --sidebar-ring: oklch(0.7731 0 0);
+  --font-sans: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+  --font-serif: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  --radius: 0.5rem;
+  --shadow-x: 0;
+  --shadow-y: 1px;
+  --shadow-blur: 3px;
+  --shadow-spread: 0px;
+  --shadow-opacity: 0.1;
+  --shadow-color: oklch(0 0 0);
+  --shadow-2xs: 0 1px 3px 0px hsl(0 0% 0% / 0.05);
+  --shadow-xs: 0 1px 3px 0px hsl(0 0% 0% / 0.05);
+  --shadow-sm: 0 1px 3px 0px hsl(0 0% 0% / 0.10), 0 1px 2px -1px hsl(0 0% 0% / 0.10);
+  --shadow: 0 1px 3px 0px hsl(0 0% 0% / 0.10), 0 1px 2px -1px hsl(0 0% 0% / 0.10);
+  --shadow-md: 0 1px 3px 0px hsl(0 0% 0% / 0.10), 0 2px 4px -1px hsl(0 0% 0% / 0.10);
+  --shadow-lg: 0 1px 3px 0px hsl(0 0% 0% / 0.10), 0 4px 6px -1px hsl(0 0% 0% / 0.10);
+  --shadow-xl: 0 1px 3px 0px hsl(0 0% 0% / 0.10), 0 8px 10px -1px hsl(0 0% 0% / 0.10);
+  --shadow-2xl: 0 1px 3px 0px hsl(0 0% 0% / 0.25);
+  --tracking-normal: 0em;
+  --spacing: 0.22rem;
 }
 
 @layer base {
+  * {
+    border-color: var(--border);
+  }
+  html {
+    overflow-x: hidden;
+    scroll-behavior: smooth;
+  }
   body {
+    overflow-x: hidden;
+    max-width: 100vw;
     background-color: var(--background);
     color: var(--foreground);
-    font-sans: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-    letter-spacing: -0.011em;
+    font-family: var(--font-sans);
+    letter-spacing: var(--tracking-normal);
     transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 }
 
+@keyframes border-beam {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes border-beam-svg {
+  0% {
+    stroke-dashoffset: 100;
+  }
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* Explicit Button & Semantic Utility fallbacks */
+.bg-primary {
+  background-color: var(--primary) !important;
+}
+.text-primary-foreground {
+  color: var(--primary-foreground) !important;
+}
+.bg-secondary {
+  background-color: var(--secondary) !important;
+}
+.text-secondary-foreground {
+  color: var(--secondary-foreground) !important;
+}
+.bg-popover {
+  background-color: var(--popover) !important;
+}
+.text-popover-foreground {
+  color: var(--popover-foreground) !important;
+}
+.bg-card {
+  background-color: var(--card) !important;
+}
+.text-card-foreground {
+  color: var(--card-foreground) !important;
+}
+
+/* Account Popover Dropdown - 100% Solid & High Readability */
+.account-dropdown-menu {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  opacity: 1 !important;
+}
+
+html.dark .account-dropdown-menu,
+html[data-theme="dark"] .account-dropdown-menu,
+body.dark .account-dropdown-menu {
+  background-color: #16202c !important;
+  color: #f1f5f9 !important;
+  opacity: 1 !important;
+}
+
 /* ==========================================================================
-   1. JAPAN BLUES LIGHT MODE (Warm Washi Paper & Indigo Ink)
+   Light Mode Overrides (Explicit Washed Paper & Indigo Ink)
    ========================================================================== */
 html:not(.dark),
 html.light,
@@ -84,7 +219,7 @@ html[data-theme="light"] body {
   color: var(--foreground) !important;
 }
 
-/* Navigation bar */
+/* Navigation header */
 html:not(.dark) header,
 html.light header,
 html[data-theme="light"] header {
@@ -93,13 +228,10 @@ html[data-theme="light"] header {
   border-color: var(--border) !important;
 }
 
-/* Cards & containers */
+/* Cards & surfaces in light mode */
 html:not(.dark) .bg-white,
-html:not(.dark) [class*="dark:bg-zinc-900"],
 html.light .bg-white,
-html.light [class*="dark:bg-zinc-900"],
-html[data-theme="light"] .bg-white,
-html[data-theme="light"] [class*="dark:bg-zinc-900"] {
+html[data-theme="light"] .bg-white {
   background-color: var(--card) !important;
   color: var(--foreground) !important;
   border-color: var(--border) !important;
@@ -107,11 +239,8 @@ html[data-theme="light"] [class*="dark:bg-zinc-900"] {
 }
 
 html:not(.dark) .bg-slate-50,
-html:not(.dark) [class*="dark:bg-zinc-950"],
 html.light .bg-slate-50,
-html.light [class*="dark:bg-zinc-950"],
-html[data-theme="light"] .bg-slate-50,
-html[data-theme="light"] [class*="dark:bg-zinc-950"] {
+html[data-theme="light"] .bg-slate-50 {
   background-color: var(--background) !important;
 }
 
@@ -121,18 +250,16 @@ html.light .bg-slate-100 {
   color: var(--secondary-foreground) !important;
 }
 
-/* Borders */
+/* Borders in light mode */
 html:not(.dark) .border-slate-200,
 html:not(.dark) .border-slate-200\/80,
 html:not(.dark) .border-slate-300,
-html:not(.dark) [class*="dark:border-zinc-800"],
-html:not(.dark) [class*="dark:border-zinc-700"],
 html.light .border-slate-200,
 html.light .border-slate-300 {
   border-color: var(--border) !important;
 }
 
-/* Texts */
+/* Texts in light mode */
 html:not(.dark) .text-slate-900,
 html.light .text-slate-900 {
   color: var(--foreground) !important;
@@ -153,26 +280,7 @@ html.light .text-slate-500 {
   color: var(--muted-foreground) !important;
 }
 
-/* Primary actions / buttons */
-html:not(.dark) .bg-indigo-600,
-html.light .bg-indigo-600 {
-  background-color: var(--primary) !important;
-  color: var(--primary-foreground) !important;
-}
-
-html:not(.dark) .text-indigo-600,
-html:not(.dark) .text-indigo-700,
-html.light .text-indigo-600 {
-  color: oklch(0.5540 0.0460 257.4170) !important;
-}
-
-html:not(.dark) .bg-indigo-50,
-html.light .bg-indigo-50 {
-  background-color: var(--secondary) !important;
-  color: var(--secondary-foreground) !important;
-}
-
-/* Form controls */
+/* Form inputs in light mode */
 html:not(.dark) input:not([type="checkbox"]):not([type="radio"]),
 html:not(.dark) textarea,
 html:not(.dark) select,
@@ -185,7 +293,7 @@ html.light select {
 }
 
 /* ==========================================================================
-   2. JAPAN BLUES DARK MODE (Obsidian Slate & Japanese Ice Blue)
+   Dark Mode Overrides (Obsidian Slate & Japanese Ice Blue)
    ========================================================================== */
 html.dark,
 html[data-theme="dark"],
@@ -201,7 +309,7 @@ html[data-theme="dark"] body {
   color: var(--foreground) !important;
 }
 
-/* Navigation bar */
+/* Navigation header in dark mode */
 html.dark header,
 html[data-theme="dark"] header {
   background-color: oklch(0.2679 0.0036 106.6427 / 0.94) !important;
@@ -209,7 +317,7 @@ html[data-theme="dark"] header {
   border-color: var(--border) !important;
 }
 
-/* Cards & containers */
+/* Cards & surfaces in dark mode */
 html.dark .bg-white,
 html.dark [class*="dark:bg-zinc-900"],
 html[data-theme="dark"] .bg-white,
@@ -234,7 +342,7 @@ html[data-theme="dark"] .bg-slate-100 {
   color: var(--muted-foreground) !important;
 }
 
-/* Borders */
+/* Borders in dark mode */
 html.dark .border-slate-200,
 html.dark .border-slate-200\/80,
 html.dark .border-slate-300,
@@ -245,7 +353,7 @@ html[data-theme="dark"] .border-slate-200 {
   border-color: var(--border) !important;
 }
 
-/* Texts */
+/* Texts in dark mode */
 html.dark .text-slate-900,
 html.dark [class*="dark:text-zinc-100"],
 html[data-theme="dark"] .text-slate-900 {
@@ -269,29 +377,7 @@ html[data-theme="dark"] .text-slate-400 {
   color: var(--muted-foreground) !important;
 }
 
-/* Primary actions / buttons (Luminous Ice Blue in Dark Mode) */
-html.dark .bg-indigo-600,
-html[data-theme="dark"] .bg-indigo-600 {
-  background-color: var(--primary) !important;
-  color: var(--primary-foreground) !important;
-  box-shadow: 0 2px 10px -2px oklch(0.9010 0.0580 230.9020 / 0.35) !important;
-}
-
-html.dark .text-indigo-600,
-html.dark .text-indigo-400,
-html.dark [class*="dark:text-indigo-400"],
-html[data-theme="dark"] .text-indigo-600 {
-  color: var(--primary) !important;
-}
-
-html.dark .bg-indigo-50,
-html.dark [class*="dark:bg-indigo-950"],
-html[data-theme="dark"] .bg-indigo-50 {
-  background-color: var(--accent) !important;
-  color: var(--accent-foreground) !important;
-}
-
-/* Form controls */
+/* Form inputs in dark mode */
 html.dark input:not([type="checkbox"]):not([type="radio"]),
 html.dark textarea,
 html.dark select,
@@ -375,76 +461,398 @@ html[data-theme="dark"] select {
   margin-bottom: 0.25rem;
 }
 
-
-
-/* Recruiter-Approved Resume Template Styles */
-.modern-template {
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-  line-height: 1.6;
-}
-.modern-template h1 {
-  font-size: 1.75rem;
-  font-weight: 800;
-  letter-spacing: -0.02em;
-  margin-bottom: 0.25rem;
-  color: #0f172a;
-}
-.modern-template h2, .modern-template h3 {
-  font-size: 1.05rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  border-bottom: 1.5px solid #e2e8f0;
-  padding-bottom: 0.25rem;
-  margin-top: 1.25rem;
-  margin-bottom: 0.5rem;
-  color: #1e293b;
+/* ==========================================================================
+   VIEW TRANSITIONS API FOR ANIMATED THEME TOGGLER (MAGIC UI)
+   Enables smooth circular expanding clip-path reveal when switching themes
+   ========================================================================== */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
 }
 
-.classic-template {
-  font-family: 'Times New Roman', Times, Georgia, serif;
-  line-height: 1.5;
-}
-.classic-template h1 {
-  font-size: 1.85rem;
-  font-weight: 700;
-  text-align: center;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  margin-bottom: 0.25rem;
-}
-.classic-template h2, .classic-template h3 {
-  font-size: 1.1rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  border-bottom: 1px solid #000;
-  padding-bottom: 0.15rem;
-  margin-top: 1.15rem;
-  margin-bottom: 0.4rem;
+::view-transition-old(root) {
+  z-index: 1;
 }
 
-.compact-template {
-  font-family: Arial, Helvetica, sans-serif;
-  line-height: 1.35;
-  font-size: 0.88rem;
+::view-transition-new(root) {
+  z-index: 9999;
 }
-.compact-template h1 {
-  font-size: 1.5rem;
-  font-weight: 800;
-  margin-bottom: 0.15rem;
+
+.dark::view-transition-old(root) {
+  z-index: 1;
 }
-.compact-template h2, .compact-template h3 {
-  font-size: 0.95rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  border-bottom: 1px solid #cbd5e1;
-  padding-bottom: 0.15rem;
-  margin-top: 0.85rem;
-  margin-bottom: 0.25rem;
+
+.dark::view-transition-new(root) {
+  z-index: 9999;
 }
-.compact-template p, .compact-template ul {
-  margin-top: 0.25rem;
-  margin-bottom: 0.25rem;
+
+/* ==========================================================================
+   UIVERSE.IO ANIMATED INPUT TEXT FIELD (by @satyamchaudharydev)
+   Features:
+   - Dynamic border-radius transition on focus-within (20px -> 6px)
+   - Animated expanding center-outward bottom accent border line on focus
+   - Integrated left icon & interactive clear reset button shown when input has text
+   ========================================================================== */
+
+.uiverse-input-wrapper {
+  --timing: 0.35s;
+  --border-height: 2px;
+  --input-bg: var(--card);
+  --border-color: var(--primary);
+  --border-radius: 20px;
+  --after-border-radius: 6px;
+
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-height: 42px;
+  border-radius: var(--border-radius);
+  transition: border-radius 0.45s cubic-bezier(0.4, 0, 0.2, 1),
+              border-color 0.3s ease,
+              background-color 0.3s ease,
+              box-shadow 0.3s ease;
+  background: var(--input-bg);
+  border: 1px solid var(--border);
+  overflow: hidden;
 }
+
+/* Animated bottom border line expanding from center outward */
+.uiverse-input-wrapper:before {
+  content: "";
+  position: absolute;
+  background: var(--border-color);
+  transform: scaleX(0);
+  transform-origin: center;
+  width: 100%;
+  height: var(--border-height);
+  left: 0;
+  bottom: 0;
+  border-radius: 1px;
+  transition: transform var(--timing) cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: none;
+  z-index: 5;
+}
+
+/* Hover on Input container */
+.uiverse-input-wrapper:hover {
+  border-color: var(--border-color);
+}
+
+/* Focus-within on Input container */
+.uiverse-input-wrapper:focus-within {
+  border-radius: var(--after-border-radius);
+  border-color: var(--border-color);
+  box-shadow: 0 1px 4px 0px hsl(0 0% 0% / 0.08);
+}
+
+.uiverse-input-wrapper:focus-within:before {
+  transform: scaleX(1);
+}
+
+/* Error state styling */
+.uiverse-input-wrapper.has-error {
+  --border-color: var(--destructive);
+  border-color: var(--destructive);
+  background: oklch(from var(--destructive) l c h / 0.04);
+}
+
+/* Input element styling */
+.uiverse-input {
+  font-size: 0.875rem;
+  background-color: transparent !important;
+  width: 100%;
+  height: 100%;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  color: var(--foreground);
+}
+
+.uiverse-input:focus {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Left Icon Button */
+.uiverse-icon-btn {
+  border: none;
+  background: none;
+  color: var(--muted-foreground);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  cursor: pointer;
+}
+
+.uiverse-icon-btn:hover {
+  color: var(--foreground);
+}
+
+/* Reset / Clear Button shown when typing */
+.uiverse-reset {
+  border: none;
+  background: none;
+  color: var(--muted-foreground);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.2s ease, visibility 0.2s ease, transform 0.2s ease, color 0.2s ease;
+  cursor: pointer;
+}
+
+/* Close button shown when typing (when not placeholder-shown) */
+.uiverse-input:not(:placeholder-shown) ~ .uiverse-reset {
+  opacity: 0.75;
+  visibility: visible;
+}
+
+.uiverse-reset:hover {
+  opacity: 1 !important;
+  transform: scale(1.15);
+  color: var(--foreground);
+}
+
+/* ==========================================================================
+   UIVERSE.IO ANIMATED BUTTON EFFECT
+   Features:
+   - Smooth letter-spacing expansion on hover (1.2px -> 2.4px)
+   - Dynamic luminous ambient box-shadow glow matching the theme's colors
+   - Tactile active press-down feel (translateY with 100ms snap)
+   - Pill-shaped border-radius (rounded-full)
+   - Preserves all original theme colors
+   ========================================================================== */
+
+.uiverse-btn {
+  border-radius: 9999px;
+  cursor: pointer;
+  letter-spacing: 1.2px;
+  transition: letter-spacing 0.3s ease, box-shadow 0.3s ease, transform 0.15s ease, opacity 0.2s ease, background-color 0.2s ease;
+  position: relative;
+  user-select: none;
+}
+
+/* On touch devices, disable hover expansion to keep mobile layouts solid and collision-free */
+@media (hover: none) {
+  .uiverse-btn:hover:not(:disabled) {
+    letter-spacing: 1.2px !important;
+  }
+}
+
+/* Primary variant hover glow & active feel */
+.uiverse-btn-primary {
+  box-shadow: 0 2px 8px -1px oklch(from var(--primary) l c h / 0.2);
+}
+
+.uiverse-btn-primary:hover:not(:disabled) {
+  letter-spacing: 2.4px;
+  box-shadow: 0 7px 25px 0px oklch(from var(--primary) l c h / 0.45);
+}
+
+.uiverse-btn-primary:active:not(:disabled) {
+  letter-spacing: 2.4px;
+  box-shadow: 0 0 0 0 transparent;
+  transform: translateY(4px);
+  transition: 100ms;
+}
+
+/* Secondary variant hover glow */
+.uiverse-btn-secondary {
+  box-shadow: 0 2px 6px -1px oklch(from var(--secondary-foreground) l c h / 0.12);
+}
+
+.uiverse-btn-secondary:hover:not(:disabled) {
+  letter-spacing: 2.2px;
+  box-shadow: 0 6px 20px 0px oklch(from var(--secondary-foreground) l c h / 0.25);
+}
+
+.uiverse-btn-secondary:active:not(:disabled) {
+  letter-spacing: 2.2px;
+  box-shadow: 0 0 0 0 transparent;
+  transform: translateY(4px);
+  transition: 100ms;
+}
+
+/* Outline variant hover */
+.uiverse-btn-outline:hover:not(:disabled) {
+  letter-spacing: 2.2px;
+  box-shadow: 0 6px 20px 0px oklch(from var(--primary) l c h / 0.2);
+}
+
+.uiverse-btn-outline:active:not(:disabled) {
+  letter-spacing: 2.2px;
+  box-shadow: 0 0 0 0 transparent;
+  transform: translateY(4px);
+  transition: 100ms;
+}
+
+/* Danger variant hover glow */
+.uiverse-btn-danger:hover:not(:disabled) {
+  letter-spacing: 2.2px;
+  box-shadow: 0 7px 22px 0px oklch(from var(--destructive) l c h / 0.4);
+}
+
+.uiverse-btn-danger:active:not(:disabled) {
+  letter-spacing: 2.2px;
+  box-shadow: 0 0 0 0 transparent;
+  transform: translateY(4px);
+  transition: 100ms;
+}
+
+/* Browser fallback for standard rgba shadows */
+@supports not (color: oklch(from red l c h / 0.5)) {
+  .uiverse-btn-primary:hover:not(:disabled) {
+    box-shadow: 0 7px 25px 0px rgba(56, 189, 248, 0.45);
+  }
+  .uiverse-btn-secondary:hover:not(:disabled) {
+    box-shadow: 0 6px 20px 0px rgba(100, 116, 139, 0.25);
+  }
+  .uiverse-btn-danger:hover:not(:disabled) {
+    box-shadow: 0 7px 22px 0px rgba(239, 68, 68, 0.45);
+  }
+}
+
+/* ==========================================================================
+   CHECKBOX WRAPPER 12 (UIVERSE.IO SPLASH ANIMATION)
+   ========================================================================== */
+
+.checkbox-wrapper-12 {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.checkbox-wrapper-12 * {
+  box-sizing: border-box;
+}
+
+.checkbox-wrapper-12 .cbx {
+  position: relative;
+  width: 22px;
+  height: 22px;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.checkbox-wrapper-12 .cbx input[type="checkbox"] {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  -webkit-tap-highlight-color: transparent;
+  cursor: pointer;
+  margin: 0;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 22px;
+  height: 22px;
+  border: 2px solid var(--border);
+  border-radius: 50%;
+  background: var(--card);
+  transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+  outline: none;
+  z-index: 2;
+}
+
+.checkbox-wrapper-12 .cbx input[type="checkbox"]:hover {
+  border-color: var(--primary);
+}
+
+.checkbox-wrapper-12 .cbx input[type="checkbox"]:focus-visible {
+  box-shadow: 0 0 0 3px oklch(from var(--primary) l c h / 0.3);
+}
+
+.checkbox-wrapper-12 .cbx label {
+  width: 22px;
+  height: 22px;
+  background: none;
+  border-radius: 50%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform: translate3d(0, 0, 0);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.checkbox-wrapper-12 .cbx svg {
+  position: absolute;
+  top: 4px;
+  left: 3.5px;
+  z-index: 3;
+  pointer-events: none;
+}
+
+.checkbox-wrapper-12 .cbx svg path {
+  stroke: var(--primary-foreground, #fff);
+  stroke-width: 2.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 19;
+  stroke-dashoffset: 19;
+  transition: stroke-dashoffset 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition-delay: 0.15s;
+}
+
+/* Checked state animations */
+.checkbox-wrapper-12 .cbx input[type="checkbox"]:checked {
+  border-color: var(--primary);
+  background: var(--primary);
+}
+
+.checkbox-wrapper-12 .cbx input[type="checkbox"]:checked + label {
+  animation: splash-12 0.6s ease forwards;
+}
+
+.checkbox-wrapper-12 .cbx input[type="checkbox"]:checked + label + svg path {
+  stroke-dashoffset: 0;
+}
+
+@-webkit-keyframes splash-12 {
+  40% {
+    background: var(--primary, #866efb);
+    box-shadow: 0 -18px 0 -8px var(--primary, #866efb),
+                16px -8px 0 -8px var(--primary, #866efb),
+                16px 8px 0 -8px var(--primary, #866efb),
+                0 18px 0 -8px var(--primary, #866efb),
+                -16px 8px 0 -8px var(--primary, #866efb),
+                -16px -8px 0 -8px var(--primary, #866efb);
+  }
+
+  100% {
+    background: var(--primary, #866efb);
+    box-shadow: 0 -36px 0 -10px transparent,
+                32px -16px 0 -10px transparent,
+                32px 16px 0 -10px transparent,
+                0 36px 0 -10px transparent,
+                -32px 16px 0 -10px transparent,
+                -32px -16px 0 -10px transparent;
+  }
+}
+
+@keyframes splash-12 {
+  40% {
+    background: var(--primary, #866efb);
+    box-shadow: 0 -18px 0 -8px var(--primary, #866efb),
+                16px -8px 0 -8px var(--primary, #866efb),
+                16px 8px 0 -8px var(--primary, #866efb),
+                0 18px 0 -8px var(--primary, #866efb),
+                -16px 8px 0 -8px var(--primary, #866efb),
+                -16px -8px 0 -8px var(--primary, #866efb);
+  }
+
+  100% {
+    background: var(--primary, #866efb);
+    box-shadow: 0 -36px 0 -10px transparent,
+                32px -16px 0 -10px transparent,
+                32px 16px 0 -10px transparent,
+                0 36px 0 -10px transparent,
+                -32px 16px 0 -10px transparent,
+                -32px -16px 0 -10px transparent;
+  }
+}
+
+
 
 

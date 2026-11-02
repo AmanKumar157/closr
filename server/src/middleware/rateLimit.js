@@ -3,7 +3,8 @@ import rateLimit from 'express-rate-limit';
 // Strict rate limit for auth endpoints to prevent brute force
 export const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 30, // Limit each IP to 30 auth requests per window
+  max: process.env.NODE_ENV === 'development' ? 500 : 30, // Relaxed in dev to prevent lockout on hot-reload
+  skipSuccessfulRequests: true, // Only count failed attempts against rate limit
   message: {
     success: false,
     message: 'Too many authentication attempts. Please try again after 15 minutes.',
