@@ -241,13 +241,13 @@ export const HistoryPage = () => {
         >
           <div className="space-y-6">
             {/* Score Delta Highlight */}
-            <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between">
+            <div className="p-4 rounded-xl bg-slate-50 dark:bg-zinc-800/60 border border-slate-200 dark:border-zinc-700 flex items-center justify-between">
               <div>
-                <span className="text-xs font-semibold text-slate-500 uppercase">Score Progression</span>
+                <span className="text-xs font-semibold text-slate-500 dark:text-zinc-400 uppercase">Score Progression</span>
                 <div className="flex items-center gap-3 mt-1">
-                  <span className="text-2xl font-black text-slate-700">{comparison.scoreA}%</span>
-                  <ArrowRight className="w-5 h-5 text-slate-400" />
-                  <span className="text-2xl font-black text-indigo-600">{comparison.scoreB}%</span>
+                  <span className="text-2xl font-black text-slate-700 dark:text-zinc-200">{comparison.scoreA}%</span>
+                  <ArrowRight className="w-5 h-5 text-slate-400 dark:text-zinc-500" />
+                  <span className="text-2xl font-black text-indigo-600 dark:text-indigo-400">{comparison.scoreB}%</span>
                 </div>
               </div>
 
@@ -311,14 +311,14 @@ export const HistoryPage = () => {
       )}
 
       {/* Tabs */}
-      <div className="flex border-b border-slate-200">
+      <div className="flex border-b border-slate-200 dark:border-zinc-800">
         <button
           type="button"
           onClick={() => setActiveTab('analyses')}
           className={`px-4 py-2.5 text-sm font-semibold border-b-2 -mb-px transition-colors ${
             activeTab === 'analyses'
-              ? 'border-indigo-600 text-indigo-600'
-              : 'border-transparent text-slate-500 hover:text-slate-700'
+              ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400'
+              : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-zinc-400 dark:hover:text-zinc-200'
           }`}
         >
           Analyses ({analyses.length})
@@ -328,8 +328,8 @@ export const HistoryPage = () => {
           onClick={() => setActiveTab('roadmaps')}
           className={`px-4 py-2.5 text-sm font-semibold border-b-2 -mb-px transition-colors ${
             activeTab === 'roadmaps'
-              ? 'border-indigo-600 text-indigo-600'
-              : 'border-transparent text-slate-500 hover:text-slate-700'
+              ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400'
+              : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-zinc-400 dark:hover:text-zinc-200'
           }`}
         >
           Roadmaps ({roadmaps.length})
@@ -339,8 +339,8 @@ export const HistoryPage = () => {
           onClick={() => setActiveTab('resumes')}
           className={`px-4 py-2.5 text-sm font-semibold border-b-2 -mb-px transition-colors ${
             activeTab === 'resumes'
-              ? 'border-indigo-600 text-indigo-600'
-              : 'border-transparent text-slate-500 hover:text-slate-700'
+              ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400'
+              : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-zinc-400 dark:hover:text-zinc-200'
           }`}
         >
           ATS Resumes ({resumes.length})
@@ -351,8 +351,8 @@ export const HistoryPage = () => {
       {activeTab === 'analyses' && (
         <div className="space-y-4">
           {analyses.length >= 2 && (
-            <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-4 flex flex-col sm:flex-row items-center justify-between gap-3">
-              <p className="text-xs text-indigo-900 font-medium">
+            <div className="bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800/60 rounded-xl p-4 flex flex-col sm:flex-row items-center justify-between gap-3">
+              <p className="text-xs text-indigo-900 dark:text-indigo-200 font-medium">
                 Select any 2 analyses below to view a side-by-side skill gap diff and score progression.
                 ({selectedForCompare.length} of 2 selected)
               </p>
@@ -379,39 +379,39 @@ export const HistoryPage = () => {
                   onClick={() => handleSelectCompare(a._id)}
                   className={`p-5 rounded-xl border cursor-pointer transition-all ${
                     isSelected
-                      ? 'border-indigo-600 bg-indigo-50/40 ring-2 ring-indigo-200 shadow-sm'
-                      : 'border-slate-200 bg-white hover:border-slate-300 shadow-sm'
+                      ? 'border-indigo-600 bg-indigo-50/40 dark:bg-indigo-950/30 ring-2 ring-indigo-200 dark:ring-indigo-800 shadow-sm'
+                      : 'border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:border-slate-300 dark:hover:border-zinc-700 shadow-sm'
                   }`}
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-zinc-500">
                           {new Date(a.createdAt).toLocaleDateString()}
                         </span>
                         {a.fileName && (
-                          <span className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-600 bg-slate-100 px-2 py-0.5 rounded truncate max-w-[190px]">
+                          <span className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-600 dark:text-zinc-300 bg-slate-100 dark:bg-zinc-800 px-2 py-0.5 rounded truncate max-w-[190px]">
                             <FileText className="w-3 h-3 text-indigo-500 shrink-0" />
                             <span className="truncate">{a.fileName}</span>
                           </span>
                         )}
                       </div>
-                      <h4 className="text-base font-bold text-slate-900 truncate mt-1">
+                      <h4 className="text-base font-bold text-slate-900 dark:text-zinc-100 truncate mt-1">
                         {a.targetRole}
                       </h4>
-                      <p className="text-xs text-slate-500 mt-1">
+                      <p className="text-xs text-slate-500 dark:text-zinc-400 mt-1">
                         {a.missingSkills?.length || 0} gaps • {a.matchedSkills?.length || 0} matched skills
                       </p>
                     </div>
 
                     <div className="flex flex-col items-end shrink-0">
-                      <span className="text-2xl font-black text-indigo-600">{a.matchScore}%</span>
-                      <span className="text-[10px] font-semibold text-slate-500">ATS Score</span>
+                      <span className="text-2xl font-black text-indigo-600 dark:text-indigo-400">{a.matchScore}%</span>
+                      <span className="text-[10px] font-semibold text-slate-500 dark:text-zinc-400">ATS Score</span>
                     </div>
                   </div>
 
-                  <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
-                    <span className="text-xs font-semibold text-indigo-600">
+                  <div className="mt-4 pt-3 border-t border-slate-100 dark:border-zinc-800 flex items-center justify-between">
+                    <span className="text-xs font-semibold text-indigo-600 dark:text-indigo-400">
                       {isSelected ? '✓ Selected for Compare' : '+ Click to Select'}
                     </span>
                     <div className="flex items-center gap-2">
@@ -428,7 +428,7 @@ export const HistoryPage = () => {
                             rawResumeText: a.resumeText || ''
                           });
                         }}
-                        className="text-xs text-indigo-600 hover:text-indigo-800 font-semibold inline-flex items-center gap-1 hover:underline"
+                        className="text-xs text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300 font-semibold inline-flex items-center gap-1 hover:underline"
                         title="Open in PDF Viewer"
                       >
                         <FileText className="w-3.5 h-3.5 text-indigo-500" />
@@ -437,7 +437,7 @@ export const HistoryPage = () => {
                       <Link
                         to={`/analysis/${a._id}`}
                         onClick={(e) => e.stopPropagation()}
-                        className="text-xs text-slate-600 hover:text-slate-900 font-medium inline-flex items-center gap-1"
+                        className="text-xs text-slate-600 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-zinc-200 font-medium inline-flex items-center gap-1"
                       >
                         <Eye className="w-3.5 h-3.5" />
                         Report
@@ -445,7 +445,7 @@ export const HistoryPage = () => {
                       <button
                         type="button"
                         onClick={(e) => handleDeleteAnalysis(e, a._id, a.fileName || a.targetRole)}
-                        className="text-xs text-rose-500 hover:text-rose-700 font-medium inline-flex items-center gap-1 p-1 hover:bg-rose-50 rounded transition-colors"
+                        className="text-xs text-rose-500 hover:text-rose-700 dark:text-rose-400 dark:hover:text-rose-300 font-medium inline-flex items-center gap-1 p-1 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded transition-colors"
                         title="Delete this analysis and all associated ATS resumes & roadmaps"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
@@ -467,21 +467,21 @@ export const HistoryPage = () => {
             <Link
               key={r._id}
               to={`/roadmap/${r._id}`}
-              className="p-5 rounded-xl border border-slate-200 bg-white hover:border-indigo-300 hover:shadow-sm transition-all block group"
+              className="p-5 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:border-indigo-300 dark:hover:border-indigo-700 hover:shadow-sm transition-all block group"
             >
               <div className="flex items-start justify-between">
                 <div>
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-zinc-500">
                     {new Date(r.createdAt).toLocaleDateString()}
                   </span>
-                  <h4 className="text-base font-bold text-slate-900 group-hover:text-indigo-600 transition-colors mt-0.5">
+                  <h4 className="text-base font-bold text-slate-900 dark:text-zinc-100 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors mt-0.5">
                     {r.targetRole}
                   </h4>
-                  <p className="text-xs text-slate-500 mt-1">
+                  <p className="text-xs text-slate-500 dark:text-zinc-400 mt-1">
                     {r.weeks?.length || 12} weeks • Curated milestones
                   </p>
                 </div>
-                <div className="p-2 rounded-lg bg-indigo-50 text-indigo-600 group-hover:scale-105 transition-transform">
+                <div className="p-2 rounded-lg bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 group-hover:scale-105 transition-transform">
                   <Map className="w-5 h-5" />
                 </div>
               </div>
@@ -506,43 +506,43 @@ export const HistoryPage = () => {
             return (
               <div
                 key={res._id}
-                className="p-5 rounded-xl border border-slate-200 bg-white hover:border-indigo-300 hover:shadow-sm transition-all block group relative"
+                className="p-5 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:border-indigo-300 dark:hover:border-indigo-700 hover:shadow-sm transition-all block group relative"
               >
                 <div className="flex items-start justify-between">
                   <div className="min-w-0 pr-8">
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-zinc-500">
                         {new Date(res.createdAt).toLocaleDateString()}
                       </span>
-                      <span className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-600 bg-slate-100 px-2 py-0.5 rounded truncate max-w-[190px]">
+                      <span className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-600 dark:text-zinc-300 bg-slate-100 dark:bg-zinc-800 px-2 py-0.5 rounded truncate max-w-[190px]">
                         <FileText className="w-3 h-3 text-indigo-500 shrink-0" />
                         <span className="truncate">{res.analysisId?.fileName || 'Uploaded_Resume.pdf'}</span>
                       </span>
                     </div>
-                    <h4 className="text-base font-bold text-slate-900 group-hover:text-indigo-600 transition-colors mt-1 truncate">
+                    <h4 className="text-base font-bold text-slate-900 dark:text-zinc-100 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors mt-1 truncate">
                       {displayName}
                     </h4>
-                    <p className="text-xs text-slate-500 mt-1">
-                      Target Role: <strong className="text-slate-700">{displayRole}</strong>
+                    <p className="text-xs text-slate-500 dark:text-zinc-400 mt-1">
+                      Target Role: <strong className="text-slate-700 dark:text-zinc-300">{displayRole}</strong>
                     </p>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
                     <button
                       type="button"
                       onClick={(e) => handleDeleteResume(e, res._id, displayName)}
-                      className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
+                      className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg transition-colors"
                       title="Permanently remove this resume from app"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
-                    <div className="p-2 rounded-lg bg-emerald-50 text-emerald-600 group-hover:scale-105 transition-transform">
+                    <div className="p-2 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 group-hover:scale-105 transition-transform">
                       <FileText className="w-5 h-5" />
                     </div>
                   </div>
                 </div>
 
-                <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
-                  <span className="text-xs text-slate-400">ATS Pass Ready • Single Column</span>
+                <div className="mt-4 pt-3 border-t border-slate-100 dark:border-zinc-800 flex items-center justify-between">
+                  <span className="text-xs text-slate-400 dark:text-zinc-500">ATS Pass Ready • Single Column</span>
                   <div className="flex items-center gap-2">
                     <button
                       type="button"
@@ -556,14 +556,14 @@ export const HistoryPage = () => {
                           hasOriginalPdf: res.analysisId?.hasOriginalPdf
                         })
                       }
-                      className="text-xs text-slate-600 hover:text-indigo-600 font-semibold inline-flex items-center gap-1"
+                      className="text-xs text-slate-600 hover:text-indigo-600 dark:text-zinc-400 dark:hover:text-indigo-400 font-semibold inline-flex items-center gap-1"
                     >
                       <Eye className="w-3.5 h-3.5 text-indigo-500" />
                       <span>PDF View</span>
                     </button>
                     <Link
                       to={`/resume/${res._id}`}
-                      className="text-xs text-indigo-600 hover:text-indigo-800 font-semibold inline-flex items-center gap-1"
+                      className="text-xs text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300 font-semibold inline-flex items-center gap-1"
                     >
                       <span>Open Page</span>
                       <ArrowRight className="w-3.5 h-3.5" />

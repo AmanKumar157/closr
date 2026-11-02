@@ -16,9 +16,9 @@ export const Button = ({
 
   const variants = {
     primary: 'bg-indigo-600 hover:bg-indigo-700 text-white focus:ring-indigo-500 shadow-sm',
-    secondary: 'bg-slate-800 hover:bg-slate-900 text-white focus:ring-slate-700 shadow-sm',
-    outline: 'border border-slate-300 hover:bg-slate-100 text-slate-700 focus:ring-indigo-500 bg-white',
-    ghost: 'text-slate-600 hover:bg-slate-100 hover:text-slate-900 focus:ring-slate-400',
+    secondary: 'bg-slate-800 hover:bg-slate-900 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-white focus:ring-slate-700 shadow-sm',
+    outline: 'border border-slate-300 dark:border-zinc-700 hover:bg-slate-100 dark:hover:bg-zinc-800 text-slate-700 dark:text-zinc-200 focus:ring-indigo-500 bg-white dark:bg-zinc-900',
+    ghost: 'text-slate-600 dark:text-zinc-400 hover:bg-slate-100 dark:hover:bg-zinc-800 hover:text-slate-900 dark:hover:text-zinc-100 focus:ring-slate-400',
     danger: 'bg-red-600 hover:bg-red-700 text-white focus:ring-red-500 shadow-sm'
   };
 

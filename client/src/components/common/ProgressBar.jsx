@@ -28,15 +28,15 @@ export const ProgressBar = ({
     <div className={`w-full space-y-1.5 ${className}`}>
       {(label || subLabel) && (
         <div className="flex justify-between items-center text-xs font-semibold">
-          {label && <span className="text-slate-700">{label}</span>}
+          {label && <span className="text-slate-700 dark:text-zinc-300">{label}</span>}
           {subLabel ? (
-            <span className="text-slate-500 font-medium">{subLabel}</span>
+            <span className="text-slate-500 dark:text-zinc-400 font-medium">{subLabel}</span>
           ) : (
-            <span className="text-indigo-600">{percentage}%</span>
+            <span className="text-indigo-600 dark:text-indigo-400">{percentage}%</span>
           )}
         </div>
       )}
-      <div className={`w-full bg-slate-100 rounded-full overflow-hidden ${heights[size] || heights.md}`}>
+      <div className={`w-full bg-slate-100 dark:bg-zinc-800 rounded-full overflow-hidden ${heights[size] || heights.md}`}>
         <div
           className={`${colorVariants[color] || colorVariants.indigo} ${heights[size] || heights.md} rounded-full transition-all duration-500 ease-out`}
           style={{ width: `${percentage}%` }}

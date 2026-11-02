@@ -308,17 +308,17 @@ export const NewAnalysisPage = () => {
 
               {/* Complete Description of Job */}
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1.5 flex items-center gap-1.5">
-                  <FileText className="w-4 h-4 text-slate-500" />
+                <label className="block text-sm font-medium text-slate-700 dark:text-zinc-300 mb-1.5 flex items-center gap-1.5">
+                  <FileText className="w-4 h-4 text-slate-500 dark:text-zinc-400" />
                   Complete Description of Job (Optional but recommended)
                 </label>
                 <textarea
                   rows={5}
                   placeholder="Paste the complete job description, requirements, responsibilities, or bullet points from the job posting..."
-                  className="block w-full rounded-lg border border-slate-300 text-sm p-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
+                  className="block w-full rounded-lg border border-slate-300 dark:border-zinc-700 text-sm p-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-zinc-900 text-slate-900 dark:text-zinc-100 placeholder-slate-400 dark:placeholder-zinc-500"
                   {...register('jobDescription')}
                 />
-                <p className="mt-1 text-xs text-slate-500">
+                <p className="mt-1 text-xs text-slate-500 dark:text-zinc-400">
                   Providing full JD details enables pinpoint ATS scoring and precision missing-skill identification.
                 </p>
               </div>
@@ -331,7 +331,7 @@ export const NewAnalysisPage = () => {
             subtitle="Choose a previously uploaded resume from your account or upload a new PDF/DOCX file"
           >
             {/* Source Toggle Tabs */}
-            <div className="flex rounded-xl bg-slate-100 p-1 mb-5 border border-slate-200">
+            <div className="flex rounded-xl bg-slate-100 dark:bg-zinc-800 p-1 mb-5 border border-slate-200 dark:border-zinc-700">
               <button
                 type="button"
                 onClick={() => {
@@ -340,14 +340,14 @@ export const NewAnalysisPage = () => {
                 }}
                 className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-3 text-xs sm:text-sm font-bold rounded-lg transition-all cursor-pointer ${
                   resumeSource === 'saved'
-                    ? 'bg-white text-indigo-700 shadow-xs'
-                    : 'text-slate-600 hover:text-slate-900'
+                    ? 'bg-white dark:bg-zinc-900 text-indigo-700 dark:text-indigo-400 shadow-xs'
+                    : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-100'
                 }`}
               >
                 <FolderOpen className="w-4 h-4 text-indigo-500" />
                 <span>Choose Pre-Uploaded Resume</span>
                 {savedResumes.length > 0 && (
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-indigo-50 text-indigo-700 border border-indigo-200">
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">
                     {savedResumes.length}
                   </span>
                 )}
@@ -360,8 +360,8 @@ export const NewAnalysisPage = () => {
                 }}
                 className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-3 text-xs sm:text-sm font-bold rounded-lg transition-all cursor-pointer ${
                   resumeSource === 'upload'
-                    ? 'bg-white text-indigo-700 shadow-xs'
-                    : 'text-slate-600 hover:text-slate-900'
+                    ? 'bg-white dark:bg-zinc-900 text-indigo-700 dark:text-indigo-400 shadow-xs'
+                    : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-100'
                 }`}
               >
                 <UploadCloud className="w-4 h-4 text-indigo-500" />
@@ -378,10 +378,10 @@ export const NewAnalysisPage = () => {
                     Loading your pre-uploaded resumes...
                   </div>
                 ) : savedResumes.length === 0 ? (
-                  <div className="p-6 text-center border-2 border-dashed border-slate-200 rounded-xl bg-slate-50/50 space-y-2">
+                  <div className="p-6 text-center border-2 border-dashed border-slate-200 dark:border-zinc-800 rounded-xl bg-slate-50/50 dark:bg-zinc-900/40 space-y-2">
                     <FileText className="w-8 h-8 text-slate-400 mx-auto" />
-                    <p className="text-sm font-semibold text-slate-700">No Pre-Uploaded Resumes Found</p>
-                    <p className="text-xs text-slate-500">
+                    <p className="text-sm font-semibold text-slate-700 dark:text-zinc-300">No Pre-Uploaded Resumes Found</p>
+                    <p className="text-xs text-slate-500 dark:text-zinc-400">
                       You haven't uploaded any resumes yet. Upload a new resume to evaluate your skills.
                     </p>
                     <div className="pt-2">
@@ -409,8 +409,8 @@ export const NewAnalysisPage = () => {
                           }}
                           className={`flex items-center justify-between p-3.5 rounded-xl border transition-all cursor-pointer ${
                             isSelected
-                              ? 'border-indigo-600 bg-indigo-50/60 ring-2 ring-indigo-500/20 shadow-xs'
-                              : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50/60'
+                              ? 'border-indigo-600 bg-indigo-50/60 dark:bg-indigo-950/40 ring-2 ring-indigo-500/20 shadow-xs'
+                              : 'border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:border-slate-300 dark:hover:border-zinc-700 hover:bg-slate-50/60 dark:hover:bg-zinc-800/40'
                           }`}
                         >
                           <div className="flex items-center gap-3 min-w-0">
@@ -419,31 +419,31 @@ export const NewAnalysisPage = () => {
                               className={`w-5 h-5 rounded-full border flex items-center justify-center shrink-0 ${
                                 isSelected
                                   ? 'border-indigo-600 bg-indigo-600 text-white'
-                                  : 'border-slate-300 bg-white'
+                                  : 'border-slate-300 dark:border-zinc-600 bg-white dark:bg-zinc-800'
                               }`}
                             >
                               {isSelected && <div className="w-2 h-2 rounded-full bg-white" />}
                             </div>
 
                             {/* Resume icon */}
-                            <div className="w-9 h-9 rounded-lg bg-rose-50 text-rose-500 border border-rose-100 flex items-center justify-center shrink-0">
+                            <div className="w-9 h-9 rounded-lg bg-rose-50 dark:bg-rose-950/40 text-rose-500 border border-rose-100 dark:border-rose-900/50 flex items-center justify-center shrink-0">
                               <FileText className="w-5 h-5" />
                             </div>
 
                             {/* Details */}
                             <div className="min-w-0 flex-1">
                               <div className="flex items-center gap-2">
-                                <h4 className="text-xs sm:text-sm font-bold text-slate-900 truncate">
+                                <h4 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-zinc-100 truncate">
                                   {r.fileName || 'Uploaded_Resume.pdf'}
                                 </h4>
                                 {isSelected && (
-                                  <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-indigo-100 text-indigo-700 border border-indigo-200 uppercase tracking-wide shrink-0">
+                                  <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-indigo-100 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 uppercase tracking-wide shrink-0">
                                     Selected
                                   </span>
                                 )}
                               </div>
-                              <p className="text-[11px] text-slate-500 truncate flex items-center gap-1.5 mt-0.5">
-                                <span className="font-semibold text-slate-700">{r.targetRole || 'Resume Document'}</span>
+                              <p className="text-[11px] text-slate-500 dark:text-zinc-400 truncate flex items-center gap-1.5 mt-0.5">
+                                <span className="font-semibold text-slate-700 dark:text-zinc-300">{r.targetRole || 'Resume Document'}</span>
                                 <span>•</span>
                                 <span>{new Date(r.createdAt).toLocaleDateString(undefined, { dateStyle: 'medium' })}</span>
                                 {r.fileSize > 0 && (
@@ -504,34 +504,34 @@ export const NewAnalysisPage = () => {
           </Card>
 
           {/* STEP 3: Options & Submission */}
-          <Card className="p-4 bg-slate-50/70 border border-slate-200">
+          <Card className="p-4 bg-slate-50/70 dark:bg-zinc-900/70 border border-slate-200 dark:border-zinc-800">
             <div className="space-y-3">
               {/* Auto-generate roadmap checkbox */}
               <div className="flex items-center gap-2.5">
                 <input
                   type="checkbox"
                   id="roadmap-checkbox"
-                  className="w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500 cursor-pointer"
+                  className="w-4 h-4 text-indigo-600 rounded border-slate-300 dark:border-zinc-700 focus:ring-indigo-500 cursor-pointer"
                   {...register('autoGenerateRoadmap')}
                 />
                 <label
                   htmlFor="roadmap-checkbox"
-                  className="text-xs sm:text-sm font-semibold text-slate-800 cursor-pointer flex items-center gap-1.5"
+                  className="text-xs sm:text-sm font-semibold text-slate-800 dark:text-zinc-200 cursor-pointer flex items-center gap-1.5"
                 >
-                  <Map className="w-4 h-4 text-indigo-600" />
+                  <Map className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
                   Automatically generate 12-week learning roadmap from skill gaps
                 </label>
               </div>
 
               {/* Overwrite Option Checkbox */}
-              <div className="flex items-center gap-2.5 pt-2 border-t border-slate-200">
+              <div className="flex items-center gap-2.5 pt-2 border-t border-slate-200 dark:border-zinc-800">
                 <input
                   type="checkbox"
                   id="overwrite-checkbox"
-                  className="w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500 cursor-pointer"
+                  className="w-4 h-4 text-indigo-600 rounded border-slate-300 dark:border-zinc-700 focus:ring-indigo-500 cursor-pointer"
                   {...register('overwrite')}
                 />
-                <label htmlFor="overwrite-checkbox" className="text-xs text-slate-600 font-medium cursor-pointer">
+                <label htmlFor="overwrite-checkbox" className="text-xs text-slate-600 dark:text-zinc-400 font-medium cursor-pointer">
                   Overwrite / Replace previous analysis if this resume was already evaluated for this target role
                 </label>
               </div>

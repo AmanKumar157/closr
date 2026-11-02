@@ -797,67 +797,67 @@ export const RoadmapTimelinePage = () => {
       {/* Integrated Progress & Metric Cards (Merged Feature 7) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Metric 1: Overall Progress */}
-        <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm flex flex-col justify-between">
+        <div className="bg-white dark:bg-zinc-900 rounded-xl border border-slate-200 dark:border-zinc-800 p-5 shadow-sm flex flex-col justify-between transition-colors">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Overall Progress</span>
-            <span className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center">
+            <span className="text-xs font-bold text-slate-500 dark:text-zinc-400 uppercase tracking-wider">Overall Progress</span>
+            <span className="w-8 h-8 rounded-lg bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
               <TrendingUp className="w-4 h-4" />
             </span>
           </div>
           <div className="mt-3">
             <div className="flex items-baseline justify-between mb-1">
-              <span className="text-3xl font-black text-indigo-600">{overallPercent}%</span>
-              <span className="text-xs font-semibold text-slate-400">Target: 100%</span>
+              <span className="text-3xl font-black text-indigo-600 dark:text-indigo-400">{overallPercent}%</span>
+              <span className="text-xs font-semibold text-slate-400 dark:text-zinc-500">Target: 100%</span>
             </div>
             <ProgressBar value={overallPercent} max={100} size="sm" color={overallPercent === 100 ? 'emerald' : 'indigo'} />
           </div>
         </div>
 
         {/* Metric 2: Current Focus Week */}
-        <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm flex flex-col justify-between">
+        <div className="bg-white dark:bg-zinc-900 rounded-xl border border-slate-200 dark:border-zinc-800 p-5 shadow-sm flex flex-col justify-between transition-colors">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Current Focus</span>
-            <span className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center">
+            <span className="text-xs font-bold text-slate-500 dark:text-zinc-400 uppercase tracking-wider">Current Focus</span>
+            <span className="w-8 h-8 rounded-lg bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
               <Calendar className="w-4 h-4" />
             </span>
           </div>
           <div className="mt-2">
-            <p className="text-2xl font-black text-slate-900">
+            <p className="text-2xl font-black text-slate-900 dark:text-zinc-100">
               {overallPercent === 100 ? 'All Complete! 🎉' : `Week ${currentFocusWeek}`}
             </p>
-            <p className="text-xs text-slate-500 mt-1 truncate max-w-[200px]">
+            <p className="text-xs text-slate-500 dark:text-zinc-400 mt-1 truncate max-w-[200px]">
               {overallPercent === 100 ? 'Ready for applications' : (roadmap.weeks?.[currentFocusWeek - 1]?.topicTitle || 'In progress')}
             </p>
           </div>
         </div>
 
         {/* Metric 3: Milestones Finished */}
-        <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm flex flex-col justify-between">
+        <div className="bg-white dark:bg-zinc-900 rounded-xl border border-slate-200 dark:border-zinc-800 p-5 shadow-sm flex flex-col justify-between transition-colors">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Milestones Done</span>
-            <span className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
+            <span className="text-xs font-bold text-slate-500 dark:text-zinc-400 uppercase tracking-wider">Milestones Done</span>
+            <span className="w-8 h-8 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
               <CheckCircle2 className="w-4 h-4" />
             </span>
           </div>
           <div className="mt-2">
-            <p className="text-3xl font-black text-emerald-600">{completedCount}</p>
-            <p className="text-xs text-slate-500 mt-1">
+            <p className="text-3xl font-black text-emerald-600 dark:text-emerald-400">{completedCount}</p>
+            <p className="text-xs text-slate-500 dark:text-zinc-400 mt-1">
               Of {totalCount} verified deliverables finished
             </p>
           </div>
         </div>
 
         {/* Metric 4: Remaining Deliverables */}
-        <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm flex flex-col justify-between">
+        <div className="bg-white dark:bg-zinc-900 rounded-xl border border-slate-200 dark:border-zinc-800 p-5 shadow-sm flex flex-col justify-between transition-colors">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Remaining</span>
-            <span className="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center">
+            <span className="text-xs font-bold text-slate-500 dark:text-zinc-400 uppercase tracking-wider">Remaining</span>
+            <span className="w-8 h-8 rounded-lg bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center">
               <Layers className="w-4 h-4" />
             </span>
           </div>
           <div className="mt-2">
-            <p className="text-3xl font-black text-amber-600">{totalCount - completedCount}</p>
-            <p className="text-xs text-slate-500 mt-1">
+            <p className="text-3xl font-black text-amber-600 dark:text-amber-400">{totalCount - completedCount}</p>
+            <p className="text-xs text-slate-500 dark:text-zinc-400 mt-1">
               Deliverables remaining to full role readiness
             </p>
           </div>
@@ -876,10 +876,10 @@ export const RoadmapTimelinePage = () => {
               key={week.weekNumber}
               className={`rounded-2xl border transition-all ${
                 isWeekFinished
-                  ? 'border-emerald-200 bg-emerald-50/20'
+                  ? 'border-emerald-200 dark:border-emerald-900/50 bg-emerald-50/20 dark:bg-emerald-950/20'
                   : week.weekNumber === currentFocusWeek
-                  ? 'border-indigo-400 bg-white shadow-md ring-2 ring-indigo-100'
-                  : 'border-slate-200 bg-white shadow-sm'
+                  ? 'border-indigo-400 dark:border-indigo-500 bg-white dark:bg-zinc-900 shadow-md ring-2 ring-indigo-100 dark:ring-indigo-950/60'
+                  : 'border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm'
               }`}
             >
               {/* Week Header */}
@@ -895,27 +895,27 @@ export const RoadmapTimelinePage = () => {
                         ? 'bg-emerald-500 text-white'
                         : week.weekNumber === currentFocusWeek
                         ? 'bg-indigo-600 text-white shadow-sm'
-                        : 'bg-indigo-50 text-indigo-700 border border-indigo-100'
+                        : 'bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border border-indigo-100 dark:border-indigo-900/40'
                     }`}
                   >
                     W{week.weekNumber}
                   </div>
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
-                      <h3 className="text-base font-bold text-slate-900 truncate">
+                      <h3 className="text-base font-bold text-slate-900 dark:text-zinc-100 truncate">
                         {week.topicTitle}
                       </h3>
                       {isWeekFinished ? (
-                        <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
+                        <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300">
                           Complete ✓
                         </span>
                       ) : week.weekNumber === currentFocusWeek ? (
-                        <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700">
+                        <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-950/80 text-indigo-700 dark:text-indigo-300">
                           Current Focus
                         </span>
                       ) : null}
                     </div>
-                    <p className="text-xs text-slate-500 mt-0.5 truncate max-w-xl">
+                    <p className="text-xs text-slate-500 dark:text-zinc-400 mt-0.5 truncate max-w-xl">
                       {week.description}
                     </p>
                   </div>

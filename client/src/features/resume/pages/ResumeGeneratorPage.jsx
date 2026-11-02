@@ -2020,13 +2020,13 @@ export const ResumeGeneratorPage = () => {
 
       {/* Multiple Resumes Switcher Shelf */}
       {allResumes.length > 0 && (
-        <div className="bg-slate-50 border border-slate-200 rounded-xl p-3.5">
+        <div className="bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-xl p-3.5 transition-colors">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-bold text-slate-600 uppercase tracking-wider flex items-center gap-1.5">
-              <Briefcase className="w-3.5 h-3.5 text-indigo-600" />
+            <span className="text-xs font-bold text-slate-600 dark:text-zinc-400 uppercase tracking-wider flex items-center gap-1.5">
+              <Briefcase className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
               Your Tailored Resumes & Openings ({allResumes.length})
             </span>
-            <span className="text-[11px] text-slate-400">Click any card to switch versions • Click trash to delete completely</span>
+            <span className="text-[11px] text-slate-400 dark:text-zinc-500">Click any card to switch versions • Click trash to delete completely</span>
           </div>
 
           <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-thin">
@@ -2047,15 +2047,15 @@ export const ResumeGeneratorPage = () => {
                   key={r._id}
                   onClick={() => navigate(`/resume/${r._id}`)}
                   className={`group relative px-3 py-2 rounded-lg text-left text-xs shrink-0 border cursor-pointer transition-all pr-8 ${isActive
-                      ? 'bg-white border-indigo-500 shadow-sm ring-1 ring-indigo-200'
-                      : 'bg-white/80 border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-white'
+                      ? 'bg-white dark:bg-zinc-800 border-indigo-500 shadow-sm ring-1 ring-indigo-200 dark:ring-indigo-900/60'
+                      : 'bg-white/80 dark:bg-zinc-900/80 border-slate-200 dark:border-zinc-800 text-slate-700 dark:text-zinc-300 hover:border-slate-300 dark:hover:border-zinc-700 hover:bg-white dark:hover:bg-zinc-800'
                     }`}
                 >
-                  <div className="font-bold text-slate-900 truncate max-w-[170px] flex items-center gap-1.5">
+                  <div className="font-bold text-slate-900 dark:text-zinc-100 truncate max-w-[170px] flex items-center gap-1.5">
                     <FileText className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
                     <span className="truncate">{displayName}</span>
                   </div>
-                  <div className="text-[11px] text-slate-500 truncate max-w-[170px] mt-0.5">
+                  <div className="text-[11px] text-slate-500 dark:text-zinc-400 truncate max-w-[170px] mt-0.5">
                     {displayRole} • {new Date(r.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
                   </div>
 
@@ -2064,7 +2064,7 @@ export const ResumeGeneratorPage = () => {
                     type="button"
                     onClick={(e) => handleDeleteResumeCard(e, r._id)}
                     title="Delete this resume version"
-                    className="absolute top-2 right-2 p-1 text-slate-400 hover:text-rose-600 rounded hover:bg-rose-50 transition-colors opacity-70 group-hover:opacity-100"
+                    className="absolute top-2 right-2 p-1 text-slate-400 hover:text-rose-600 rounded hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors opacity-70 group-hover:opacity-100"
                   >
                     <Trash2 className="w-3 h-3" />
                   </button>
@@ -2076,7 +2076,7 @@ export const ResumeGeneratorPage = () => {
       )}
 
       {/* Main Page Header */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 pb-4 border-b border-slate-200">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 pb-4 border-b border-slate-200 dark:border-zinc-800">
         <div>
           <div className="inline-flex items-center gap-1.5 text-indigo-600 font-semibold text-xs mb-1 uppercase tracking-wider">
             <ShieldCheck className="w-3.5 h-3.5" />
@@ -2335,19 +2335,19 @@ export const ResumeGeneratorPage = () => {
       )}
 
       {/* Control Strip: 1) Recruiter Templates & 2) View Modes (Split / Original / ATS) */}
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 bg-white p-3 rounded-xl border border-slate-200 shadow-2xs">
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 bg-white dark:bg-zinc-900 p-3 rounded-xl border border-slate-200 dark:border-zinc-800 shadow-2xs transition-colors">
         {/* Recruiter-Approved Styles Switcher */}
         <div className="flex items-center gap-2">
-          <span className="text-xs font-bold text-slate-500 uppercase tracking-wider shrink-0">Style:</span>
-          <div className="grid grid-cols-3 gap-1 bg-slate-100 p-1 rounded-lg border border-slate-200">
+          <span className="text-xs font-bold text-slate-500 dark:text-zinc-400 uppercase tracking-wider shrink-0">Style:</span>
+          <div className="grid grid-cols-3 gap-1 bg-slate-100 dark:bg-zinc-800 p-1 rounded-lg border border-slate-200 dark:border-zinc-700">
             {TEMPLATES.map((tmpl) => (
               <button
                 key={tmpl.id}
                 type="button"
                 onClick={() => handleTemplateChange(tmpl.id)}
                 className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${selectedTemplate === tmpl.id
-                    ? 'bg-white text-indigo-700 shadow-xs font-bold'
-                    : 'text-slate-600 hover:text-slate-900'
+                    ? 'bg-white dark:bg-zinc-900 text-indigo-700 dark:text-indigo-400 shadow-xs font-bold'
+                    : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-100'
                   }`}
                 title={tmpl.description}
               >
@@ -2359,12 +2359,12 @@ export const ResumeGeneratorPage = () => {
 
         {/* View Switcher: Full ATS | Native PDF Stream | Side-by-Side (Compare) | Original Uploaded PDF */}
         <div className="flex items-center gap-2">
-          <span className="text-xs font-bold text-slate-500 uppercase tracking-wider shrink-0">View:</span>
-          <div className="flex rounded-lg border border-slate-200 p-0.5 bg-slate-100 flex-wrap">
+          <span className="text-xs font-bold text-slate-500 dark:text-zinc-400 uppercase tracking-wider shrink-0">View:</span>
+          <div className="flex rounded-lg border border-slate-200 dark:border-zinc-700 p-0.5 bg-slate-100 dark:bg-zinc-800 flex-wrap">
             <button
               type="button"
               onClick={() => setViewMode('preview')}
-              className={`flex items-center gap-1 px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${viewMode === 'preview' ? 'bg-white text-slate-900 shadow-sm font-bold' : 'text-slate-600 hover:text-slate-900'
+              className={`flex items-center gap-1 px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${viewMode === 'preview' ? 'bg-white dark:bg-zinc-900 text-slate-900 dark:text-zinc-100 shadow-sm font-bold' : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-100'
                 }`}
             >
               <Eye className="w-3.5 h-3.5" />
@@ -2374,7 +2374,7 @@ export const ResumeGeneratorPage = () => {
             <button
               type="button"
               onClick={() => setViewMode('native')}
-              className={`flex items-center gap-1 px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${viewMode === 'native' ? 'bg-white text-indigo-700 shadow-sm font-bold' : 'text-slate-600 hover:text-slate-900'
+              className={`flex items-center gap-1 px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${viewMode === 'native' ? 'bg-white dark:bg-zinc-900 text-indigo-700 dark:text-indigo-400 shadow-sm font-bold' : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-100'
                 }`}
               title="View in native browser PDF reader stream"
             >
@@ -2385,7 +2385,7 @@ export const ResumeGeneratorPage = () => {
             <button
               type="button"
               onClick={() => setViewMode('split')}
-              className={`flex items-center gap-1 px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${viewMode === 'split' ? 'bg-white text-slate-900 shadow-sm font-bold text-indigo-700' : 'text-slate-600 hover:text-slate-900'
+              className={`flex items-center gap-1 px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${viewMode === 'split' ? 'bg-white dark:bg-zinc-900 text-indigo-700 dark:text-indigo-400 shadow-sm font-bold' : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-100'
                 }`}
               title="Compare Original Uploaded Resume vs ATS Version"
             >
@@ -2396,7 +2396,7 @@ export const ResumeGeneratorPage = () => {
             <button
               type="button"
               onClick={() => setViewMode('original')}
-              className={`flex items-center gap-1 px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${viewMode === 'original' ? 'bg-white text-slate-900 shadow-sm font-bold' : 'text-slate-600 hover:text-slate-900'
+              className={`flex items-center gap-1 px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${viewMode === 'original' ? 'bg-white dark:bg-zinc-900 text-slate-900 dark:text-zinc-100 shadow-sm font-bold' : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-100'
                 }`}
               title="View original uploaded PDF"
             >
@@ -2407,7 +2407,7 @@ export const ResumeGeneratorPage = () => {
             <button
               type="button"
               onClick={() => setViewMode('code')}
-              className={`flex items-center gap-1 px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${viewMode === 'code' ? 'bg-white text-slate-900 shadow-sm font-bold' : 'text-slate-600 hover:text-slate-900'
+              className={`flex items-center gap-1 px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${viewMode === 'code' ? 'bg-white dark:bg-zinc-900 text-slate-900 dark:text-zinc-100 shadow-sm font-bold' : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-100'
                 }`}
             >
               <Code className="w-3.5 h-3.5" />

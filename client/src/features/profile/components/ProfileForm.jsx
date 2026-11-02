@@ -268,18 +268,18 @@ export const ProfileForm = () => {
           />
 
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1.5 flex items-center gap-1.5">
-              <Globe className="w-4 h-4 text-slate-500" />
+            <label className="block text-sm font-medium text-slate-700 dark:text-zinc-300 mb-1.5 flex items-center gap-1.5">
+              <Globe className="w-4 h-4 text-slate-500 dark:text-zinc-400" />
               Preferred Learning Language
             </label>
             <select
-              className="block w-full rounded-lg border border-slate-300 text-sm py-2.5 px-3 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+              className="block w-full rounded-lg border border-slate-300 dark:border-zinc-700 text-sm py-2.5 px-3 bg-white dark:bg-zinc-900 text-slate-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
               {...register('preferredLanguage')}
             >
               <option value="en">English (Default)</option>
               <option value="hi">Hindi (हिंदी - For YouTube courses & tutorials)</option>
             </select>
-            <p className="mt-1 text-xs text-slate-500">
+            <p className="mt-1 text-xs text-slate-500 dark:text-zinc-400">
               Roadmap resources will favor Hindi courses/tutorials where available if Hindi is selected.
             </p>
           </div>
@@ -287,10 +287,10 @@ export const ProfileForm = () => {
 
         {/* Current Skills Chips Manager */}
         <div className="space-y-3">
-          <label className="block text-sm font-medium text-slate-700">
+          <label className="block text-sm font-medium text-slate-700 dark:text-zinc-300">
             Your Current Skills ({skills.length})
           </label>
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-slate-500 dark:text-zinc-400">
             Skills you already possess. closr evaluates your skill gap against this list.
           </p>
 
@@ -302,7 +302,7 @@ export const ProfileForm = () => {
               onChange={(e) => setNewSkillInput(e.target.value)}
               onKeyDown={handleKeyDownSkill}
               placeholder="Type a skill and press Enter (e.g. Next.js, Redux, PostgreSQL)"
-              className="flex-1 rounded-lg border border-slate-300 px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
+              className="flex-1 rounded-lg border border-slate-300 dark:border-zinc-700 px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-zinc-900 text-slate-900 dark:text-zinc-100"
             />
             <Button
               type="button"
@@ -316,7 +316,7 @@ export const ProfileForm = () => {
           </div>
 
           {/* Active skill chips */}
-          <div className="min-h-[56px] p-3 rounded-xl border border-dashed border-slate-300 bg-slate-50/50 flex flex-wrap gap-2 items-center">
+          <div className="min-h-[56px] p-3 rounded-xl border border-dashed border-slate-300 dark:border-zinc-700 bg-slate-50/50 dark:bg-zinc-900/40 flex flex-wrap gap-2 items-center">
             {skills.length === 0 ? (
               <span className="text-xs text-slate-400 italic">
                 No skills added yet. Add skills above to track your strengths.

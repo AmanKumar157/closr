@@ -81,34 +81,34 @@ export const ResumeDropzone = ({ file, onFileSelect, onFileRemove, error }) => {
           onClick={() => fileInputRef.current?.click()}
           className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-all ${
             isDragging
-              ? 'border-indigo-500 bg-indigo-50/50 scale-[0.99]'
-              : 'border-slate-300 hover:border-indigo-400 bg-white hover:bg-slate-50/50'
+              ? 'border-indigo-500 bg-indigo-50/50 dark:bg-indigo-950/40 scale-[0.99]'
+              : 'border-slate-300 dark:border-zinc-700 hover:border-indigo-400 bg-white dark:bg-zinc-900/60 hover:bg-slate-50/50 dark:hover:bg-zinc-800/60'
           }`}
         >
-          <div className="mx-auto w-12 h-12 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600 mb-3 shadow-inner">
+          <div className="mx-auto w-12 h-12 rounded-full bg-indigo-50 dark:bg-indigo-950/60 flex items-center justify-center text-indigo-600 dark:text-indigo-400 mb-3 shadow-inner">
             <UploadCloud className="w-6 h-6" />
           </div>
-          <h3 className="text-sm font-semibold text-slate-800">
+          <h3 className="text-sm font-semibold text-slate-800 dark:text-zinc-200">
             Click to upload or drag & drop your resume
           </h3>
-          <p className="text-xs text-slate-500 mt-1">
+          <p className="text-xs text-slate-500 dark:text-zinc-400 mt-1">
             Accepts PDF or DOCX formats (up to 5MB)
           </p>
         </div>
       ) : (
-        <div className="flex items-center justify-between p-4 bg-white border border-slate-200 rounded-xl shadow-sm">
+        <div className="flex items-center justify-between p-4 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-xl shadow-sm">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="w-10 h-10 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
+            <div className="w-10 h-10 rounded-lg bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
               <FileText className="w-5 h-5" />
             </div>
             <div className="min-w-0">
-              <p className="text-sm font-semibold text-slate-900 truncate">
+              <p className="text-sm font-semibold text-slate-900 dark:text-zinc-100 truncate">
                 {file.name}
               </p>
-              <div className="flex items-center gap-2 text-xs text-slate-500">
+              <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-zinc-400">
                 <span>{formatFileSize(file.size)}</span>
                 <span>•</span>
-                <span className="text-emerald-600 flex items-center gap-0.5 font-medium">
+                <span className="text-emerald-600 dark:text-emerald-400 flex items-center gap-0.5 font-medium">
                   <CheckCircle2 className="w-3.5 h-3.5" /> Ready for parsing
                 </span>
               </div>
@@ -121,7 +121,7 @@ export const ResumeDropzone = ({ file, onFileSelect, onFileRemove, error }) => {
               onFileRemove();
               if (fileInputRef.current) fileInputRef.current.value = '';
             }}
-            className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors ml-3 shrink-0"
+            className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg transition-colors ml-3 shrink-0"
             title="Remove file"
           >
             <X className="w-5 h-5" />

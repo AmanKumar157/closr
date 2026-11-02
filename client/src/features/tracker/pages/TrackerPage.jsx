@@ -101,30 +101,30 @@ export const TrackerPage = () => {
 
       {/* Overview Stat Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
-          <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Overall Progress</span>
-          <p className="text-3xl font-black text-indigo-600 mt-2">{summary.overallPercentage}%</p>
+        <div className="bg-white dark:bg-zinc-900 rounded-xl border border-slate-200 dark:border-zinc-800 p-5 shadow-sm">
+          <span className="text-xs font-semibold text-slate-500 dark:text-zinc-400 uppercase tracking-wider">Overall Progress</span>
+          <p className="text-3xl font-black text-indigo-600 dark:text-indigo-400 mt-2">{summary.overallPercentage}%</p>
           <ProgressBar value={summary.overallPercentage} max={100} size="sm" color="indigo" className="mt-2" />
         </div>
 
-        <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
-          <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Current Focus Week</span>
-          <p className="text-3xl font-black text-slate-900 mt-2">Week {summary.currentWeek}</p>
-          <p className="text-xs text-slate-500 mt-1">Of 12 total structured weeks</p>
+        <div className="bg-white dark:bg-zinc-900 rounded-xl border border-slate-200 dark:border-zinc-800 p-5 shadow-sm">
+          <span className="text-xs font-semibold text-slate-500 dark:text-zinc-400 uppercase tracking-wider">Current Focus Week</span>
+          <p className="text-3xl font-black text-slate-900 dark:text-zinc-100 mt-2">Week {summary.currentWeek}</p>
+          <p className="text-xs text-slate-500 dark:text-zinc-400 mt-1">Of 12 total structured weeks</p>
         </div>
 
-        <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
-          <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Milestones Completed</span>
-          <p className="text-3xl font-black text-emerald-600 mt-2">{summary.completedMilestones}</p>
-          <p className="text-xs text-slate-500 mt-1">Deliverables completed</p>
+        <div className="bg-white dark:bg-zinc-900 rounded-xl border border-slate-200 dark:border-zinc-800 p-5 shadow-sm">
+          <span className="text-xs font-semibold text-slate-500 dark:text-zinc-400 uppercase tracking-wider">Milestones Completed</span>
+          <p className="text-3xl font-black text-emerald-600 dark:text-emerald-400 mt-2">{summary.completedMilestones}</p>
+          <p className="text-xs text-slate-500 dark:text-zinc-400 mt-1">Deliverables completed</p>
         </div>
 
-        <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
-          <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Remaining Tasks</span>
-          <p className="text-3xl font-black text-amber-600 mt-2">
+        <div className="bg-white dark:bg-zinc-900 rounded-xl border border-slate-200 dark:border-zinc-800 p-5 shadow-sm">
+          <span className="text-xs font-semibold text-slate-500 dark:text-zinc-400 uppercase tracking-wider">Remaining Tasks</span>
+          <p className="text-3xl font-black text-amber-600 dark:text-amber-400 mt-2">
             {summary.totalMilestones - summary.completedMilestones}
           </p>
-          <p className="text-xs text-slate-500 mt-1">Deliverables in roadmap</p>
+          <p className="text-xs text-slate-500 dark:text-zinc-400 mt-1">Deliverables in roadmap</p>
         </div>
       </div>
 
@@ -142,8 +142,8 @@ export const TrackerPage = () => {
                 key={w.weekNumber}
                 className={`p-4 rounded-xl border transition-all ${
                   isCurrent
-                    ? 'border-indigo-400 bg-indigo-50/30 ring-1 ring-indigo-200'
-                    : 'border-slate-200 bg-white'
+                    ? 'border-indigo-400 dark:border-indigo-600 bg-indigo-50/30 dark:bg-indigo-950/30 ring-1 ring-indigo-200 dark:ring-indigo-800'
+                    : 'border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900'
                 }`}
               >
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-2">
@@ -154,25 +154,25 @@ export const TrackerPage = () => {
                           ? 'bg-emerald-500 text-white'
                           : isCurrent
                           ? 'bg-indigo-600 text-white'
-                          : 'bg-slate-100 text-slate-700'
+                          : 'bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300'
                       }`}
                     >
                       W{w.weekNumber}
                     </span>
                     <div>
-                      <h4 className="text-sm font-bold text-slate-900">{w.topicTitle}</h4>
-                      <p className="text-xs text-slate-500">{w.description}</p>
+                      <h4 className="text-sm font-bold text-slate-900 dark:text-zinc-100">{w.topicTitle}</h4>
+                      <p className="text-xs text-slate-500 dark:text-zinc-400">{w.description}</p>
                     </div>
                   </div>
 
                   <div className="flex items-center gap-4 text-xs">
                     {isCurrent && (
-                      <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700">
+                      <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300">
                         Current Week
                       </span>
                     )}
-                    <span className="font-semibold text-slate-700">{wDone}/{wTotal} Done</span>
-                    <span className="font-bold text-indigo-600">{wPct}%</span>
+                    <span className="font-semibold text-slate-700 dark:text-zinc-300">{wDone}/{wTotal} Done</span>
+                    <span className="font-bold text-indigo-600 dark:text-indigo-400">{wPct}%</span>
                   </div>
                 </div>
 

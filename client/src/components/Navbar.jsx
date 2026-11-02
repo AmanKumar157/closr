@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth.js';
+import { useTheme } from '../context/ThemeContext.jsx';
 import {
   Compass,
   LogOut,
@@ -11,12 +12,15 @@ import {
   History,
   Camera,
   X,
-  ChevronDown
+  ChevronDown,
+  Sun,
+  Moon
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export const Navbar = () => {
   const { user, isAuthenticated, logout } = useAuth();
+  const { isDark, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
@@ -64,7 +68,7 @@ export const Navbar = () => {
   };
 
   return (
-    <header className="sticky top-0 z-40 bg-white/95 backdrop-blur border-b border-slate-200">
+    <header className="sticky top-0 z-40 bg-white/95 dark:bg-zinc-950/95 backdrop-blur border-b border-slate-200 dark:border-zinc-800 transition-colors duration-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
@@ -76,7 +80,7 @@ export const Navbar = () => {
               <span className="text-xl font-black tracking-tight lowercase bg-gradient-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent">
                 closr
               </span>
-              <span className="hidden sm:inline-block ml-2 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-indigo-700 bg-indigo-50 rounded">
+              <span className="hidden sm:inline-block ml-2 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/60 rounded">
                 AI Powered
               </span>
             </div>
@@ -95,8 +99,8 @@ export const Navbar = () => {
                     to={item.to}
                     className={`flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg transition-all ${
                       active
-                        ? 'bg-indigo-50 text-indigo-700 font-bold shadow-xs'
-                        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100 font-medium'
+                        ? 'bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 font-bold shadow-xs'
+                        : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-100 hover:bg-slate-100 dark:hover:bg-zinc-900 font-medium'
                     }`}
                   >
                     <IconComponent className={`w-3.5 h-3.5 ${active ? 'text-indigo-600' : 'text-slate-400'}`} />
@@ -107,8 +111,23 @@ export const Navbar = () => {
             </nav>
           )}
 
-          {/* User Profile / Unified Account Menu */}
-          <div className="flex items-center gap-3">
+          {/* Controls: Theme Toggle & User Account / Login */}
+          <div className="flex items-center gap-2 sm:gap-3">
+            {/* Light / Dark Mode Toggle Button */}
+            <button
+              type="button"
+              onClick={toggleTheme}
+              className="p-2 rounded-xl text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-100 hover:bg-slate-100 dark:hover:bg-zinc-900 border border-slate-200/80 dark:border-zinc-800 transition-all cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+              title={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+              aria-label="Toggle theme"
+            >
+              {isDark ? (
+                <Sun className="w-4 h-4 text-amber-400 transition-transform hover:rotate-45" />
+              ) : (
+                <Moon className="w-4 h-4 text-indigo-600 transition-transform hover:-rotate-12" />
+              )}
+            </button>
+
             {isAuthenticated ? (
               <div className="relative" ref={accountMenuRef}>
                 {/* Unified Account Trigger Button */}
@@ -117,12 +136,12 @@ export const Navbar = () => {
                   onClick={() => setAccountMenuOpen((prev) => !prev)}
                   className={`flex items-center gap-2 p-1 pl-1.5 pr-2.5 rounded-full border transition-all cursor-pointer focus:outline-none ${
                     accountMenuOpen
-                      ? 'border-indigo-500 bg-indigo-50/60 shadow-xs ring-2 ring-indigo-500/20'
-                      : 'border-slate-200 hover:border-indigo-300 hover:bg-slate-50'
+                      ? 'border-indigo-500 bg-indigo-50/60 dark:bg-indigo-950/40 shadow-xs ring-2 ring-indigo-500/20'
+                      : 'border-slate-200 dark:border-zinc-800 hover:border-indigo-300 dark:hover:border-zinc-700 hover:bg-slate-50 dark:hover:bg-zinc-900'
                   }`}
                   title="Account menu"
                 >
-                  <div className="w-8 h-8 rounded-full overflow-hidden shrink-0 ring-2 ring-indigo-500/40 bg-slate-100">
+                  <div className="w-8 h-8 rounded-full overflow-hidden shrink-0 ring-2 ring-indigo-500/40 bg-slate-100 dark:bg-zinc-800">
                     {user?.avatar ? (
                       <img
                         src={user.avatar}
@@ -137,7 +156,7 @@ export const Navbar = () => {
                     )}
                   </div>
                   <div className="hidden sm:flex flex-col text-left">
-                    <span className="text-xs font-semibold text-slate-800 leading-tight">
+                    <span className="text-xs font-semibold text-slate-800 dark:text-zinc-200 leading-tight">
                       {user?.name || 'Account'}
                     </span>
                   </div>
@@ -242,13 +261,13 @@ export const Navbar = () => {
               <div className="flex items-center gap-2">
                 <Link
                   to="/login"
-                  className="px-4 py-2 text-sm font-medium text-slate-700 hover:text-indigo-600 transition-colors"
+                  className="px-3.5 py-1.5 text-xs sm:text-sm font-medium text-slate-700 dark:text-zinc-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
                 >
                   Sign In
                 </Link>
                 <Link
                   to="/register"
-                  className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-sm shadow-indigo-100 transition-colors"
+                  className="px-3.5 py-1.5 text-xs sm:text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-sm shadow-indigo-100 transition-colors"
                 >
                   Get Started
                 </Link>

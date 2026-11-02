@@ -108,9 +108,9 @@ export const DashboardPage = () => {
 
       {/* Active Tracked Resume Section */}
       {latestAnalysis ? (
-        <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-slate-200 dark:border-zinc-800 p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6 transition-colors">
           <div className="flex items-start sm:items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-indigo-50 border border-indigo-100 text-indigo-600 flex items-center justify-center shrink-0 shadow-inner">
+            <div className="w-12 h-12 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-100 dark:border-indigo-900/40 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0 shadow-inner">
               <FileText className="w-6 h-6" />
             </div>
             <div>
@@ -122,11 +122,11 @@ export const DashboardPage = () => {
                   Uploaded {new Date(latestAnalysis.createdAt).toLocaleDateString(undefined, { dateStyle: 'medium' })}
                 </span>
               </div>
-              <h3 className="text-lg font-bold text-slate-900 mt-1">
+              <h3 className="text-lg font-bold text-slate-900 dark:text-zinc-100 mt-1">
                 {latestAnalysis.fileName || 'Uploaded_Resume.pdf'}
               </h3>
-              <p className="text-xs text-slate-500 mt-0.5">
-                Target Role: <strong className="text-slate-700">{latestAnalysis.targetRole}</strong> • ATS Match Score: <strong className="text-indigo-600">{latestAnalysis.matchScore}%</strong> • {latestAnalysis.missingSkills?.length || 0} gaps remaining
+              <p className="text-xs text-slate-500 dark:text-zinc-400 mt-0.5">
+                Target Role: <strong className="text-slate-700 dark:text-zinc-300">{latestAnalysis.targetRole}</strong> • ATS Match Score: <strong className="text-indigo-600 dark:text-indigo-400">{latestAnalysis.matchScore}%</strong> • {latestAnalysis.missingSkills?.length || 0} gaps remaining
               </p>
             </div>
           </div>
@@ -216,72 +216,72 @@ export const DashboardPage = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Link
               to="/profile"
-              className="p-4 rounded-xl border border-indigo-200 bg-indigo-50/30 hover:bg-indigo-50/70 transition-all group block"
+              className="p-4 rounded-xl border border-indigo-200 dark:border-indigo-900/50 bg-indigo-50/30 dark:bg-zinc-800/40 hover:bg-indigo-50/70 dark:hover:bg-zinc-800/70 transition-all group block"
             >
               <div className="flex items-center justify-between mb-3">
-                <div className="w-8 h-8 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center">
+                <div className="w-8 h-8 rounded-lg bg-indigo-100 dark:bg-indigo-950/80 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
                   <FileCheck2 className="w-5 h-5" />
                 </div>
                 <ArrowRight className="w-4 h-4 text-indigo-500 group-hover:translate-x-1 transition-transform" />
               </div>
-              <h4 className="font-semibold text-slate-900 text-sm group-hover:text-indigo-600 transition-colors">
+              <h4 className="font-semibold text-slate-900 dark:text-zinc-100 text-sm group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
                 1. Profile & Target Role
               </h4>
-              <p className="text-xs text-slate-500 mt-1">
+              <p className="text-xs text-slate-500 dark:text-zinc-400 mt-1">
                 Configure your target role and current skills to tailor gap analysis.
               </p>
             </Link>
 
             <Link
               to="/analysis/new"
-              className="p-4 rounded-xl border border-violet-200 bg-violet-50/30 hover:bg-violet-50/70 transition-all group block"
+              className="p-4 rounded-xl border border-violet-200 dark:border-violet-900/50 bg-violet-50/30 dark:bg-zinc-800/40 hover:bg-violet-50/70 dark:hover:bg-zinc-800/70 transition-all group block"
             >
               <div className="flex items-center justify-between mb-3">
-                <div className="w-8 h-8 rounded-lg bg-violet-100 text-violet-600 flex items-center justify-center">
+                <div className="w-8 h-8 rounded-lg bg-violet-100 dark:bg-violet-950/80 text-violet-600 dark:text-violet-400 flex items-center justify-center">
                   <Sparkles className="w-5 h-5" />
                 </div>
                 <ArrowRight className="w-4 h-4 text-violet-500 group-hover:translate-x-1 transition-transform" />
               </div>
-              <h4 className="font-semibold text-slate-900 text-sm group-hover:text-violet-600 transition-colors">
+              <h4 className="font-semibold text-slate-900 dark:text-zinc-100 text-sm group-hover:text-violet-600 dark:group-hover:text-violet-400 transition-colors">
                 2. AI Skill-Gap Analysis
               </h4>
-              <p className="text-xs text-slate-500 mt-1">
+              <p className="text-xs text-slate-500 dark:text-zinc-400 mt-1">
                 Upload your resume (PDF/DOCX) to get an ATS match score and pinpoint missing skills.
               </p>
             </Link>
 
             <Link
               to="/roadmap"
-              className="p-4 rounded-xl border border-sky-200 bg-sky-50/30 hover:bg-sky-50/70 transition-all group block"
+              className="p-4 rounded-xl border border-sky-200 dark:border-sky-900/50 bg-sky-50/30 dark:bg-zinc-800/40 hover:bg-sky-50/70 dark:hover:bg-zinc-800/70 transition-all group block"
             >
               <div className="flex items-center justify-between mb-3">
-                <div className="w-8 h-8 rounded-lg bg-sky-100 text-sky-600 flex items-center justify-center">
+                <div className="w-8 h-8 rounded-lg bg-sky-100 dark:bg-sky-950/80 text-sky-600 dark:text-sky-400 flex items-center justify-center">
                   <Map className="w-5 h-5" />
                 </div>
                 <ArrowRight className="w-4 h-4 text-sky-500 group-hover:translate-x-1 transition-transform" />
               </div>
-              <h4 className="font-semibold text-slate-900 text-sm group-hover:text-sky-600 transition-colors">
+              <h4 className="font-semibold text-slate-900 dark:text-zinc-100 text-sm group-hover:text-sky-600 dark:group-hover:text-sky-400 transition-colors">
                 3. 12-Week Roadmap & Progress
               </h4>
-              <p className="text-xs text-slate-500 mt-1">
+              <p className="text-xs text-slate-500 dark:text-zinc-400 mt-1">
                 Follow milestone tasks with 1 curated resource and monitor weekly completion.
               </p>
             </Link>
 
             <Link
               to="/history"
-              className="p-4 rounded-xl border border-emerald-200 bg-emerald-50/30 hover:bg-emerald-50/70 transition-all group block"
+              className="p-4 rounded-xl border border-emerald-200 dark:border-emerald-900/50 bg-emerald-50/30 dark:bg-zinc-800/40 hover:bg-emerald-50/70 dark:hover:bg-zinc-800/70 transition-all group block"
             >
               <div className="flex items-center justify-between mb-3">
-                <div className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center">
+                <div className="w-8 h-8 rounded-lg bg-emerald-100 dark:bg-emerald-950/80 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
                   <TrendingUp className="w-5 h-5" />
                 </div>
                 <ArrowRight className="w-4 h-4 text-emerald-500 group-hover:translate-x-1 transition-transform" />
               </div>
-              <h4 className="font-semibold text-slate-900 text-sm group-hover:text-emerald-600 transition-colors">
+              <h4 className="font-semibold text-slate-900 dark:text-zinc-100 text-sm group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
                 4. Re-analysis Loop & Compare
               </h4>
-              <p className="text-xs text-slate-500 mt-1">
+              <p className="text-xs text-slate-500 dark:text-zinc-400 mt-1">
                 Re-upload updated resumes to track score improvement charts and export ATS PDFs.
               </p>
             </Link>

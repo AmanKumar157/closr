@@ -131,9 +131,9 @@ export const RegisterForm = () => {
       </Button>
 
       <div className="text-center pt-2">
-        <p className="text-sm text-slate-600">
+        <p className="text-sm text-slate-600 dark:text-zinc-400">
           Already have an account?{' '}
-          <Link to="/login" className="font-semibold text-indigo-600 hover:text-indigo-500">
+          <Link to="/login" className="font-semibold text-indigo-600 dark:text-indigo-400 hover:text-indigo-500">
             Sign In
           </Link>
         </p>

@@ -121,16 +121,16 @@ export const AnalysisResultPage = () => {
       </div>
 
       {/* Top Banner / Actions */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 pb-4 border-b border-slate-200">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 pb-4 border-b border-slate-200 dark:border-zinc-800">
         <div>
-          <div className="inline-flex items-center gap-1.5 text-indigo-600 font-semibold text-xs mb-1 uppercase tracking-wider">
+          <div className="inline-flex items-center gap-1.5 text-indigo-600 dark:text-indigo-400 font-semibold text-xs mb-1 uppercase tracking-wider">
             <Sparkles className="w-3.5 h-3.5" />
             <span>AI Resume Gap Report</span>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-zinc-100 tracking-tight flex items-center gap-2">
             <span>{analysis.targetRole}</span>
           </h1>
-          <p className="text-xs text-slate-500 mt-1 flex items-center gap-2">
+          <p className="text-xs text-slate-500 dark:text-zinc-400 mt-1 flex items-center gap-2">
             <Calendar className="w-3.5 h-3.5" />
             <span>Analyzed on {new Date(analysis.createdAt).toLocaleDateString()}</span>
           </p>
@@ -145,7 +145,7 @@ export const AnalysisResultPage = () => {
           </Link>
           <Link to={`/resume?analysisId=${analysis._id}`}>
             <Button variant="outline" size="sm">
-              <FileText className="w-3.5 h-3.5 mr-1.5 text-indigo-600" />
+              <FileText className="w-3.5 h-3.5 mr-1.5 text-indigo-600 dark:text-indigo-400" />
               Generate ATS Resume
             </Button>
           </Link>
@@ -160,7 +160,7 @@ export const AnalysisResultPage = () => {
             variant="outline"
             size="sm"
             onClick={handleDeleteAnalysis}
-            className="text-rose-600 border-rose-200 hover:bg-rose-50 hover:border-rose-300"
+            className="text-rose-600 dark:text-rose-400 border-rose-200 dark:border-rose-900/60 hover:bg-rose-50 dark:hover:bg-rose-950/40 hover:border-rose-300"
             title="Permanently remove this resume analysis and all associated ATS resumes & roadmaps"
           >
             <Trash2 className="w-3.5 h-3.5 mr-1 text-rose-500" />
@@ -170,29 +170,29 @@ export const AnalysisResultPage = () => {
       </div>
 
       {/* Uploaded Resume File Card */}
-      <div className="bg-white rounded-xl border border-slate-200 p-4 sm:p-5 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="bg-white dark:bg-zinc-900 rounded-xl border border-slate-200 dark:border-zinc-800 p-4 sm:p-5 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3 min-w-0">
-          <div className="w-11 h-11 rounded-xl bg-indigo-50 border border-indigo-100 text-indigo-600 flex items-center justify-center shrink-0">
+          <div className="w-11 h-11 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-100 dark:border-indigo-800 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
             <FileText className="w-6 h-6" />
           </div>
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="text-sm sm:text-base font-bold text-slate-900 truncate max-w-xs sm:max-w-md">
+              <span className="text-sm sm:text-base font-bold text-slate-900 dark:text-zinc-100 truncate max-w-xs sm:max-w-md">
                 {analysis.fileName || 'Uploaded_Resume.pdf'}
               </span>
-              <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-indigo-50 text-indigo-700 uppercase">
+              <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 uppercase">
                 {analysis.fileName?.toLowerCase().endsWith('.docx') ? 'DOCX' : 'PDF'}
               </span>
               {analysis.fileSize > 0 && (
-                <span className="text-xs text-slate-400 font-medium">
+                <span className="text-xs text-slate-400 dark:text-zinc-500 font-medium">
                   ({(analysis.fileSize / 1024).toFixed(1)} KB)
                 </span>
               )}
             </div>
-            <p className="text-xs text-slate-500 mt-1 flex flex-wrap items-center gap-2">
+            <p className="text-xs text-slate-500 dark:text-zinc-400 mt-1 flex flex-wrap items-center gap-2">
               <span>Extracted {analysis.resumeText ? analysis.resumeText.split(/\s+/).filter(Boolean).length : 0} words</span>
               <span>•</span>
-              <span className="text-emerald-600 font-semibold">{analysis.extractedSkills?.length || 0} skills identified</span>
+              <span className="text-emerald-600 dark:text-emerald-400 font-semibold">{analysis.extractedSkills?.length || 0} skills identified</span>
               <span>•</span>
               <span>Ready for ATS screening</span>
             </p>
@@ -204,9 +204,9 @@ export const AnalysisResultPage = () => {
             variant="outline"
             size="sm"
             onClick={() => setShowPdfModal(true)}
-            className="border-indigo-200 text-indigo-700 hover:bg-indigo-50 font-semibold"
+            className="border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-950/50 font-semibold"
           >
-            <FileText className="w-3.5 h-3.5 mr-1.5 text-indigo-600" />
+            <FileText className="w-3.5 h-3.5 mr-1.5 text-indigo-600 dark:text-indigo-400" />
             <span>Open in PDF Viewer</span>
           </Button>
 
@@ -215,7 +215,7 @@ export const AnalysisResultPage = () => {
               href={`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/analysis/${analysis._id}/file`}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:text-slate-900 bg-white border border-slate-200 hover:border-slate-300 rounded-lg shadow-2xs transition-colors"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-zinc-300 hover:text-slate-900 dark:hover:text-zinc-100 bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 hover:border-slate-300 rounded-lg shadow-2xs transition-colors"
             >
               <ExternalLink className="w-3.5 h-3.5 text-indigo-500" />
               <span>New Tab</span>
@@ -252,7 +252,7 @@ export const AnalysisResultPage = () => {
                 <span>{copiedText ? 'Copied' : 'Copy Text'}</span>
               </button>
             </div>
-            <div className="max-h-96 overflow-y-auto p-4 bg-white rounded-lg border border-slate-200 font-mono text-xs text-slate-700 whitespace-pre-wrap leading-relaxed shadow-inner">
+            <div className="max-h-96 overflow-y-auto p-4 bg-white dark:bg-zinc-950 rounded-lg border border-slate-200 dark:border-zinc-800 font-mono text-xs text-slate-700 dark:text-zinc-300 whitespace-pre-wrap leading-relaxed shadow-inner">
               {analysis.resumeText}
             </div>
           </div>
@@ -264,51 +264,51 @@ export const AnalysisResultPage = () => {
         {/* Score Gauge Card */}
         <Card className="flex flex-col items-center justify-center p-6 text-center shadow-sm">
           <ScoreGauge score={analysis.matchScore} size="lg" label="ATS Readiness Score" />
-          <p className="text-xs text-slate-500 mt-3 max-w-xs">
+          <p className="text-xs text-slate-500 dark:text-zinc-400 mt-3 max-w-xs">
             Reflects candidate alignment with technical competencies, tooling, and expected domain expertise.
           </p>
         </Card>
 
         {/* Quick Breakdown Metrics */}
         <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm flex flex-col justify-between">
+          <div className="bg-white dark:bg-zinc-900 rounded-xl border border-slate-200 dark:border-zinc-800 p-5 shadow-sm flex flex-col justify-between">
             <div>
-              <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+              <span className="text-xs font-semibold text-slate-500 dark:text-zinc-400 uppercase tracking-wider">
                 Matched Skills
               </span>
-              <p className="text-3xl font-extrabold text-emerald-600 mt-2">
+              <p className="text-3xl font-extrabold text-emerald-600 dark:text-emerald-400 mt-2">
                 {analysis.matchedSkills?.length || 0}
               </p>
             </div>
-            <p className="text-xs text-slate-500 mt-2">
+            <p className="text-xs text-slate-500 dark:text-zinc-400 mt-2">
               Skills from your resume verified against the role.
             </p>
           </div>
 
-          <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm flex flex-col justify-between">
+          <div className="bg-white dark:bg-zinc-900 rounded-xl border border-slate-200 dark:border-zinc-800 p-5 shadow-sm flex flex-col justify-between">
             <div>
-              <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+              <span className="text-xs font-semibold text-slate-500 dark:text-zinc-400 uppercase tracking-wider">
                 Missing Skill Gaps
               </span>
-              <p className="text-3xl font-extrabold text-rose-600 mt-2">
+              <p className="text-3xl font-extrabold text-rose-600 dark:text-rose-400 mt-2">
                 {analysis.missingSkills?.length || 0}
               </p>
             </div>
-            <p className="text-xs text-slate-500 mt-2">
-              <span className="font-semibold text-red-600">{highImportanceGaps.length}</span> high-priority missing items.
+            <p className="text-xs text-slate-500 dark:text-zinc-400 mt-2">
+              <span className="font-semibold text-red-600 dark:text-red-400">{highImportanceGaps.length}</span> high-priority missing items.
             </p>
           </div>
 
-          <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm flex flex-col justify-between">
+          <div className="bg-white dark:bg-zinc-900 rounded-xl border border-slate-200 dark:border-zinc-800 p-5 shadow-sm flex flex-col justify-between">
             <div>
-              <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+              <span className="text-xs font-semibold text-slate-500 dark:text-zinc-400 uppercase tracking-wider">
                 Total Extracted Skills
               </span>
-              <p className="text-3xl font-extrabold text-indigo-600 mt-2">
+              <p className="text-3xl font-extrabold text-indigo-600 dark:text-indigo-400 mt-2">
                 {analysis.extractedSkills?.length || 0}
               </p>
             </div>
-            <p className="text-xs text-slate-500 mt-2">
+            <p className="text-xs text-slate-500 dark:text-zinc-400 mt-2">
               Technical terms parsed directly from your document.
             </p>
           </div>
@@ -395,7 +395,7 @@ export const AnalysisResultPage = () => {
         <Card title="Identified Weak Areas" subtitle="Sections where ATS parsers or recruiters may deduct points">
           <ul className="space-y-3">
             {analysis.weakSections?.map((section, idx) => (
-              <li key={idx} className="flex items-start gap-2.5 text-sm text-slate-700">
+              <li key={idx} className="flex items-start gap-2.5 text-sm text-slate-700 dark:text-zinc-300">
                 <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
                 <span>{section}</span>
               </li>
@@ -407,7 +407,7 @@ export const AnalysisResultPage = () => {
         <Card title="Actionable AI Recommendations" subtitle="Immediate improvements to elevate your interview call rate">
           <ul className="space-y-3">
             {analysis.suggestions?.map((suggestion, idx) => (
-              <li key={idx} className="flex items-start gap-2.5 text-sm text-slate-700">
+              <li key={idx} className="flex items-start gap-2.5 text-sm text-slate-700 dark:text-zinc-300">
                 <Lightbulb className="w-4 h-4 text-indigo-600 shrink-0 mt-0.5" />
                 <span>{suggestion}</span>
               </li>

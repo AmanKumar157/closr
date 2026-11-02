@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from './context/AuthContext.jsx';
+import { ThemeProvider } from './context/ThemeContext.jsx';
 import ProtectedRoute from './routes/ProtectedRoute.jsx';
 import Navbar from './components/Navbar.jsx';
 import LoginPage from './features/auth/pages/LoginPage.jsx';
@@ -18,8 +19,9 @@ import HistoryPage from './features/history/pages/HistoryPage.jsx';
 export const App = () => {
   return (
     <BrowserRouter>
-      <AuthProvider>
-        <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900">
+      <ThemeProvider>
+        <AuthProvider>
+          <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-zinc-950 text-slate-900 dark:text-zinc-100 transition-colors duration-200">
           <Toaster
             position="top-right"
             toastOptions={{
@@ -167,7 +169,8 @@ export const App = () => {
           </main>
         </div>
       </AuthProvider>
-    </BrowserRouter>
+    </ThemeProvider>
+  </BrowserRouter>
   );
 };
 

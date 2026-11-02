@@ -166,22 +166,22 @@ export const ImageCropModal = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-xs animate-fadeIn">
-      <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-md overflow-hidden flex flex-col">
+      <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-zinc-800 w-full max-w-md overflow-hidden flex flex-col">
         {/* Modal Header */}
-        <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+        <div className="px-5 py-4 border-b border-slate-100 dark:border-zinc-800 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-lg bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
               <Crop className="w-4 h-4" />
             </div>
             <div>
-              <h3 className="text-sm font-bold text-slate-900">Crop Profile Photo</h3>
-              <p className="text-[11px] text-slate-500">Drag to reposition & zoom to frame your face</p>
+              <h3 className="text-sm font-bold text-slate-900 dark:text-zinc-100">Crop Profile Photo</h3>
+              <p className="text-[11px] text-slate-500 dark:text-zinc-400">Drag to reposition & zoom to frame your face</p>
             </div>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition-colors"
+            className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-zinc-200 rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors"
           >
             <X className="w-4 h-4" />
           </button>
@@ -238,13 +238,13 @@ export const ImageCropModal = ({
         </div>
 
         {/* Controls Toolbar */}
-        <div className="p-4 bg-slate-50 border-t border-slate-100 space-y-3">
+        <div className="p-4 bg-slate-50 dark:bg-zinc-900 border-t border-slate-100 dark:border-zinc-800 space-y-3">
           {/* Zoom Slider */}
           <div className="flex items-center gap-3">
             <button
               type="button"
               onClick={() => setZoom((prev) => Math.max(1, +(prev - 0.15).toFixed(2)))}
-              className="p-1.5 text-slate-500 hover:text-slate-800 rounded-lg hover:bg-slate-200 transition-colors"
+              className="p-1.5 text-slate-500 dark:text-zinc-400 hover:text-slate-800 dark:hover:text-zinc-200 rounded-lg hover:bg-slate-200 dark:hover:bg-zinc-800 transition-colors"
               title="Zoom out"
             >
               <ZoomOut className="w-4 h-4" />
@@ -256,17 +256,17 @@ export const ImageCropModal = ({
               step="0.05"
               value={zoom}
               onChange={(e) => setZoom(parseFloat(e.target.value))}
-              className="flex-1 h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+              className="flex-1 h-1.5 bg-slate-200 dark:bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-indigo-600"
             />
             <button
               type="button"
               onClick={() => setZoom((prev) => Math.min(3, +(prev + 0.15).toFixed(2)))}
-              className="p-1.5 text-slate-500 hover:text-slate-800 rounded-lg hover:bg-slate-200 transition-colors"
+              className="p-1.5 text-slate-500 dark:text-zinc-400 hover:text-slate-800 dark:hover:text-zinc-200 rounded-lg hover:bg-slate-200 dark:hover:bg-zinc-800 transition-colors"
               title="Zoom in"
             >
               <ZoomIn className="w-4 h-4" />
             </button>
-            <span className="text-[11px] font-mono text-slate-500 w-10 text-right">
+            <span className="text-[11px] font-mono text-slate-500 dark:text-zinc-400 w-10 text-right">
               {Math.round(zoom * 100)}%
             </span>
           </div>
@@ -277,7 +277,7 @@ export const ImageCropModal = ({
               <button
                 type="button"
                 onClick={handleRotate}
-                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-white border border-slate-200 text-slate-600 hover:text-indigo-600 hover:border-indigo-200 transition-colors"
+                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-slate-600 dark:text-zinc-300 hover:text-indigo-600 dark:hover:text-indigo-400 hover:border-indigo-200 dark:hover:border-indigo-800 transition-colors"
                 title="Rotate 90 degrees"
               >
                 <RotateCw className="w-3.5 h-3.5" />
@@ -286,7 +286,7 @@ export const ImageCropModal = ({
               <button
                 type="button"
                 onClick={handleReset}
-                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-white border border-slate-200 text-slate-600 hover:text-slate-900 transition-colors"
+                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-slate-600 dark:text-zinc-300 hover:text-slate-900 dark:hover:text-zinc-100 transition-colors"
                 title="Reset crop"
               >
                 <RefreshCw className="w-3.5 h-3.5" />
@@ -294,12 +294,12 @@ export const ImageCropModal = ({
               </button>
             </div>
 
-            <span className="text-[11px] text-slate-400 italic">Square 1:1 circle export</span>
+            <span className="text-[11px] text-slate-400 dark:text-zinc-500 italic">Square 1:1 circle export</span>
           </div>
         </div>
 
         {/* Modal Footer */}
-        <div className="px-5 py-3.5 bg-white border-t border-slate-100 flex items-center justify-end gap-2">
+        <div className="px-5 py-3.5 bg-white dark:bg-zinc-900 border-t border-slate-100 dark:border-zinc-800 flex items-center justify-end gap-2">
           <Button type="button" variant="outline" size="sm" onClick={onClose}>
             Cancel
           </Button>
