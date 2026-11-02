@@ -6,7 +6,7 @@ const startServer = async () => {
   try {
     await connectDB();
     const server = app.listen(ENV.PORT, () => {
-      console.log(`[Server] CareerPilot server listening on port ${ENV.PORT} (${ENV.NODE_ENV})`);
+      console.log(`[Server] closr server listening on port ${ENV.PORT} (${ENV.NODE_ENV})`);
       console.log(`[Server] Accepting requests from: ${ENV.CLIENT_URL}`);
     });
 

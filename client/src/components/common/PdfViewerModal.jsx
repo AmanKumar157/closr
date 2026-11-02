@@ -265,7 +265,7 @@ export const PdfViewerModal = ({
               <iframe
                 src={nativePdfUrl}
                 className="w-full h-full border-none min-h-[750px]"
-                title="CareerPilot Native PDF Reader"
+                title="closr Native PDF Reader"
               />
             </div>
           ) : activeTab === 'original' && originalPdfUrl ? (
@@ -329,7 +329,7 @@ export const PdfViewerModal = ({
                   <div className="border-b-2 border-slate-900 pb-3 mb-4">
                     <h2 className="text-lg font-bold text-slate-900 font-sans">{title}</h2>
                     <p className="text-xs text-slate-500 font-sans">
-                      Target Position: <strong>{targetRole}</strong> • CareerPilot Document Viewer
+                      Target Position: <strong>{targetRole}</strong> • closr Document Viewer
                     </p>
                   </div>
                   <div>{rawResumeText || 'Document content preview...'}</div>
@@ -342,7 +342,7 @@ export const PdfViewerModal = ({
         {/* Footer Status Bar */}
         <div className="bg-slate-900 px-4 py-1.5 border-t border-slate-800 text-[11px] text-slate-400 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-3">
-            <span>CareerPilot In-App PDF Engine</span>
+            <span>closr In-App PDF Engine</span>
             <span>•</span>
             <span className="text-emerald-400">100% ATS Single-Column Layout</span>
             <span>•</span>

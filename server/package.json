@@ -1,7 +1,7 @@
 {
-  "name": "careerpilot-server",
+  "name": "closr-server",
   "version": "1.0.0",
-  "description": "CareerPilot Backend API",
+  "description": "closr Backend API",
   "type": "module",
   "main": "src/server.js",
   "scripts": {
@@ -10,7 +10,7 @@
     "test": "node --test tests/**/*.js"
   },
   "keywords": [
-    "careerpilot",
+    "closr",
     "ats",
     "resume",
     "roadmap",

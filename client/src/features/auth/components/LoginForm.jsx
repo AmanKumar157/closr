@@ -31,7 +31,7 @@ export const LoginForm = () => {
     try {
       setSubmitting(true);
       await login(data);
-      toast.success('Welcome back to CareerPilot!');
+      toast.success('Welcome back to closr!');
       navigate(from, { replace: true });
     } catch (err) {
       toast.error(err.message || 'Login failed. Please check your credentials.');

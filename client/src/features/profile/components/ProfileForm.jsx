@@ -291,7 +291,7 @@ export const ProfileForm = () => {
             Your Current Skills ({skills.length})
           </label>
           <p className="text-xs text-slate-500">
-            Skills you already possess. CareerPilot evaluates your skill gap against this list.
+            Skills you already possess. closr evaluates your skill gap against this list.
           </p>
 
           {/* Input box to add skills */}

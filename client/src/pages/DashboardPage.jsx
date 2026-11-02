@@ -88,7 +88,7 @@ export const DashboardPage = () => {
             Welcome back, {user?.name || 'Explorer'}!
           </h1>
           <p className="mt-2 text-indigo-100 text-base sm:text-lg">
-            Ready to discover your skill gaps and unlock your target role? CareerPilot analyzes your resume against target JDs and generates a personalized 12-week roadmap.
+            Ready to discover your skill gaps and unlock your target role? closr analyzes your resume against target JDs and generates a personalized 12-week roadmap.
           </p>
           <div className="mt-6 flex flex-wrap gap-3">
             <Link to="/analysis/new">
@@ -212,7 +212,7 @@ export const DashboardPage = () => {
           </div>
         </Card>
 
-        <Card title="Next Steps" subtitle="Core CareerPilot pipeline" className="md:col-span-2">
+        <Card title="Next Steps" subtitle="Core closr pipeline" className="md:col-span-2">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Link
               to="/profile"

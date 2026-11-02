@@ -54,12 +54,12 @@ test('Security: Bcrypt hashes and verifies passwords correctly', async () => {
 
 test('Security: JWT tokens can be signed and verified with secret', () => {
   const secret = 'test-secret-key-12345';
-  const payload = { id: 'user_123', email: 'test@careerpilot.dev' };
+  const payload = { id: 'user_123', email: 'test@closr.dev' };
   const token = jwt.sign(payload, secret, { expiresIn: '1h' });
 
   const decoded = jwt.verify(token, secret);
   assert.equal(decoded.id, 'user_123');
-  assert.equal(decoded.email, 'test@careerpilot.dev');
+  assert.equal(decoded.email, 'test@closr.dev');
 });
 
 test('API Response Formatter: formats success and error payloads consistently', () => {

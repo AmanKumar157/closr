@@ -35,10 +35,10 @@ export const ProfilePage = () => {
           </div>
           <div className="space-y-1">
             <h4 className="text-sm font-semibold text-indigo-950">
-              How CareerPilot uses your profile:
+              How closr uses your profile:
             </h4>
             <p className="text-xs text-indigo-800 leading-relaxed">
-              When you upload a resume in the next phase, the AI compares your resume text and target role to pinpoint high-importance missing skills. If your profile skills list is empty, CareerPilot will automatically prefill your profile with the skills extracted from your resume!
+              When you upload a resume in the next phase, the AI compares your resume text and target role to pinpoint high-importance missing skills. If your profile skills list is empty, closr will automatically prefill your profile with the skills extracted from your resume!
             </p>
           </div>
         </div>

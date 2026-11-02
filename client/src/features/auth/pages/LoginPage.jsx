@@ -12,7 +12,7 @@ export const LoginPage = () => {
             <Compass className="w-8 h-8" />
           </div>
           <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight">
-            Sign in to CareerPilot
+            Sign in to closr
           </h2>
           <p className="mt-2 text-sm text-slate-600">
             Close the gap between your resume and your dream job

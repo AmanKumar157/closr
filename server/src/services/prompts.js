@@ -1,5 +1,5 @@
 /**
- * AI Prompts Library for CareerPilot
+ * AI Prompts Library for closr
  * 
  * Mentor Note for MERN Developers:
  * Keeping prompts centralized in a dedicated file makes prompts easy to test, version,

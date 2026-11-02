@@ -598,7 +598,7 @@ export const RoadmapTimelinePage = () => {
               </div>
               <h3 className="text-lg font-bold text-slate-900 mt-4">No Roadmap Created Yet</h3>
               <p className="text-sm text-slate-600 max-w-md mx-auto mt-2">
-                Upload your resume and target job description. CareerPilot's AI will find your missing skills and automatically generate a custom 12-week roadmap.
+                Upload your resume and target job description. closr's AI will find your missing skills and automatically generate a custom 12-week roadmap.
               </p>
               <div className="mt-6">
                 <Link to="/analysis/new">

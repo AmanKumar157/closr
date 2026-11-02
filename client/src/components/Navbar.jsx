@@ -73,8 +73,8 @@ export const Navbar = () => {
               <Compass className="w-6 h-6" />
             </div>
             <div>
-              <span className="text-xl font-bold bg-gradient-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent">
-                CareerPilot
+              <span className="text-xl font-black tracking-tight lowercase bg-gradient-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent">
+                closr
               </span>
               <span className="hidden sm:inline-block ml-2 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-indigo-700 bg-indigo-50 rounded">
                 AI Powered
@@ -154,7 +154,7 @@ export const Navbar = () => {
                           <Compass className="w-3.5 h-3.5" />
                         </div>
                         <span className="text-xs font-bold tracking-wide text-slate-200">
-                          CareerPilot Account
+                          closr Account
                         </span>
                       </div>
                       <button

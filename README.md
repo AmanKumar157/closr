@@ -1,8 +1,8 @@
-# CareerPilot 🚀
+# closr 🚀
 
-> **Bridge the skill gap between your resume and your target dream role with AI.**
+> **Close the skill gap between your resume and your target dream role with AI.**
 
-CareerPilot is an AI-powered MERN stack platform that parses resumes, matches them against target Job Descriptions (JD), detects skill gaps, generates an actionable 12-week roadmap with exactly one best verified resource per milestone, tracks learning progress, allows users to re-analyze updated resumes to view score improvements, and exports ATS-friendly PDF resumes.
+closr is an AI-powered MERN stack platform that parses resumes, matches them against target Job Descriptions (JD), detects skill gaps, generates an actionable 12-week roadmap with exactly one best verified resource per milestone, tracks learning progress, allows users to re-analyze updated resumes to view score improvements, and exports ATS-friendly PDF resumes.
 
 ---
 
@@ -50,7 +50,7 @@ Backend API (Express ES Modules + Mongoose)
 ## 📂 Project Structure
 
 ```text
-careerpilot/
+closr/
 ├── package.json
 ├── .gitignore
 ├── README.md

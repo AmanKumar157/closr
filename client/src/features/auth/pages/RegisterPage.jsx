@@ -12,7 +12,7 @@ export const RegisterPage = () => {
             <Compass className="w-8 h-8" />
           </div>
           <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight">
-            Get Started with CareerPilot
+            Get Started with closr
           </h2>
           <p className="mt-2 text-sm text-slate-600">
             Start bridging your skill gaps with AI-driven guidance

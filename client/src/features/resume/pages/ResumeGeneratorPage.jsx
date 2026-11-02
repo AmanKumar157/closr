@@ -307,7 +307,7 @@ export const ResumeGeneratorPage = () => {
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      const cName = customCompanyName || resume?.companyName || 'CareerPilot_ATS_Resume';
+      const cName = customCompanyName || resume?.companyName || 'closr_ATS_Resume';
       const cleanName = cName.replace(/[^a-zA-Z0-9_-]/g, '_');
       const downloadName = `Resume_${cleanName}.pdf`;
       link.setAttribute('download', downloadName);
@@ -2581,7 +2581,7 @@ export const ResumeGeneratorPage = () => {
             <iframe
               src={`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/resume/${resume._id}/pdf?inline=true`}
               className="w-full h-full border-none shadow-2xl"
-              title="CareerPilot Native PDF Reader"
+              title="closr Native PDF Reader"
             />
           </div>
         </Card>
