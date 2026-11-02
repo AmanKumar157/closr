@@ -440,8 +440,8 @@ export const AnalysisResultPage = () => {
           </p>
         </div>
         <Link to={`/roadmap?analysisId=${analysis._id}`}>
-          <Button variant="primary" size="lg" className="bg-white text-indigo-900 hover:bg-indigo-50 shadow-md min-w-[200px]">
-            <Map className="w-4 h-4 mr-2 text-indigo-600" />
+          <Button variant="primary" size="lg" className="bg-white dark:bg-indigo-600 text-indigo-900 dark:text-white hover:bg-indigo-50 dark:hover:bg-indigo-500 shadow-md min-w-[200px]">
+            <Map className="w-4 h-4 mr-2 text-indigo-600 dark:text-white" />
             Create 12-Week Roadmap
           </Button>
         </Link>

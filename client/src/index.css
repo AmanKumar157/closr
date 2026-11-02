@@ -4,74 +4,241 @@
 
 @layer base {
   body {
-    @apply font-sans text-slate-800 dark:text-zinc-100 bg-slate-50 dark:bg-zinc-950 antialiased transition-colors duration-200;
+    @apply font-sans text-slate-800 bg-slate-50 antialiased transition-colors duration-200;
   }
 }
 
-/* Bulletproof Global Dark Mode Overrides */
-html.dark, body.dark {
-  color-scheme: dark;
+/* ==========================================================================
+   BULLETPROOF BIDIRECTIONAL THEME SYSTEM
+   Works seamlessly regardless of Vite dev server HMR cache or OS dark preference
+   ========================================================================== */
+
+/* 1. DARK MODE STYLES (Active when html has .dark or [data-theme="dark"]) */
+html.dark,
+html[data-theme="dark"],
+body.dark {
+  color-scheme: dark !important;
   background-color: #09090b !important;
   color: #f4f4f5 !important;
 }
 
-html.dark body, body.dark {
+html.dark body,
+html[data-theme="dark"] body {
   background-color: #09090b !important;
   color: #f4f4f5 !important;
 }
 
-html.dark header, body.dark header {
+html.dark header,
+html[data-theme="dark"] header {
   background-color: rgba(9, 9, 11, 0.95) !important;
   border-color: #27272a !important;
 }
 
-html.dark .bg-white, body.dark .bg-white {
+html.dark .bg-white,
+html[data-theme="dark"] .bg-white {
   background-color: #18181b !important;
-  color: #f4f4f5;
+  color: #f4f4f5 !important;
 }
 
-html.dark .bg-slate-50, body.dark .bg-slate-50 {
+html.dark .bg-slate-50,
+html[data-theme="dark"] .bg-slate-50 {
   background-color: #09090b !important;
 }
 
-html.dark .bg-slate-100, body.dark .bg-slate-100 {
+html.dark .bg-slate-100,
+html[data-theme="dark"] .bg-slate-100 {
   background-color: #27272a !important;
-  color: #e4e4e7;
+  color: #e4e4e7 !important;
 }
 
 html.dark .border-slate-200,
 html.dark .border-slate-200\/80,
 html.dark .border-slate-300,
 html.dark .border-slate-100,
-body.dark .border-slate-200,
-body.dark .border-slate-300 {
+html[data-theme="dark"] .border-slate-200,
+html[data-theme="dark"] .border-slate-300 {
   border-color: #27272a !important;
 }
 
-html.dark .text-slate-900, body.dark .text-slate-900 {
+html.dark .text-slate-900,
+html[data-theme="dark"] .text-slate-900 {
   color: #f4f4f5 !important;
 }
 
-html.dark .text-slate-800, html.dark .text-slate-700,
-body.dark .text-slate-800, body.dark .text-slate-700 {
+html.dark .text-slate-800,
+html.dark .text-slate-700,
+html[data-theme="dark"] .text-slate-800,
+html[data-theme="dark"] .text-slate-700 {
   color: #d4d4d8 !important;
 }
 
-html.dark .text-slate-600, html.dark .text-slate-500,
-body.dark .text-slate-600, body.dark .text-slate-500 {
+html.dark .text-slate-600,
+html.dark .text-slate-500,
+html[data-theme="dark"] .text-slate-600,
+html[data-theme="dark"] .text-slate-500 {
   color: #a1a1aa !important;
 }
 
 html.dark input:not([type="checkbox"]):not([type="radio"]),
 html.dark textarea,
 html.dark select,
-body.dark input:not([type="checkbox"]):not([type="radio"]),
-body.dark textarea,
-body.dark select {
+html[data-theme="dark"] input:not([type="checkbox"]):not([type="radio"]),
+html[data-theme="dark"] textarea,
+html[data-theme="dark"] select {
   background-color: #18181b !important;
   color: #f4f4f5 !important;
   border-color: #3f3f46 !important;
 }
+
+
+/* 2. LIGHT MODE OVERRIDES
+   When dark mode is off (html.light or html:not(.dark)),
+   guarantees clean, crisp light colors across all elements even if OS prefers dark mode */
+html:not(.dark),
+html.light,
+html[data-theme="light"] {
+  color-scheme: light !important;
+}
+
+html:not(.dark) body,
+html.light body,
+html[data-theme="light"] body {
+  background-color: #f8fafc !important;
+  color: #0f172a !important;
+}
+
+html:not(.dark) header,
+html.light header,
+html[data-theme="light"] header {
+  background-color: rgba(255, 255, 255, 0.95) !important;
+  border-color: #e2e8f0 !important;
+}
+
+/* Neutralize dark backgrounds when in light mode */
+html:not(.dark) [class*="dark:bg-zinc-950"],
+html.light [class*="dark:bg-zinc-950"],
+html[data-theme="light"] [class*="dark:bg-zinc-950"] {
+  background-color: #f8fafc !important;
+}
+
+html:not(.dark) [class*="dark:bg-zinc-900"],
+html.light [class*="dark:bg-zinc-900"],
+html[data-theme="light"] [class*="dark:bg-zinc-900"] {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+}
+
+html:not(.dark) .bg-white,
+html.light .bg-white {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+}
+
+html:not(.dark) .bg-slate-50,
+html.light .bg-slate-50 {
+  background-color: #f8fafc !important;
+}
+
+html:not(.dark) .bg-slate-100,
+html.light .bg-slate-100 {
+  background-color: #f1f5f9 !important;
+  color: #334155 !important;
+}
+
+/* Neutralize dark borders in light mode */
+html:not(.dark) [class*="dark:border-zinc-800"],
+html:not(.dark) [class*="dark:border-zinc-700"],
+html.light [class*="dark:border-zinc-800"],
+html.light [class*="dark:border-zinc-700"],
+html[data-theme="light"] [class*="dark:border-zinc-800"] {
+  border-color: #e2e8f0 !important;
+}
+
+html:not(.dark) .border-slate-200,
+html:not(.dark) .border-slate-200\/80,
+html:not(.dark) .border-slate-300,
+html.light .border-slate-200,
+html.light .border-slate-300 {
+  border-color: #e2e8f0 !important;
+}
+
+/* Neutralize dark texts in light mode */
+html:not(.dark) [class*="dark:text-zinc-100"],
+html:not(.dark) [class*="dark:text-zinc-200"],
+html.light [class*="dark:text-zinc-100"],
+html.light [class*="dark:text-zinc-200"],
+html[data-theme="light"] [class*="dark:text-zinc-100"] {
+  color: #0f172a !important;
+}
+
+html:not(.dark) [class*="dark:text-zinc-300"],
+html:not(.dark) [class*="dark:text-zinc-400"],
+html.light [class*="dark:text-zinc-300"],
+html.light [class*="dark:text-zinc-400"],
+html[data-theme="light"] [class*="dark:text-zinc-300"] {
+  color: #64748b !important;
+}
+
+html:not(.dark) .text-slate-900,
+html.light .text-slate-900 {
+  color: #0f172a !important;
+}
+
+html:not(.dark) .text-slate-800,
+html:not(.dark) .text-slate-700,
+html.light .text-slate-800,
+html.light .text-slate-700 {
+  color: #334155 !important;
+}
+
+html:not(.dark) .text-slate-600,
+html:not(.dark) .text-slate-500,
+html.light .text-slate-600,
+html.light .text-slate-500 {
+  color: #64748b !important;
+}
+
+/* Neutralize inputs in light mode */
+html:not(.dark) input:not([type="checkbox"]):not([type="radio"]),
+html:not(.dark) textarea,
+html:not(.dark) select,
+html.light input:not([type="checkbox"]):not([type="radio"]),
+html.light textarea,
+html.light select,
+html[data-theme="light"] input:not([type="checkbox"]):not([type="radio"]),
+html[data-theme="light"] textarea,
+html[data-theme="light"] select {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border-color: #cbd5e1 !important;
+}
+
+/* Neutralize Next Steps subcards in light mode */
+html:not(.dark) .dark\:bg-zinc-800\/40,
+html.light .dark\:bg-zinc-800\/40 {
+  background-color: rgba(238, 242, 255, 0.4) !important;
+}
+
+html:not(.dark) .dark\:bg-indigo-950\/80,
+html.light .dark\:bg-indigo-950\/80 {
+  background-color: #e0e7ff !important;
+}
+
+html:not(.dark) .dark\:bg-violet-950\/80,
+html.light .dark\:bg-violet-950\/80 {
+  background-color: #ede9fe !important;
+}
+
+html:not(.dark) .dark\:bg-sky-950\/80,
+html.light .dark\:bg-sky-950\/80 {
+  background-color: #e0f2fe !important;
+}
+
+html:not(.dark) .dark\:bg-emerald-950\/80,
+html.light .dark\:bg-emerald-950\/80 {
+  background-color: #d1fae5 !important;
+}
+
 
 /* Recruiter-Approved Resume Template Styles */
 .modern-template {

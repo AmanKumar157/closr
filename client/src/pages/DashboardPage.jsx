@@ -92,8 +92,8 @@ export const DashboardPage = () => {
           </p>
           <div className="mt-6 flex flex-wrap gap-3">
             <Link to="/analysis/new">
-              <Button variant="primary" className="bg-white text-indigo-900 hover:bg-indigo-50 shadow-md">
-                <Sparkles className="w-4 h-4 mr-2 text-indigo-600" />
+              <Button variant="primary" className="bg-white dark:bg-indigo-600 text-indigo-900 dark:text-white hover:bg-indigo-50 dark:hover:bg-indigo-500 shadow-md">
+                <Sparkles className="w-4 h-4 mr-2 text-indigo-600 dark:text-white" />
                 Analyze Your Resume Now
               </Button>
             </Link>
