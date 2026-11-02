@@ -4,9 +4,11 @@ const ThemeContext = createContext();
 
 export const ThemeProvider = ({ children }) => {
   const [theme, setTheme] = useState(() => {
-    // 1. Read stored preference from localStorage
-    const saved = localStorage.getItem('closr-theme');
-    if (saved === 'dark' || saved === 'light') return saved;
+    // 1. Read stored preference from localStorage safely
+    try {
+      const saved = localStorage.getItem('closr-theme');
+      if (saved === 'dark' || saved === 'light') return saved;
+    } catch (_) {}
 
     // 2. Fall back to user OS system preference
     if (typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
@@ -17,14 +19,19 @@ export const ThemeProvider = ({ children }) => {
 
   useEffect(() => {
     const root = document.documentElement;
+    const body = document.body;
     if (theme === 'dark') {
       root.classList.add('dark');
+      if (body) body.classList.add('dark');
       root.style.colorScheme = 'dark';
     } else {
       root.classList.remove('dark');
+      if (body) body.classList.remove('dark');
       root.style.colorScheme = 'light';
     }
-    localStorage.setItem('closr-theme', theme);
+    try {
+      localStorage.setItem('closr-theme', theme);
+    } catch (_) {}
   }, [theme]);
 
   // Listen to system OS theme changes if user hasn't explicitly set a preference
@@ -33,10 +40,12 @@ export const ThemeProvider = ({ children }) => {
 
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
     const handleChange = (e) => {
-      const saved = localStorage.getItem('closr-theme');
-      if (!saved) {
-        setTheme(e.matches ? 'dark' : 'light');
-      }
+      try {
+        const saved = localStorage.getItem('closr-theme');
+        if (!saved) {
+          setTheme(e.matches ? 'dark' : 'light');
+        }
+      } catch (_) {}
     };
 
     mediaQuery.addEventListener('change', handleChange);
@@ -63,3 +72,4 @@ export const useTheme = () => {
 };
 
 export default ThemeContext;
+

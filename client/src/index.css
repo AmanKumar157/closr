@@ -4,8 +4,73 @@
 
 @layer base {
   body {
-    @apply font-sans text-slate-800 bg-slate-50 antialiased;
+    @apply font-sans text-slate-800 dark:text-zinc-100 bg-slate-50 dark:bg-zinc-950 antialiased transition-colors duration-200;
   }
+}
+
+/* Bulletproof Global Dark Mode Overrides */
+html.dark, body.dark {
+  color-scheme: dark;
+  background-color: #09090b !important;
+  color: #f4f4f5 !important;
+}
+
+html.dark body, body.dark {
+  background-color: #09090b !important;
+  color: #f4f4f5 !important;
+}
+
+html.dark header, body.dark header {
+  background-color: rgba(9, 9, 11, 0.95) !important;
+  border-color: #27272a !important;
+}
+
+html.dark .bg-white, body.dark .bg-white {
+  background-color: #18181b !important;
+  color: #f4f4f5;
+}
+
+html.dark .bg-slate-50, body.dark .bg-slate-50 {
+  background-color: #09090b !important;
+}
+
+html.dark .bg-slate-100, body.dark .bg-slate-100 {
+  background-color: #27272a !important;
+  color: #e4e4e7;
+}
+
+html.dark .border-slate-200,
+html.dark .border-slate-200\/80,
+html.dark .border-slate-300,
+html.dark .border-slate-100,
+body.dark .border-slate-200,
+body.dark .border-slate-300 {
+  border-color: #27272a !important;
+}
+
+html.dark .text-slate-900, body.dark .text-slate-900 {
+  color: #f4f4f5 !important;
+}
+
+html.dark .text-slate-800, html.dark .text-slate-700,
+body.dark .text-slate-800, body.dark .text-slate-700 {
+  color: #d4d4d8 !important;
+}
+
+html.dark .text-slate-600, html.dark .text-slate-500,
+body.dark .text-slate-600, body.dark .text-slate-500 {
+  color: #a1a1aa !important;
+}
+
+html.dark input:not([type="checkbox"]):not([type="radio"]),
+html.dark textarea,
+html.dark select,
+body.dark input:not([type="checkbox"]):not([type="radio"]),
+body.dark textarea,
+body.dark select {
+  background-color: #18181b !important;
+  color: #f4f4f5 !important;
+  border-color: #3f3f46 !important;
 }
 
 /* Recruiter-Approved Resume Template Styles */

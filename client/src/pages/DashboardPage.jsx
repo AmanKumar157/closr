@@ -190,21 +190,21 @@ export const DashboardPage = () => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card title="Active Profile" subtitle="Your authenticated identity">
           <div className="space-y-3">
-            <div className="flex items-center justify-between text-sm py-1.5 border-b border-slate-100">
-              <span className="text-slate-500">Name</span>
-              <span className="font-semibold text-slate-800">{user?.name}</span>
+            <div className="flex items-center justify-between text-sm py-1.5 border-b border-slate-100 dark:border-zinc-800">
+              <span className="text-slate-500 dark:text-zinc-400">Name</span>
+              <span className="font-semibold text-slate-800 dark:text-zinc-200">{user?.name}</span>
             </div>
-            <div className="flex items-center justify-between text-sm py-1.5 border-b border-slate-100">
-              <span className="text-slate-500">Email</span>
-              <span className="font-semibold text-slate-800">{user?.email}</span>
+            <div className="flex items-center justify-between text-sm py-1.5 border-b border-slate-100 dark:border-zinc-800">
+              <span className="text-slate-500 dark:text-zinc-400">Email</span>
+              <span className="font-semibold text-slate-800 dark:text-zinc-200">{user?.email}</span>
             </div>
-            <div className="flex items-center justify-between text-sm py-1.5 border-b border-slate-100">
-              <span className="text-slate-500">User ID</span>
-              <span className="font-mono text-xs text-slate-600 truncate max-w-[150px]">{user?._id}</span>
+            <div className="flex items-center justify-between text-sm py-1.5 border-b border-slate-100 dark:border-zinc-800">
+              <span className="text-slate-500 dark:text-zinc-400">User ID</span>
+              <span className="font-mono text-xs text-slate-600 dark:text-zinc-400 truncate max-w-[150px]">{user?._id}</span>
             </div>
             <div className="flex items-center justify-between text-sm py-1.5">
-              <span className="text-slate-500">Status</span>
-              <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700">
+              <span className="text-slate-500 dark:text-zinc-400">Status</span>
+              <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
                 Active
               </span>
