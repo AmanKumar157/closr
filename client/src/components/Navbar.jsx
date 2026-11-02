@@ -73,14 +73,14 @@ export const Navbar = () => {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2.5 group">
-            <div className="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white shadow-md shadow-indigo-100 group-hover:scale-105 transition-transform">
+            <div className="w-10 h-10 rounded-xl bg-[oklch(0.7040_0.0400_256.7880)] dark:bg-[oklch(0.9010_0.0580_230.9020)] flex items-center justify-center text-white dark:text-slate-900 shadow-md transition-all group-hover:scale-105">
               <Compass className="w-6 h-6" />
             </div>
             <div>
-              <span className="text-xl font-black tracking-tight lowercase bg-gradient-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent">
+              <span className="text-xl font-black tracking-tight lowercase bg-gradient-to-r from-[oklch(0.5540_0.0460_257.4170)] to-[oklch(0.7040_0.0400_256.7880)] dark:from-[oklch(0.9010_0.0580_230.9020)] dark:to-[oklch(0.8110_0.1110_293.5710)] bg-clip-text text-transparent">
                 closr
               </span>
-              <span className="hidden sm:inline-block ml-2 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/60 rounded">
+              <span className="hidden sm:inline-block ml-2 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-[oklch(0.5540_0.0460_257.4170)] dark:text-[oklch(0.9010_0.0580_230.9020)] bg-[oklch(0.8690_0.0220_252.8940)] dark:bg-[oklch(0.3618_0.0101_106.8928)] rounded">
                 AI Powered
               </span>
             </div>

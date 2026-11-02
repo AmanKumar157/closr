@@ -77,28 +77,28 @@ export const DashboardPage = () => {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
       {/* Welcome Banner */}
-      <div className="bg-gradient-to-r from-indigo-900 via-indigo-800 to-violet-900 rounded-2xl p-8 text-white shadow-xl relative overflow-hidden">
+      <div className="bg-gradient-to-r from-slate-900 via-[#1f2d3d] to-[#182330] rounded-2xl p-8 text-white shadow-xl relative overflow-hidden border border-slate-800">
         <div className="absolute right-0 top-0 bottom-0 w-1/3 opacity-10 bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:16px_16px] pointer-events-none"></div>
         <div className="relative z-10 max-w-2xl">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 text-indigo-200 text-xs font-medium backdrop-blur-sm mb-4">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 text-slate-200 text-xs font-medium backdrop-blur-sm mb-4 border border-white/10">
             <ShieldCheck className="w-4 h-4 text-emerald-400" />
             <span>Session Authenticated (JWT in httpOnly Cookie)</span>
           </div>
           <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight">
             Welcome back, {user?.name || 'Explorer'}!
           </h1>
-          <p className="mt-2 text-indigo-100 text-base sm:text-lg">
+          <p className="mt-2 text-slate-300 text-base sm:text-lg">
             Ready to discover your skill gaps and unlock your target role? closr analyzes your resume against target JDs and generates a personalized 12-week roadmap.
           </p>
           <div className="mt-6 flex flex-wrap gap-3">
             <Link to="/analysis/new">
-              <Button variant="primary" className="bg-white dark:bg-indigo-600 text-indigo-900 dark:text-white hover:bg-indigo-50 dark:hover:bg-indigo-500 shadow-md">
-                <Sparkles className="w-4 h-4 mr-2 text-indigo-600 dark:text-white" />
+              <Button variant="primary" className="bg-[oklch(0.7040_0.0400_256.7880)] dark:bg-[oklch(0.9010_0.0580_230.9020)] text-white dark:text-slate-900 font-bold shadow-md hover:opacity-90 transition-all">
+                <Sparkles className="w-4 h-4 mr-2" />
                 Analyze Your Resume Now
               </Button>
             </Link>
             <Link to="/profile">
-              <Button variant="outline" className="border-indigo-300/40 text-white hover:bg-white/10 bg-transparent">
+              <Button variant="outline" className="border-slate-600 text-white hover:bg-white/10 bg-transparent">
                 Update Target Role
               </Button>
             </Link>
